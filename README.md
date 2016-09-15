@@ -8,9 +8,14 @@ platform.
 
 Inside the cloned directory run:
 
+### Python 3
 ```
-pip3 install # python 3
-pip install # python 2
+pip3 install .
+```
+
+### Python 2
+```
+pip install .
 ```
 
 This will automatically install the module along with all of its dependencies.
