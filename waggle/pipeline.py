@@ -17,13 +17,15 @@ class Plugin(object):
         self.man = man
         self.outqueue = outqueue
 
-    def send_message(self, sensor, data):
+    def send(self, sensor, data):
         assert isinstance(sensor, str)
         assert isinstance(data, bytes) or isinstance(data, bytearray)
 
         timestamp_utc = int(time.time())
         timestamp_date = time.strftime('%Y-%m-%d', time.gmtime(timestamp_utc))
         timestamp_epoch = timestamp_utc * 1000
+
+        # ...consider forking outgoing data here...
 
         message_data = [
             str(timestamp_date),
