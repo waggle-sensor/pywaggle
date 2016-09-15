@@ -29,7 +29,7 @@ class Plugin(object):
             str(timestamp_date),
             self.plugin_name,
             self.plugin_version,
-            'default',
+            '',
             str(timestamp_epoch),
             sensor,
             'meta',
@@ -38,25 +38,7 @@ class Plugin(object):
 
         self.outqueue.put(message_data)
 
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
-    def starting(self):
-        pass
-
-    def started(self):
-        pass
-
-    def stopping(self):
-        pass
-
-    def stopped(self):
-        pass
-
-    def process(self):
+    def run(self):
         pass
 
 
