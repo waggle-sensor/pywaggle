@@ -6,16 +6,15 @@ platform.
 
 ## Installation using pip
 
-Inside the cloned directory run:
-
 ### Python 3
 ```
-pip3 install .
+pip3 install git+https://github.com/waggle-sensor/pywaggle
 ```
 
 ### Python 2
 ```
-pip install .
+pip install git+https://github.com/waggle-sensor/pywaggle
 ```
 
-This will automatically install the module along with all of its dependencies.
+This will automatically fetch and install the module along with all of its
+dependencies.
