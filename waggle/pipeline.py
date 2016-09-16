@@ -21,9 +21,10 @@ class Plugin(object):
         assert isinstance(sensor, str)
         assert isinstance(data, bytes) or isinstance(data, bytearray)
 
-        timestamp_utc = int(time.time())
+        now = time.time()
+        timestamp_epoch = int(now * 1000)
+        timestamp_utc = int(now)
         timestamp_date = time.strftime('%Y-%m-%d', time.gmtime(timestamp_utc))
-        timestamp_epoch = timestamp_utc * 1000
 
         # ...consider forking outgoing data here...
 
@@ -34,14 +35,14 @@ class Plugin(object):
             '',
             str(timestamp_epoch),
             sensor,
-            'meta',
+            '',
             data,
         ]
 
         self.outqueue.put(message_data)
 
     def run(self):
-        pass
+        raise NotImplemented('Plugin must define run method.')
 
 
 class Worker(object):
