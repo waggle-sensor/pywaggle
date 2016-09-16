@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import pika
 import time
+from base64 import b64encode
 
 
 class Plugin(object):
@@ -19,7 +20,6 @@ class Plugin(object):
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
-        assert isinstance(data, bytes) or isinstance(data, bytearray)
 
         now = time.time()
         timestamp_epoch = int(now * 1000)
@@ -33,7 +33,7 @@ class Plugin(object):
             self.plugin_name,
             self.plugin_version,
             '',
-            str(timestamp_epoch),
+            timestamp_epoch,
             sensor,
             '',
             data,
