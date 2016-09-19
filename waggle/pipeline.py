@@ -1,8 +1,8 @@
 from datetime import datetime
 import json
+from multiprocessing import Process, Queue
 import pika
 import time
-from base64 import b64encode
 
 
 class Plugin(object):
@@ -90,3 +90,16 @@ class Worker(object):
 
         self.channel.basic_consume(callback, queue=self.queue_name, no_ack=True)
         self.channel.start_consuming()
+
+
+def run_standalone(plugin, callback):
+
+    def register(name, man, mailbox_outgoing):
+        plugin(name, man, mailbox_outgoing).run()
+
+    q = Queue()
+    p = Process(target=register, args=('', '', q))
+    p.start()
+
+    while True:
+        callback(q.get())
