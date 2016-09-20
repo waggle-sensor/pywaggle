@@ -98,7 +98,7 @@ def run_standalone(plugin, callback):
         plugin(name, man, mailbox_outgoing).run()
 
     q = Queue()
-    p = Process(target=register, args=('', '', q))
+    p = Process(target=register, args=(plugin.plugin_name, {}, q))
     p.start()
 
     while True:
