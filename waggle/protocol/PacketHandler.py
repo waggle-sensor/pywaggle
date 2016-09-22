@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-#Where each piece of information in a packet header is stored, by byte
+# Where each piece of information in a packet header is stored, by byte
 # Total header size is 40 bytes.
 HEADER_LOCATIONS = {
     "prot_ver"         : 0,
@@ -344,7 +344,7 @@ def get_header(packet):
 
 
 """
-    (bytearray header) Sets header field in an bytearray. Value also has to be an bytearray.
+(bytearray header) Sets header field in an bytearray. Value also has to be an bytearray.
 """
 def set_header_field(header_bytearray, field, value):
     if type(value) is str:
