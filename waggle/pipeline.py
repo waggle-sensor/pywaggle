@@ -28,7 +28,7 @@ class Plugin(object):
 
         self.channel = self.connection.channel()
 
-        self.channel.queue_declare(queue='data-check',
+        self.channel.queue_declare(queue='sensor-data',
                                    durable=True)
 
     def send(self, sensor, data):
@@ -76,18 +76,19 @@ class Plugin(object):
         else:
             raise ValueError('unsupported data type')
 
-        # forward to rmq
         properties = pika.BasicProperties(
             type=datatype,
+            timestamp=int(time.time() * 1000),
             headers={
+                'node': '0000000000000000',
                 'plugin': [self.plugin_name, self.plugin_version, ''],
-                'sensor': sensor,
+                'key': sensor,
             }
         )
 
         self.channel.basic_publish(properties=properties,
                                    exchange='',
-                                   routing_key='data-check',
+                                   routing_key='sensor-data',
                                    body=data)
 
     def run(self):
