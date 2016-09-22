@@ -18,18 +18,20 @@ class Plugin(object):
         self.man = man
         self.outqueue = outqueue
 
-        # think about using empty credentials for this and filtering
-        # bad items.
-        credentials = pika.PlainCredentials('node', 'node')
-
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters('localhost',
-                                      credentials=credentials))
+            pika.ConnectionParameters('localhost'))
 
         self.channel = self.connection.channel()
 
+        self.channel.exchange_declare('sensor-data',
+                                      exchange_type='fanout',
+                                      durable=True)
+
         self.channel.queue_declare(queue='sensor-data',
                                    durable=True)
+
+        self.channel.queue_bind(exchange='sensor-data',
+                                queue='sensor-data')
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
@@ -87,8 +89,8 @@ class Plugin(object):
         )
 
         self.channel.basic_publish(properties=properties,
-                                   exchange='',
-                                   routing_key='sensor-data',
+                                   exchange='sensor-data',
+                                   routing_key='',
                                    body=data)
 
     def run(self):
