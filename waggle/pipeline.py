@@ -79,6 +79,7 @@ class Plugin(object):
             raise ValueError('unsupported data type')
 
         properties = pika.BasicProperties(
+            delivery_mode=2,  # persist message
             type=datatype,
             timestamp=int(time.time() * 1000),
             headers={
