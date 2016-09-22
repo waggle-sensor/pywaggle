@@ -49,7 +49,7 @@ class Plugin(object):
             timestamp_epoch,
             sensor,
             '',
-            data,
+            ['data:{}'.format(data)],
         ]
 
         self.outqueue.put(message_data)
