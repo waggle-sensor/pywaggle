@@ -11,7 +11,7 @@ def cached(func):
 
 
 def first(p, s):
-    return next(filter(p, s))
+    return next(filter(p, iter(s)))
 
 
 @cached
