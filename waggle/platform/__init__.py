@@ -1,3 +1,6 @@
+'''
+Python abstraction for Waggle node hardware and system info.
+'''
 import re
 import subprocess
 
@@ -11,7 +14,8 @@ def cached(func):
 
 
 def first(p, s):
-    return next(filter(p, iter(s)))
+    # (x for x in s) is meant to be a py2/3 compatibility...
+    return next(filter(p, (x for x in s)))
 
 
 @cached

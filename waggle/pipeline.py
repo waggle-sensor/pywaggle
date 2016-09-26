@@ -1,8 +1,8 @@
 from datetime import datetime
 import json
 from multiprocessing import Process, Queue
-import pika
 import time
+import pika
 
 
 class Plugin(object):
@@ -17,21 +17,6 @@ class Plugin(object):
         self.name = name
         self.man = man
         self.outqueue = outqueue
-
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters('localhost'))
-
-        self.channel = self.connection.channel()
-
-        self.channel.exchange_declare('sensor-data',
-                                      exchange_type='fanout',
-                                      durable=True)
-
-        self.channel.queue_declare(queue='sensor-data',
-                                   durable=True)
-
-        self.channel.queue_bind(exchange='sensor-data',
-                                queue='sensor-data')
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
@@ -53,46 +38,6 @@ class Plugin(object):
         ]
 
         self.outqueue.put(message_data)
-
-        if isinstance(data, int):
-            # consider packing certain types to save space.
-            # can also consider automatically applying zlib
-            # if it makes sense on the data. it'd be even
-            # better if we could take advantage of protobufs
-            # or some standard, open encoding technique.
-            # data = struct.pack('>i', data)
-            data = str(data).encode()
-            datatype = 'i'
-        elif isinstance(data, float):
-            # data = struct.pack('>f', data)
-            data = str(data).encode()
-            datatype = 'f'
-        elif isinstance(data, str):
-            data = data.encode()
-            datatype = 's'
-        elif isinstance(data, bytearray):
-            data = bytes(data)
-            datatype = 'b'
-        elif isinstance(data, bytes):
-            datatype = 'b'
-        else:
-            raise ValueError('unsupported data type')
-
-        properties = pika.BasicProperties(
-            delivery_mode=2,  # persist message
-            type=datatype,
-            timestamp=int(time.time() * 1000),
-            headers={
-                'node': '0000000000000000',
-                'plugin': [self.plugin_name, self.plugin_version, ''],
-                'key': sensor,
-            }
-        )
-
-        self.channel.basic_publish(properties=properties,
-                                   exchange='sensor-data',
-                                   routing_key='',
-                                   body=data)
 
     def run(self):
         raise NotImplemented('Plugin must define run method.')
