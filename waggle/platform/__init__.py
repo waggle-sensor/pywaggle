@@ -34,4 +34,4 @@ def hardware():
 def macaddr():
     output = subprocess.check_output(['ip', 'link']).decode()
     addrs = re.findall('link/ether (\S+)', output)
-    return first(lambda m: m.startswith('00:1e:06'), addrs).replace(':', '')
+    return first(lambda m: m.startswith('00:1e:06'), addrs).replace(':', '').rjust(16, '0')
