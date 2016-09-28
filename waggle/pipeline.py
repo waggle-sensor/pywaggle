@@ -1,12 +1,8 @@
 from datetime import datetime
 import json
-from multiprocessing import Process, Queue
 import pika
 import time
 import waggle.platform
-
-
-# TODO Set this up to use different backends.
 
 
 class PluginBackend(object):
@@ -42,6 +38,18 @@ class PluginManagerBackend(PluginBackend):
             '',
             ['data:{}'.format(data)],
         ])
+
+
+class StandloneBackend(PluginBackend):
+
+    def __init__(self, callback):
+        self.callback = callback
+
+    def connect(self):
+        pass
+
+    def send(self, sensor, data):
+        self.callback(sensor, data)
 
 
 class RabbitMQBackend(PluginBackend):
@@ -113,57 +121,37 @@ class RabbitMQBackend(PluginBackend):
 
 class Plugin(object):
 
-    def __init__(self, name, man, outqueue):
+    def __init__(self, backend):
         if not hasattr(self, 'plugin_name'):
             raise RuntimeError('Plugin name must be specified.')
 
         if not hasattr(self, 'plugin_version'):
             raise RuntimeError('Plugin version must be specified.')
 
-        self.name = name
-        self.man = man
-        self.outqueue = outqueue
-
-        # self.backend = RabbitMQBackend('localhost')
-        # self.backend.connect()
+        self.backend = backend
+        self.backend.connect()
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
-
-        now = time.time()
-        timestamp_epoch = int(now * 1000)
-        timestamp_utc = int(now)
-        timestamp_date = time.strftime('%Y-%m-%d', time.gmtime(timestamp_utc))
-
-        message_data = [
-            str(timestamp_date),
-            self.plugin_name,
-            self.plugin_version,
-            '',
-            timestamp_epoch,
-            sensor,
-            '',
-            ['data:{}'.format(data)],
-        ]
-
-        self.outqueue.put(message_data)
-        # self.backend.send(sensor, data)
+        self.backend.send(sensor, data)
 
     def run(self):
         raise NotImplemented('Plugin must define run method.')
 
     @classmethod
     def register(cls, name, man, mailbox_outgoing):
-        cls(name, man, mailbox_outgoing).run()
+        backend = PluginManagerBackend(mailbox_outgoing)
+        # backend = RabbitMQBackend('localhost')
+        plugin = cls(backend)
+        plugin.name = name
+        plugin.man = man
+        plugin.run()
 
     @classmethod
     def run_standalone(cls, callback):
-        q = Queue()
-        p = Process(target=cls.register, args=(cls.plugin_name, {}, q))
-        p.start()
-
-        while True:
-            callback(q.get())
+        backend = StandloneBackend(callback)
+        plugin = cls(backend)
+        plugin.run()
 
 
 class Worker(object):
