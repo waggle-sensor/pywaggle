@@ -3,6 +3,7 @@ import json
 from multiprocessing import Process, Queue
 import pika
 import time
+import waggle.platform
 
 
 # TODO Set this up to use different backends.
@@ -34,6 +35,10 @@ class Plugin(object):
         #
         # self.channel.queue_bind(exchange='sensor-data',
         #                         queue='sensor-data')
+
+        # NOTE I strongly dislike this and think it should be handled in a more
+        # weakly coupled way. This is worth creating a better design for.
+        self.node_id = waggle.platform.macaddr()
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
@@ -85,7 +90,7 @@ class Plugin(object):
         #     type=datatype,
         #     timestamp=int(time.time() * 1000),
         #     headers={
-        #         'node': '0000000000000000',
+        #         'node': self.node_id,
         #         'plugin': [self.plugin_name, self.plugin_version, ''],
         #         'key': sensor,
         #     }
