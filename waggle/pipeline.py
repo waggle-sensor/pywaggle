@@ -144,7 +144,7 @@ class Plugin(object):
     @classmethod
     def run_standalone(cls, callback):
         backend = StandloneBackend(callback)
-        plugin = cls(backend)
+        plugin = cls(backend, node_id='0000000000000000')
         plugin.run()
 
 
