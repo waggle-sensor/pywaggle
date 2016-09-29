@@ -7,9 +7,6 @@ import waggle.platform
 
 class PluginBackend(object):
 
-    def connect(self):
-        pass
-
     def send(self, sensor, data):
         pass
 
@@ -18,9 +15,6 @@ class PluginManagerBackend(PluginBackend):
 
     def __init__(self, queue):
         self.queue = queue
-
-    def connect(self):
-        pass
 
     def send(self, sensor, data):
         now = time.time()
@@ -45,25 +39,17 @@ class StandloneBackend(PluginBackend):
     def __init__(self, callback):
         self.callback = callback
 
-    def connect(self):
-        pass
-
     def send(self, sensor, data):
         self.callback(sensor, data)
 
 
 class RabbitMQBackend(PluginBackend):
 
-    def __init__(self, host='localhost'):
-        self.host = host
+    def __init__(self, host=None, port=None, node_id=None):
+        params = pika.ConnectionParameters(host=host,
+                                           port=host)
 
-        # NOTE I strongly dislike this and think it should be handled in a more
-        # weakly coupled way. This is worth creating a better design for.
-        self.node_id = waggle.platform.macaddr()
-
-    def connect(self):
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(self.host))
+        self.connection = pika.BlockingConnection(params)
 
         self.channel = self.connection.channel()
 
@@ -76,6 +62,11 @@ class RabbitMQBackend(PluginBackend):
 
         self.channel.queue_bind(exchange='sensor-data',
                                 queue='sensor-data')
+
+        # NOTE I strongly dislike this and think it should be handled in a more
+        # weakly coupled way. This is worth creating a better design for.
+        if node_id is None:
+            self.node_id = waggle.platform.macaddr()
 
     def send(self, sensor, data):
         if isinstance(data, int):
@@ -129,7 +120,6 @@ class Plugin(object):
             raise RuntimeError('Plugin version must be specified.')
 
         self.backend = backend
-        self.backend.connect()
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
