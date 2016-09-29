@@ -24,8 +24,8 @@ class PluginManagerBackend(PluginBackend):
 
         self.queue.put([
             str(timestamp_date),
-            self.plugin_name,
-            self.plugin_version,
+            self.plugin.plugin_name,
+            self.plugin.plugin_version,
             '',
             timestamp_epoch,
             sensor,
