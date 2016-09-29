@@ -45,9 +45,8 @@ class StandloneBackend(PluginBackend):
 
 class RabbitMQBackend(PluginBackend):
 
-    def __init__(self, host=None, port=None, node_id=None):
-        params = pika.ConnectionParameters(host=host,
-                                           port=host)
+    def __init__(self, host=None, port=None):
+        params = pika.ConnectionParameters(host=host, port=port)
 
         self.connection = pika.BlockingConnection(params)
 
@@ -62,11 +61,6 @@ class RabbitMQBackend(PluginBackend):
 
         self.channel.queue_bind(exchange='sensor-data',
                                 queue='sensor-data')
-
-        # NOTE I strongly dislike this and think it should be handled in a more
-        # weakly coupled way. This is worth creating a better design for.
-        if node_id is None:
-            self.node_id = waggle.platform.macaddr()
 
     def send(self, sensor, data):
         if isinstance(data, int):
@@ -98,8 +92,10 @@ class RabbitMQBackend(PluginBackend):
             type=datatype,
             timestamp=int(time.time() * 1000),
             headers={
-                'node': self.node_id,
-                'plugin': [self.plugin_name, self.plugin_version, ''],
+                'node': self.plugin.node_id,
+                'plugin': [self.plugin.plugin_name,
+                           self.plugin.plugin_version,
+                           ''],
                 'key': sensor,
             }
         )
@@ -112,14 +108,22 @@ class RabbitMQBackend(PluginBackend):
 
 class Plugin(object):
 
-    def __init__(self, backend):
+    def __init__(self, backend, node_id=None):
         if not hasattr(self, 'plugin_name'):
             raise RuntimeError('Plugin name must be specified.')
 
         if not hasattr(self, 'plugin_version'):
             raise RuntimeError('Plugin version must be specified.')
 
+        # NOTE I strongly dislike this and think it should be handled in a more
+        # weakly coupled way. This is worth creating a better design for.
+        if node_id is None:
+            self.node_id = waggle.platform.macaddr()
+        else:
+            self.node_id = node_id
+
         self.backend = backend
+        self.backend.plugin = self
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
