@@ -5,13 +5,13 @@ import time
 import waggle.platform
 
 
-class PluginBackend(object):
+class PluginHandler(object):
 
     def send(self, sensor, data):
         pass
 
 
-class PluginManagerBackend(PluginBackend):
+class PluginManagerHandler(PluginHandler):
 
     def __init__(self, queue):
         self.queue = queue
@@ -34,7 +34,7 @@ class PluginManagerBackend(PluginBackend):
         ])
 
 
-class StandloneBackend(PluginBackend):
+class CallbackHandler(PluginHandler):
 
     def __init__(self, callback):
         self.callback = callback
@@ -43,7 +43,13 @@ class StandloneBackend(PluginBackend):
         self.callback(sensor, data)
 
 
-class RabbitMQBackend(PluginBackend):
+class LogHandler(PluginHandler):
+
+    def send(self, sensor, data):
+        print('{} - {} - {}'.format(time.time(), sensor, data))
+
+
+class RabbitMQHandler(PluginHandler):
 
     def __init__(self, host=None, port=None):
         params = pika.ConnectionParameters(host=host, port=port)
@@ -88,7 +94,7 @@ class RabbitMQBackend(PluginBackend):
             raise ValueError('unsupported data type')
 
         properties = pika.BasicProperties(
-            delivery_mode=2,  # persist message
+            delivery_mode=2,
             type=datatype,
             timestamp=int(time.time() * 1000),
             headers={
@@ -108,7 +114,7 @@ class RabbitMQBackend(PluginBackend):
 
 class Plugin(object):
 
-    def __init__(self, backend, node_id=None):
+    def __init__(self):
         if not hasattr(self, 'plugin_name'):
             raise RuntimeError('Plugin name must be specified.')
 
@@ -117,34 +123,34 @@ class Plugin(object):
 
         # NOTE I strongly dislike this and think it should be handled in a more
         # weakly coupled way. This is worth creating a better design for.
-        if node_id is None:
+        try:
             self.node_id = waggle.platform.macaddr()
-        else:
-            self.node_id = node_id
+        except:
+            self.node_id = '0000000000000000'
 
-        self.backend = backend
-        self.backend.plugin = self
+        self.handlers = []
+
+    def add_handler(self, handler):
+        handler.plugin = self
+        self.handlers.append(handler)
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
-        self.backend.send(sensor, data)
+
+        for handler in self.handlers:
+            handler.send(sensor, data)
 
     def run(self):
         raise NotImplemented('Plugin must define run method.')
 
     @classmethod
     def register(cls, name, man, mailbox_outgoing):
-        backend = PluginManagerBackend(mailbox_outgoing)
-        # backend = RabbitMQBackend('localhost')
-        plugin = cls(backend)
+        plugin = cls()
+        plugin.add_handler(LogHandler())
+        plugin.add_handler(PluginManagerHandler(mailbox_outgoing))
+        # plugin.add_handler(RabbitMQHandler('localhost'))
         plugin.name = name
         plugin.man = man
-        plugin.run()
-
-    @classmethod
-    def run_standalone(cls, callback):
-        backend = StandloneBackend(callback)
-        plugin = cls(backend, node_id='0000000000000000')
         plugin.run()
 
 
@@ -177,14 +183,13 @@ class Worker(object):
         payload.update({
             # this should still be the internal node id. translation to "nice"
             # id will happen in the plenario push plugin.
-            'node_id': '00A',
-            'node_config': '123abc',
+            # 'node_id': '00A',
+            # 'node_config': '123abc',
             'datetime': datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f'),
         })
 
         self.channel.basic_publish(exchange='plugins-out',
                                    routing_key='',
-                                   # routing_key='envsense.2',
                                    body=json.dumps(payload))
 
     def start(self):
