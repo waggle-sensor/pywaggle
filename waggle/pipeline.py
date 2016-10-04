@@ -158,7 +158,6 @@ class Plugin(object):
         plugin.add_handler(LogHandler())
 
         # Legacy plugin manager handler + parameters.
-        plugin.add_handler(PluginManagerHandler(mailbox_outgoing))
         plugin.name = name
         plugin.man = man
 
@@ -166,6 +165,8 @@ class Plugin(object):
             plugin.add_handler(RabbitMQHandler('localhost'))
         except:
             logging.exception('Got exception when adding RabbitMQ handler.')
+            # Use old pipeline instead.
+            plugin.add_handler(PluginManagerHandler(mailbox_outgoing))
 
         plugin.run()
 
