@@ -3,6 +3,73 @@ import json
 import pika
 import time
 import waggle.platform
+import logging
+
+
+logging.basicConfig()
+
+# class Publisher(object):
+#
+#     def __init__(self, host=None, port=None):
+#         params = pika.ConnectionParameters(host=host, port=port)
+#
+#         self.connection = pika.BlockingConnection(params)
+#
+#         self.channel = self.connection.channel()
+#
+#         self.channel.exchange_declare('waggle.sensors',
+#                                       exchange_type='fanout',
+#                                       durable=True)
+#
+#         self.channel.queue_declare(queue='waggle.sensors',
+#                                    durable=True)
+#
+#         self.channel.queue_bind(exchange='waggle.sensors',
+#                                 queue='waggle.sensors')
+#
+#     def publish(self, key, value):
+#         if isinstance(value, int):
+#             # consider packing certain types to save space.
+#             # can also consider automatically applying zlib
+#             # if it makes sense on the data. it'd be even
+#             # better if we could take advantage of protobufs
+#             # or some standard, open encoding technique.
+#             # data = struct.pack('>i', data)
+#             data = str(value).encode()
+#             datatype = 'i'
+#         elif isinstance(value, float):
+#             # data = struct.pack('>f', data)
+#             data = str(value).encode()
+#             datatype = 'f'
+#         elif isinstance(value, str):
+#             data = value.encode()
+#             datatype = 's'
+#         elif isinstance(value, bytearray):
+#             data = bytes(value)
+#             datatype = 'b'
+#         elif isinstance(value, bytes):
+#             data = value
+#             datatype = 'b'
+#         else:
+#             raise ValueError('unsupported data type')
+#
+#         properties = pika.BasicProperties(
+#             delivery_mode=2,
+#             type=datatype,
+#             timestamp=int(time.time() * 1000),
+#             headers={
+#                 'node': self.plugin.node_id,
+#                 'plugin': [self.plugin.plugin_name,
+#                            self.plugin.plugin_version,
+#                            ''],
+#                 'key': data,
+#             }
+#         )
+#
+#         self.channel.basic_publish(properties=properties,
+#                                    exchange='waggle.sensors',
+#                                    routing_key='',
+#                                    body=data)
 
 
 class PluginHandler(object):
@@ -58,15 +125,15 @@ class RabbitMQHandler(PluginHandler):
 
         self.channel = self.connection.channel()
 
-        self.channel.exchange_declare('sensor-data',
+        self.channel.exchange_declare('waggle.sensor-data',
                                       exchange_type='fanout',
                                       durable=True)
 
-        self.channel.queue_declare(queue='sensor-data',
+        self.channel.queue_declare(queue='waggle.sensor-data',
                                    durable=True)
 
-        self.channel.queue_bind(exchange='sensor-data',
-                                queue='sensor-data')
+        self.channel.queue_bind(exchange='waggle.sensor-data',
+                                queue='waggle.sensor-data')
 
     def send(self, sensor, data):
         if isinstance(data, int):
@@ -93,21 +160,25 @@ class RabbitMQHandler(PluginHandler):
         else:
             raise ValueError('unsupported data type')
 
+        headers = {
+            'plugin': [self.plugin.plugin_name,
+                       self.plugin.plugin_version,
+                       ''],
+            'key': sensor,
+        }
+
+        if self.plugin.node_id is not None:
+            headers['node'] = self.plugin.node_id
+
         properties = pika.BasicProperties(
             delivery_mode=2,
             type=datatype,
             timestamp=int(time.time() * 1000),
-            headers={
-                'node': self.plugin.node_id,
-                'plugin': [self.plugin.plugin_name,
-                           self.plugin.plugin_version,
-                           ''],
-                'key': sensor,
-            }
+            headers=headers
         )
 
         self.channel.basic_publish(properties=properties,
-                                   exchange='sensor-data',
+                                   exchange='waggle.sensor-data',
                                    routing_key='',
                                    body=data)
 
@@ -126,7 +197,7 @@ class Plugin(object):
         try:
             self.node_id = waggle.platform.macaddr()
         except:
-            self.node_id = '0000000000000000'
+            self.node_id = None
 
         self.handlers = []
 
@@ -146,11 +217,19 @@ class Plugin(object):
     @classmethod
     def register(cls, name, man, mailbox_outgoing):
         plugin = cls()
+
         plugin.add_handler(LogHandler())
+
+        # Legacy plugin manager handler + parameters.
         plugin.add_handler(PluginManagerHandler(mailbox_outgoing))
-        # plugin.add_handler(RabbitMQHandler('localhost'))
         plugin.name = name
         plugin.man = man
+
+        try:
+            plugin.add_handler(RabbitMQHandler('localhost'))
+        except:
+            logging.exception('Got exception when adding RabbitMQ handler.')
+
         plugin.run()
 
 
@@ -195,7 +274,7 @@ class Worker(object):
     def start(self):
         def callback(ch, method, properties, body):
             headers = properties.headers
-            param = tuple(headers['sensor'])
+            param = tuple(headers['key'])
             self.get_message(headers, param, body)
 
         self.channel.basic_consume(callback, queue=self.queue_name, no_ack=True)
