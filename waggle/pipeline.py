@@ -55,10 +55,8 @@ class LogHandler(PluginHandler):
 
 class RabbitMQHandler(PluginHandler):
 
-    def __init__(self, host=None, port=None):
-        params = pika.ConnectionParameters(host=host, port=port)
-
-        self.connection = pika.BlockingConnection(params)
+    def __init__(self, url):
+        self.connection = pika.BlockingConnection(pika.URLParameters(url))
 
         self.channel = self.connection.channel()
 
@@ -162,7 +160,7 @@ class Plugin(object):
         plugin.man = man
 
         try:
-            plugin.add_handler(RabbitMQHandler('localhost'))
+            plugin.add_handler(RabbitMQHandler('amqp://localhost'))
         except:
             logging.exception('Got exception when adding RabbitMQ handler.')
             # Use old pipeline instead.
