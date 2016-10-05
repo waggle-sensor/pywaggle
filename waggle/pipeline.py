@@ -168,6 +168,13 @@ class Plugin(object):
 
         plugin.run()
 
+    @classmethod
+    def defaultConfig(cls):
+        plugin = cls()
+        plugin.add_handler(LogHandler())
+        plugin.add_handler(RabbitMQHandler('amqp://localhost'))
+        return plugin
+
 
 class Worker(object):
 
