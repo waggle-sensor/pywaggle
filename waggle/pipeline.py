@@ -72,51 +72,36 @@ class RabbitMQHandler(PluginHandler):
 
     def send(self, sensor, data):
         if isinstance(data, int):
-            # consider packing certain types to save space.
-            # can also consider automatically applying zlib
-            # if it makes sense on the data. it'd be even
-            # better if we could take advantage of protobufs
-            # or some standard, open encoding technique.
-            # data = struct.pack('>i', data)
-            data = str(data).encode()
-            datatype = 'i'
+            content_type = 'i'
+            body = str(data).encode()
         elif isinstance(data, float):
-            # data = struct.pack('>f', data)
-            data = str(data).encode()
-            datatype = 'f'
+            content_type = 'f'
+            body = str(data).encode()
         elif isinstance(data, str):
-            data = data.encode()
-            datatype = 's'
+            content_type = 's'
+            body = data.encode()
         elif isinstance(data, bytearray):
-            data = bytes(data)
-            datatype = 'b'
+            content_type = 'b'
+            body = bytes(data)
         elif isinstance(data, bytes):
-            datatype = 'b'
+            content_type = 'b'
+            body = data
         else:
             raise ValueError('unsupported data type')
 
-        headers = {
-            'plugin': [self.plugin.plugin_name,
-                       self.plugin.plugin_version,
-                       ''],
-            'key': sensor,
-        }
-
         properties = pika.BasicProperties(
             delivery_mode=2,
-            type=datatype,
             timestamp=int(time.time() * 1000),
-            headers=headers
+            content_type=content_type,
+            type=sensor,
+            app_id='.'.join([self.plugin.plugin_name,
+                             self.plugin.plugin_version])
         )
-
-        routing_key = '.'.join([self.plugin.plugin_name,
-                                self.plugin.plugin_version,
-                                sensor])
 
         self.channel.basic_publish(properties=properties,
                                    exchange='sensor-data',
-                                   routing_key=routing_key,
-                                   body=data)
+                                   routing_key='',
+                                   body=body)
 
 
 class Plugin(object):
