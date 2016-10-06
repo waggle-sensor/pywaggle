@@ -94,7 +94,7 @@ class RabbitMQHandler(PluginHandler):
             timestamp=int(time.time() * 1000),
             content_type=content_type,
             type=sensor,
-            app_id='.'.join([self.plugin.plugin_name,
+            app_id=':'.join([self.plugin.plugin_name,
                              self.plugin.plugin_version])
         )
 
