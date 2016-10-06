@@ -102,9 +102,6 @@ class RabbitMQHandler(PluginHandler):
             'key': sensor,
         }
 
-        if self.plugin.node_id is not None:
-            headers['node'] = self.plugin.node_id
-
         properties = pika.BasicProperties(
             delivery_mode=2,
             type=datatype,
@@ -112,9 +109,13 @@ class RabbitMQHandler(PluginHandler):
             headers=headers
         )
 
+        routing_key = '.'.join([self.plugin.plugin_name,
+                                self.plugin.plugin_version,
+                                sensor])
+
         self.channel.basic_publish(properties=properties,
                                    exchange='sensor-data',
-                                   routing_key='',
+                                   routing_key=routing_key,
                                    body=data)
 
 
