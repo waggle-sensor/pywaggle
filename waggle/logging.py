@@ -5,53 +5,35 @@ import time
 
 class BeehiveHandler(logging.Handler):
 
-    def __init__(self, url='amqp://localhost', exchange='logs'):
+    def __init__(self, url='amqp://localhost', queue='logs'):
         logging.Handler.__init__(self)
 
         self.connection = pika.BlockingConnection(pika.URLParameters(url))
 
         self.channel = self.connection.channel()
 
-        self.channel.exchange_declare(exchange=exchange,
-                                      exchange_type='topic',
-                                      durable=True)
+        self.channel.queue_declare(exchange=queue,
+                                   durable=True)
 
-        self.exchange = exchange
+        self.queue = queue
 
     def emit(self, record):
         params = record.__dict__
-        routing_key = '{}.{}'.format(params['name'].lower(),
-                                     params['levelname'].lower())
 
         body = self.format(record)
 
+        headers = {
+            'name': params['name'],
+            'level': params['levelname'].lower(),
+        }
+
         properties = pika.BasicProperties(
             timestamp=int(time.time() * 1000),
-            delivery_mode=2
+            delivery_mode=2,
+            headers=headers
         )
 
         self.channel.basic_publish(properties=properties,
-                                   exchange=self.exchange,
-                                   routing_key=routing_key,
+                                   exchange='',
+                                   routing_key=self.queue,
                                    body=body)
-
-#
-#
-# connection = pika.BlockingConnection(pika.URLParameters('amqp://localhost'))
-#
-# channel = connection.channel()
-#
-# channel.exchange_declare('logs',
-#                          exchange_type='topic',
-#                          durable=True)
-#
-#
-# def log(topic, body):
-#     properties = pika.BasicProperties(
-#         timestamp=int(time.time() * 1000)
-#     )
-#
-#     channel.basic_publish(properties=properties,
-#                           exchange='logs',
-#                           routing_key=topic,
-#                           body=body)
