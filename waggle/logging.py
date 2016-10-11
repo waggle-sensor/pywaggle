@@ -13,7 +13,8 @@ class BeehiveHandler(logging.Handler):
         self.channel = self.connection.channel()
 
         self.channel.exchange_declare(exchange=exchange,
-                                      exchange_type='topic')
+                                      exchange_type='topic',
+                                      durable=True)
 
         self.exchange = exchange
 
