@@ -25,7 +25,10 @@ class BeehiveHandler(logging.Handler):
 
         body = self.format(record)
 
-        properties = pika.BasicProperties(timestamp=int(time.time() * 1000))
+        properties = pika.BasicProperties(
+            timestamp=int(time.time() * 1000),
+            delivery_mode=2
+        )
 
         self.channel.basic_publish(properties=properties,
                                    exchange=self.exchange,
