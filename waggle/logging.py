@@ -12,7 +12,7 @@ class BeehiveHandler(logging.Handler):
 
         self.channel = self.connection.channel()
 
-        self.channel.queue_declare(exchange=queue,
+        self.channel.queue_declare(queue=queue,
                                    durable=True)
 
         self.queue = queue
