@@ -25,6 +25,7 @@ class BeehiveHandler(logging.Handler):
         headers = {
             'name': params['name'],
             'level': params['levelname'].lower(),
+            'value': params['levelno'],
         }
 
         properties = pika.BasicProperties(
