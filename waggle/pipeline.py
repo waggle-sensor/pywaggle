@@ -60,15 +60,15 @@ class RabbitMQHandler(PluginHandler):
 
         self.channel = self.connection.channel()
 
-        self.channel.exchange_declare('sensor-data',
+        self.channel.exchange_declare('data',
                                       exchange_type='fanout',
                                       durable=True)
 
-        self.channel.queue_declare(queue='sensor-data',
+        self.channel.queue_declare(queue='data',
                                    durable=True)
 
-        self.channel.queue_bind(exchange='sensor-data',
-                                queue='sensor-data')
+        self.channel.queue_bind(exchange='data',
+                                queue='data')
 
     def send(self, sensor, data):
         if isinstance(data, int):
@@ -99,7 +99,7 @@ class RabbitMQHandler(PluginHandler):
         )
 
         self.channel.basic_publish(properties=properties,
-                                   exchange='sensor-data',
+                                   exchange='data',
                                    routing_key='',
                                    body=body)
 
