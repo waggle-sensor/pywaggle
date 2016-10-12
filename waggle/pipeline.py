@@ -100,7 +100,7 @@ class RabbitMQHandler(PluginHandler):
 
         self.channel.basic_publish(properties=properties,
                                    exchange='data',
-                                   routing_key='',
+                                   routing_key=properties.app_id,
                                    body=body)
 
 
