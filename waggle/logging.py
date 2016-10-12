@@ -57,7 +57,7 @@ class BeehiveHandler(logging.Handler):
                 break
 
 
-def getLogger(service, url='amqp://localhost', queue='logs'):
+def getLogger(service=None, url='amqp://localhost', queue='logs'):
     logger = logging.getLogger(service)
     logger.addHandler(BeehiveHandler(url=url, queue=queue))
     return logger
