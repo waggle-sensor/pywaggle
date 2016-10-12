@@ -64,12 +64,6 @@ class RabbitMQHandler(PluginHandler):
                                       exchange_type='fanout',
                                       durable=True)
 
-        self.channel.queue_declare(queue='data',
-                                   durable=True)
-
-        self.channel.queue_bind(exchange='data',
-                                queue='data')
-
     def send(self, sensor, data):
         if isinstance(data, int):
             content_type = 'i'
