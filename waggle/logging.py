@@ -5,11 +5,10 @@ import time
 
 class BeehiveHandler(logging.Handler):
 
-    def __init__(self, url='amqp://localhost', queue='logs'):
+    def __init__(self, url='amqp://localhost'):
         logging.Handler.__init__(self)
 
         self.url = url
-        self.queue = queue
         self.connect()
 
     def emit(self, record):
@@ -38,7 +37,16 @@ class BeehiveHandler(logging.Handler):
             try:
                 self.connection = pika.BlockingConnection(parameters)
                 self.channel = self.connection.channel()
-                self.channel.queue_declare(queue=self.queue, durable=True)
+
+                self.channel.exchange_declare(exchange='logs',
+                                              exchange_type='fanout',
+                                              durable=True)
+
+                self.channel.queue_declare(queue='logs',
+                                           durable=True)
+
+                self.channel.queue_bind(queue='logs',
+                                        exchange='logs')
             except pika.exceptions.ConnectionClosed:
                 pass
             else:
@@ -48,8 +56,8 @@ class BeehiveHandler(logging.Handler):
         while True:
             try:
                 self.channel.basic_publish(properties=properties,
-                                           exchange='',
-                                           routing_key=self.queue,
+                                           exchange='logs',
+                                           routing_key='',
                                            body=body)
             except pika.exceptions.ConnectionClosed:
                 self.connect()
