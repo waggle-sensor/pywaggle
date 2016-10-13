@@ -28,7 +28,7 @@ def decode_coresense_data(data):
         except KeyError:
             pass
         except Exception:
-            logging.exception('Got an exception while decoding subpackets. sensor = {:02X}, format = {}'.format(sensor_id, fmt))
+            logging.exception('Got an exception while decoding subpackets. sensor = {:02X}, format = {}, data = {}'.format(sensor_id, fmt, repr(sensor_data)))
 
 
 def get_data_subpackets(data):
