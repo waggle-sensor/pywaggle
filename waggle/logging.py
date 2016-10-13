@@ -38,7 +38,7 @@ class BeehiveHandler(logging.Handler):
                 self.connection = pika.BlockingConnection(parameters)
                 self.channel = self.connection.channel()
 
-                self.channel.exchange_declare(exchange='logs',
+                self.channel.exchange_declare(exchange='logs.fanout',
                                               exchange_type='fanout',
                                               durable=True)
 
@@ -46,7 +46,7 @@ class BeehiveHandler(logging.Handler):
                                            durable=True)
 
                 self.channel.queue_bind(queue='logs',
-                                        exchange='logs')
+                                        exchange='logs.fanout')
             except pika.exceptions.ConnectionClosed:
                 pass
             else:
@@ -56,7 +56,7 @@ class BeehiveHandler(logging.Handler):
         while True:
             try:
                 self.channel.basic_publish(properties=properties,
-                                           exchange='logs',
+                                           exchange='logs.fanout',
                                            routing_key='',
                                            body=body)
             except pika.exceptions.ConnectionClosed:
