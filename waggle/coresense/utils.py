@@ -16,7 +16,7 @@ def decode_frame(frame):
     if frame[2] + 5 != len(frame):
         raise RuntimeError('inconsistent frame length')
 
-    return dict(decode_coresense_data(frame[3:-3]))
+    return dict(decode_coresense_data(frame[3:-2]))
 
 
 def decode_coresense_data(data):
