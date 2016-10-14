@@ -113,36 +113,36 @@ SPV1840LR5H-B
 intensity : ?
 
 15
-Total reducing gases
-concentration : 5
+Chemsense
+reducing_gases : 5
 
 16
-Ethanol (C2H5-OH)
-concentration : 5
+Chemsense
+ethanol : 5
 
 17
-Nitrogen Di-oxide (NO2)
-concentration : 5
+Chemsense
+no2 : 5
 
 18
-Ozone (03)
-concentration : 5
+Chemsense
+o3 : 5
 
 19
-Hydrogen Sulphide (H2S)
-concentration : 5
+Chemsense
+h2s : 5
 
 1A
-Total Oxidizing gases
-concentration : 5
+Chemsense
+oxidizing_gases : 5
 
 1B
-Carbon Monoxide (C0)
-concentration : 5
+Chemsense
+co : 5
 
 1C
-Sulfur Dioxide (SO2)
-concentration : 5
+Chemsense
+so2 : 5
 
 1D
 SHT25
