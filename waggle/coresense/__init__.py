@@ -21,180 +21,180 @@ def parse_sensor_table(text):
 
 spec = parse_sensor_table('''
 00
-Board MAC
-MAC Address : 3
+Coresense ID
+mac_address : 3
 
 01
 TMP112
-Temperature : 6
+temperature : 6
 
 02
 HTU21D
-Temperature : 6
-Humidity : 6
+temperature : 6
+humidity : 6
 
 03
 HIH4030
-Humidity : 1
+humidity : 1
 
 04
 BMP180
-Temperature : 6
-Pressure : 4
+temperature : 6
+pressure : 4
 
 05
 PR103J2
-Temperature : 1
+temperature : 1
 
 06
 TSL250RD
-Light : 1
+intensity : 1
 
 07
 MMA8452Q
-Accel X : 6
-Accel Y : 6
-Accel Z : 6
-RMS : 6
+acceleration.x : 6
+acceleration.y : 6
+acceleration.z : 6
+rms : 6
 
 08
 SPV1840LR5H-B
-Sound level : 1
+intensity : 1
 
 09
 TSYS01
-Temperature : 6
+temperature : 6
 
 0A
 HMC5883L
-B Field X : 8
-B Field Y : 8
-B Field Z : 8
+magnetic_field.x : 8
+magnetic_field.y : 8
+magnetic_field.z : 8
 
 0B
 HIH6130
-Temperature : 6
-Humidity : 6
+temperature : 6
+humidity : 6
 
 0C
 APDS-9006-020
-Light-LUX : 1
+intensity : 1
 
 0D
 TSL260RD
-Light : 1
+intensity : 1
 
 0E
 TSL250RD
-Light : 1
+intensity : 1
 
 0F
 MLX75305
-Light : 1
+intensity : 1
 
 10
 ML8511
-UV_index : 1
+intensity : 1
 
 11
 D6T
-Temperatures : ?
+temperatures : ?
 
 12
 MLX90614
-Temperature : 6
+temperature : 6
 
 13
 TMP421
-Temperature : 6
+temperature : 6
 
 14
 SPV1840LR5H-B
-Sound level : ?
+intensity : ?
 
 15
 Total reducing gases
-Concentration : 5
+concentration : 5
 
 16
 Ethanol (C2H5-OH)
-Concentration : 5
+concentration : 5
 
 17
 Nitrogen Di-oxide (NO2)
-Concentration : 5
+concentration : 5
 
 18
 Ozone (03)
-Concentration : 5
+concentration : 5
 
 19
 Hydrogen Sulphide (H2S)
-Concentration : 5
+concentration : 5
 
 1A
 Total Oxidizing gases
-Concentration : 5
+concentration : 5
 
 1B
 Carbon Monoxide (C0)
-Concentration : 5
+concentration : 5
 
 1C
 Sulfur Dioxide (SO2)
-Concentration : 5
+concentration : 5
 
 1D
 SHT25
-Temperature : 2
-Humidity : 2
+temperature : 2
+humidity : 2
 
 1E
 LPS25H
-Temperature : 2
-Pressure : 4
+temperature : 2
+pressure : 4
 
 1F
 Si1145
-Light : 1
-Light : 1
-Light : 1
+intensity : 1
+intensity : 1
+intensity : 1
 
 20
-Intel MAC
-MAC Address : 3
+Chemsense ID
+mac_address : 3
 
 21
 CO ADC Temp
-ADC Temperature : 2
+adc_temperature : 2
 
 22
 IAQ/IRR Temp
-ADC Temperature : 2
+adc_temperature : 2
 
 23
 O3/NO2 Temp
-ADC Temperature : 2
+adc_temperature : 2
 
 24
 SO2/H2S Temp
-ADC Temperature : 2
+adc_temperature : 2
 
 25
 CO LMP Temp
-ADC Temperature : 2
+adc_temperature : 2
 
 26
-Accelerometer
-Accel X : 2
-Accel Y : 2
-Accel Z : 2
-Vib Index : 4
+BMI160
+acceleration.x : 2
+acceleration.y : 2
+acceleration.z : 2
+index : 4
 
 27
-Gyro
-Orientation X : 2
-Orientation Y : 2
-Orientation Z : 2
-Orientation Index : 4
+BMI160
+orientation.x : 2
+orientation.y : 2
+orientation.z : 2
+index : 4
 ''')
