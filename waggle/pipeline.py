@@ -15,29 +15,6 @@ class PluginHandler(object):
         pass
 
 
-class PluginManagerHandler(PluginHandler):
-
-    def __init__(self, queue):
-        self.queue = queue
-
-    def send(self, sensor, data):
-        now = time.time()
-        timestamp_epoch = int(now * 1000)
-        timestamp_utc = int(now)
-        timestamp_date = time.strftime('%Y-%m-%d', time.gmtime(timestamp_utc))
-
-        self.queue.put([
-            str(timestamp_date),
-            self.plugin.plugin_name,
-            self.plugin.plugin_version,
-            '',
-            timestamp_epoch,
-            sensor,
-            '',
-            ['data:{}'.format(data)],
-        ])
-
-
 class CallbackHandler(PluginHandler):
 
     def __init__(self, callback):
@@ -140,17 +117,11 @@ class Plugin(object):
         plugin = cls()
 
         plugin.add_handler(LogHandler())
+        plugin.add_handler(RabbitMQHandler('amqp://localhost'))
 
         # Legacy plugin manager handler + parameters.
         plugin.name = name
         plugin.man = man
-
-        try:
-            plugin.add_handler(RabbitMQHandler('amqp://localhost'))
-        except:
-            logging.exception('Got exception when adding RabbitMQ handler.')
-            # Use old pipeline instead.
-            plugin.add_handler(PluginManagerHandler(mailbox_outgoing))
 
         plugin.run()
 
