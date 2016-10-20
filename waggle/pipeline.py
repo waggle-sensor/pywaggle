@@ -117,7 +117,7 @@ class Plugin(object):
 
     @classmethod
     def register(cls, name, man, mailbox_outgoing):
-        plugin = cls.basicConfig()
+        plugin = cls.defaultConfig()
         plugin.name = name
         plugin.man = man
         plugin.run()
