@@ -63,6 +63,9 @@ class RabbitMQHandler(PluginHandler):
         elif isinstance(data, bytes):
             content_type = 'b'
             body = data
+        elif isinstance(data, dict) or isinstance(data, list):
+            content_type = 'j'
+            body = json.dumps(data).encode()
         else:
             raise ValueError('unsupported data type')
 
@@ -114,15 +117,9 @@ class Plugin(object):
 
     @classmethod
     def register(cls, name, man, mailbox_outgoing):
-        plugin = cls()
-
-        plugin.add_handler(LogHandler())
-        plugin.add_handler(RabbitMQHandler('amqp://localhost'))
-
-        # Legacy plugin manager handler + parameters.
+        plugin = cls.basicConfig()
         plugin.name = name
         plugin.man = man
-
         plugin.run()
 
     @classmethod
