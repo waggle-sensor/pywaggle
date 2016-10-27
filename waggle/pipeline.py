@@ -6,9 +6,6 @@ import waggle.platform
 import logging
 
 
-logging.basicConfig()
-
-
 class PluginHandler(object):
 
     def send(self, sensor, data):
@@ -22,12 +19,6 @@ class CallbackHandler(PluginHandler):
 
     def send(self, sensor, data):
         self.callback(sensor, data)
-
-
-class LogHandler(PluginHandler):
-
-    def send(self, sensor, data):
-        print('{} - {} - {}'.format(time.time(), sensor, data))
 
 
 class RabbitMQHandler(PluginHandler):
@@ -100,6 +91,10 @@ class Plugin(object):
         except:
             self.node_id = None
 
+        self.logger = logging.getLogger('{}:{}'.format(self.plugin_name,
+                                                       self.plugin_version))
+        self.logger.setLevel(logging.INFO)
+
         self.handlers = []
 
     def add_handler(self, handler):
@@ -108,6 +103,8 @@ class Plugin(object):
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
+
+        self.logger.info('send {} {}'.format(sensor, data))
 
         for handler in self.handlers:
             handler.send(sensor, data)
@@ -125,7 +122,6 @@ class Plugin(object):
     @classmethod
     def defaultConfig(cls):
         plugin = cls()
-        plugin.add_handler(LogHandler())
         plugin.add_handler(RabbitMQHandler('amqp://localhost'))
         return plugin
 
