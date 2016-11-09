@@ -47,7 +47,7 @@ PR103J2
 temperature : 1
 
 06
-TSL250RD
+TSL250RD-AS
 intensity : 1
 
 07
@@ -85,7 +85,7 @@ TSL260RD
 intensity : 1
 
 0E
-TSL250RD
+TSL250RD-LS
 intensity : 1
 
 0F
