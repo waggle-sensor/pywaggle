@@ -33,8 +33,7 @@ class BeehiveHandler(logging.Handler):
     def connect(self):
         parameters = pika.URLParameters(self.url)
 
-        TRIAL = 5
-        while TRIAL > 0:
+        for attempt in range(5):
             try:
                 self.connection = pika.BlockingConnection(parameters)
                 self.channel = self.connection.channel()
@@ -49,24 +48,25 @@ class BeehiveHandler(logging.Handler):
                 self.channel.queue_bind(queue='logs',
                                         exchange='logs.fanout')
             except pika.exceptions.ConnectionClosed:
-                TRIAL -= 1
                 time.sleep(1)
-            except Exception:
-                pass
             else:
                 break
+        else:
+            raise RuntimeError('could not connect')
 
     def publish(self, properties, body):
-        for n in range(2):
+        for attempt in range(3):
             try:
                 self.channel.basic_publish(properties=properties,
                                            exchange='logs.fanout',
                                            routing_key='',
                                            body=body)
-            except (pika.exceptions.ConnectionClosed, Exception):
+            except pika.exceptions.ConnectionClosed:
                 self.connect()
             else:
                 break
+        else:
+            raise RuntimeError('could not publish')
 
 
 def getLogger(service, url='amqp://localhost'):
