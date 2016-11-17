@@ -33,7 +33,8 @@ class BeehiveHandler(logging.Handler):
     def connect(self):
         parameters = pika.URLParameters(self.url)
 
-        while True:
+        TRIAL = 5
+        while TRIAL > 0:
             try:
                 self.connection = pika.BlockingConnection(parameters)
                 self.channel = self.connection.channel()
@@ -48,18 +49,21 @@ class BeehiveHandler(logging.Handler):
                 self.channel.queue_bind(queue='logs',
                                         exchange='logs.fanout')
             except pika.exceptions.ConnectionClosed:
+                TRIAL -= 1
+                time.sleep(1)
+            except Exception:
                 pass
             else:
                 break
 
     def publish(self, properties, body):
-        while True:
+        for n in range(2):
             try:
                 self.channel.basic_publish(properties=properties,
                                            exchange='logs.fanout',
                                            routing_key='',
                                            body=body)
-            except pika.exceptions.ConnectionClosed:
+            except (pika.exceptions.ConnectionClosed, Exception):
                 self.connect()
             else:
                 break
