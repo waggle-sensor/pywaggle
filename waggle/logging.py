@@ -1,6 +1,7 @@
 import logging
 import pika
 import time
+import waggle.platform
 
 
 class BeehiveHandler(logging.Handler):
@@ -9,6 +10,12 @@ class BeehiveHandler(logging.Handler):
         logging.Handler.__init__(self)
 
         self.url = url
+        try:
+            self.model = waggle.platform.hardware()
+            self.macaddr = waggle.platform.macaddr()
+        except:
+            self.model = ""
+            self.macaddr = ""
         self.connect()
 
     def emit(self, record):
@@ -17,6 +24,8 @@ class BeehiveHandler(logging.Handler):
         body = self.format(record)
 
         headers = {
+            'platform' : self.model,
+            'node_id' : self.macaddr,
             'name': params['name'],
             'level': params['levelname'].lower(),
             'value': params['levelno'],

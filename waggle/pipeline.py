@@ -23,20 +23,34 @@ class CallbackHandler(PluginHandler):
 
 class RabbitMQHandler(PluginHandler):
 
-    def __init__(self, url):
+    def __init__(self, url, dest_queue='data'):
+        dest_exchange = dest_queue + '.fanout'
         self.connection = pika.BlockingConnection(pika.URLParameters(url))
 
         self.channel = self.connection.channel()
 
-        self.channel.exchange_declare('data.fanout',
+        self.channel.exchange_declare(dest_exchange,
                                       exchange_type='fanout',
                                       durable=True)
 
-        self.channel.queue_declare('data',
+        self.channel.queue_declare(dest_queue,
                                    durable=True)
 
-        self.channel.queue_bind(queue='data',
-                                exchange='data.fanout')
+        self.channel.queue_bind(queue=dest_queue,
+                                exchange=dest_exchange)
+
+
+        try:
+            self.model = waggle.platform.hardware()
+            self.macaddr = waggle.platform.macaddr()
+        except:
+            self.model = ""
+            self.macaddr = ""
+
+        self.headers = {
+            'platform' : self.model,
+            'node_id' : self.macaddr
+        }
 
     def send(self, sensor, data):
         if isinstance(data, int):
@@ -61,6 +75,7 @@ class RabbitMQHandler(PluginHandler):
             raise ValueError('unsupported data type')
 
         properties = pika.BasicProperties(
+            headers=self.headers,
             delivery_mode=2,
             timestamp=int(time.time() * 1000),
             content_type=content_type,
@@ -123,6 +138,12 @@ class Plugin(object):
     def defaultConfig(cls):
         plugin = cls()
         plugin.add_handler(RabbitMQHandler('amqp://localhost'))
+        return plugin
+
+    @classmethod
+    def fileTransferConfig(cls):
+        plugin = cls()
+        plugin.add_handler(RabbitMQHandler('amqp://localhost', dest_queue='images'))
         return plugin
 
 
