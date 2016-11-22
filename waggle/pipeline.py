@@ -84,12 +84,7 @@ class Plugin(object):
         if not hasattr(self, 'plugin_version'):
             raise RuntimeError('Plugin version must be specified.')
 
-        # NOTE I strongly dislike this and think it should be handled in a more
-        # weakly coupled way. This is worth creating a better design for.
-        try:
-            self.node_id = waggle.platform.macaddr()
-        except:
-            self.node_id = None
+        self.node_id = waggle.platform.macaddr()
 
         self.logger = logging.getLogger('{}:{}'.format(self.plugin_name,
                                                        self.plugin_version))
