@@ -1,6 +1,7 @@
 import logging
 import pika
 import time
+import waggle.platform
 import sys
 import requests
 import json
@@ -58,13 +59,18 @@ class SlackHandler(logging.Handler):
 
         requests.post(self.url, data=json.dumps(data))
 
-
 class BeehiveHandler(logging.Handler):
 
     def __init__(self, url='amqp://localhost'):
         logging.Handler.__init__(self)
 
         self.url = url
+        try:
+            self.model = waggle.platform.hardware()
+            self.macaddr = waggle.platform.macaddr()
+        except:
+            self.model = ""
+            self.macaddr = ""
         self.connect()
 
     def emit(self, record):
@@ -73,6 +79,8 @@ class BeehiveHandler(logging.Handler):
         body = self.format(record)
 
         headers = {
+            'platform' : self.model,
+            'node_id' : self.macaddr,
             'name': params['name'],
             'level': params['levelname'].lower(),
             'value': params['levelno'],
