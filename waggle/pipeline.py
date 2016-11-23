@@ -62,7 +62,7 @@ class RabbitMQHandler(PluginHandler):
             raise ValueError('unsupported data type')
 
         properties = pika.BasicProperties(
-            headers=self.headers,
+            headers=headers,
             delivery_mode=2,
             timestamp=int(time.time() * 1000),
             content_type=content_type,
@@ -138,7 +138,7 @@ class Plugin(object):
             hdr['size'] = len(binary)
 
             for handler in self.fileHandlers:
-                handler.send(sensor, data, headers=hdr)
+                handler.send(sensor, binary, headers=hdr)
 
         except Exception as e:
             self.logger.info('Error while sending file:{}'.format(str(e)))
