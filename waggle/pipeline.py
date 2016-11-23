@@ -127,7 +127,9 @@ class Plugin(object):
             if not os.path.isfile(filepath):
                 self.logger.info('Error:{} does not exist'.format(filepath))
                 return False
-            binary = open(filepath, 'rb').read()
+            binary = b''
+            with open(filepath, 'rb') as f:
+                binary = f.read()
             filename = os.path.basename(filepath)
             splt = os.path.splitext(filename)
 
