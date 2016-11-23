@@ -2,7 +2,62 @@ import logging
 import pika
 import time
 import waggle.platform
+import sys
+import requests
+import json
 
+
+def getpriority(levelno):
+    if levelno <= 10:
+        return 7  # debug
+    elif levelno <= 20:
+        return 5  # notice
+    elif levelno <= 30:
+        return 4  # warning
+    elif levelno <= 40:
+        return 3  # error
+    else:
+        return 2  # critical
+
+
+class JournalHandler(logging.Handler):
+
+    def emit(self, record):
+        params = record.__dict__
+        levelno = params['levelno']
+        msg = params['msg']
+
+        sys.stdout.write('<{}>{}\n'.format(getpriority(levelno), msg))
+        sys.stdout.flush()
+
+
+def getemoji(levelno):
+    if levelno >= 40:
+        return ':exclamation:'
+    elif levelno >= 30:
+        return ':warning:'
+    else:
+        return ':speech_balloon:'
+
+
+class SlackHandler(logging.Handler):
+
+    def __init__(self, url):
+        logging.Handler.__init__(self)
+        self.url = url
+
+    def emit(self, record):
+        params = record.__dict__
+        name = params['name']
+        levelno = params['levelno']
+        msg = params['msg']
+
+        data = {
+            'username': name,
+            'text': '{} {}'.format(getemoji(levelno), msg),
+        }
+
+        requests.post(self.url, data=json.dumps(data))
 
 class BeehiveHandler(logging.Handler):
 
