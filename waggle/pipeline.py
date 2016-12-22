@@ -6,6 +6,25 @@ import waggle.platform
 import logging
 import os.path
 
+class Dependency(thread):
+    def add_dependency(self, arg):
+        pass
+
+    def check(self):
+        pass
+
+class FileExistDependency(Dependency):
+    def add_dependency(self, arg):
+        self.target = arg
+
+    def check(self):
+        if isinstance(self.target, list):
+            ret = [os.path.exist(t) for t in target]
+            if all(ret):
+                return True
+            return False
+
+        return os.path.exist(self.target)
 
 class PluginHandler(object):
 
@@ -100,6 +119,7 @@ class Plugin(object):
 
         self.handlers = []
         self.fileHandlers = []
+        self.dependencies = []
 
     def add_handler(self, handler):
         handler.plugin = self
@@ -108,6 +128,9 @@ class Plugin(object):
     def add_file_handler(self, handler):
         handler.plugin = self
         self.fileHandlers.append(handler)
+
+    def add_dependency(self, dep):
+        self.dependencies.append(dep)
 
     def send(self, sensor, data):
         assert isinstance(sensor, str)
@@ -147,6 +170,19 @@ class Plugin(object):
             return False
 
         return True
+
+    def start(self, check_period=1):
+        self.logger.info('Starting...')
+        while True:
+            try:
+                checks = [i.check() for i in self.dependencies]
+                if all(checks):
+                    self.run()
+                else:
+                    time.sleep(check_period)
+            except Exception as e:
+                self.logger.error('on_start:%s' % str(e))
+                self.logger.info('Restarting...')
 
     def run(self):
         raise NotImplemented('Plugin must define run method.')
