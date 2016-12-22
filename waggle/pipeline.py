@@ -6,25 +6,23 @@ import waggle.platform
 import logging
 import os.path
 
-class Dependency(thread):
-    def add_dependency(self, arg):
-        pass
+class Dependency(object):
 
     def check(self):
-        pass
+        raise NotImplemented('Dependency must define check method that returns True/False.')
 
 class FileExistDependency(Dependency):
-    def add_dependency(self, arg):
+    def __init__(self, arg):
         self.target = arg
 
     def check(self):
         if isinstance(self.target, list):
-            ret = [os.path.exist(t) for t in target]
+            ret = [os.path.exists(t) for t in target]
             if all(ret):
                 return True
             return False
 
-        return os.path.exist(self.target)
+        return os.path.exists(self.target)
 
 class PluginHandler(object):
 
@@ -182,7 +180,8 @@ class Plugin(object):
                     time.sleep(check_period)
             except Exception as e:
                 self.logger.error('on_start:%s' % str(e))
-                self.logger.info('Restarting...')
+                self.logger.info('Restarting in %d...' % check_period)
+                time.sleep(check_period)
 
     def run(self):
         raise NotImplemented('Plugin must define run method.')
