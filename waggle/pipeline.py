@@ -180,7 +180,7 @@ class Plugin(object):
                     time.sleep(check_period)
             except Exception as e:
                 self.logger.error('on_start:%s' % str(e))
-                self.logger.info('Restarting in %d...' % check_period)
+                self.logger.error('Restarting in %d...' % check_period)
                 time.sleep(check_period)
 
     def run(self):
