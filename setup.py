@@ -9,7 +9,7 @@ setup(
         'pika',
         'crcmod',
         'requests',
-        'serial'
+        'pyserial'
     ],
     packages=[
         'waggle',
