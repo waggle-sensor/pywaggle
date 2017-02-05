@@ -1,5 +1,6 @@
 from waggle.transport import TimedTransport
 from waggle.coresense.utils import decode_frame
+from binascii import hexlify
 
 
 class CoresenseReader(object):
@@ -12,4 +13,9 @@ class CoresenseReader(object):
 
     def __iter__(self):
         for packet in self.transport:
-            yield decode_frame(packet.strip())
+            try:
+                data = decode_frame(packet)
+            except Exception as e:
+                print('Could not decode data: data={} exc={}'.format(hexlify(packet), e))
+            else:
+                yield data

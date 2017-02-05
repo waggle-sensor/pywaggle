@@ -14,7 +14,7 @@ class TimedTransport(object):
 
         while self.serial.in_waiting == 0:
             if time.time() - start > self.device_timeout:
-                raise RuntimeError('Device timed out.')
+                raise TimeoutError('Device timed out.')
             time.sleep(1)
 
     def read_chunks(self):
