@@ -7,19 +7,28 @@ logging.basicConfig(level=logging.WARN)
 
 
 def decode_frame(frame):
-    if frame[0] != 0xAA:
-        raise RuntimeError('invalid frame start {:02X}'.format(frame[0]))
+    header = frame[0]
+    length = frame[2]
+    crc = frame[-2]
+    footer = frame[-1]
+    data = frame[3:-2]
 
-    if frame[-1] != 0x55:
-        raise RuntimeError('invalid frame end {:02X}'.format(frame[-1]))
+    if header != 0xAA:
+        raise RuntimeError('invalid start byte')
 
-    if frame[2] + 5 != len(frame):
-        raise RuntimeError('inconsistent frame length')
+    if footer != 0x55:
+        raise RuntimeError('invalid end byte')
+
+    if length != len(frame) - 5:
+        raise RuntimeError('invalid length')
+
+    if crc != crc8(data):
+        raise RuntimeError('invalid crc')
 
     # merge resulting entries
     results = {}
 
-    for name, values in decode_coresense_data(frame[3:-2]):
+    for name, values in decode_coresense_data(data):
         if name not in results:
             results[name] = {}
         results[name].update(values)
@@ -60,3 +69,16 @@ def get_data_subpackets(data):
         logging.warn('Subpacket lengths do not total to payload length! offset = {}, length = {}'.format(offset, len(data)))
 
     return subpackets
+
+
+def crc8(data):
+    crc = 0x00
+
+    for x in data:
+        crc ^= x
+        if crc & 0x01:
+            crc = (crc >> 1) ^ 0x8C
+        else:
+            crc = crc >> 1
+
+    return crc

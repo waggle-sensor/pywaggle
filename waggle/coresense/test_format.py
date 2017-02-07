@@ -1,9 +1,9 @@
+import unittest
 from format import pack_unsigned_int, unpack_unsigned_int
 from format import pack_signed_int, unpack_signed_int
 from format import unpack, pack
 from format import pack_macaddr_into, unpack_macaddr_from
 from random import randint
-import unittest
 
 
 class TestFormat(unittest.TestCase):
