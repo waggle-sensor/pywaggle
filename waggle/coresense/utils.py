@@ -7,6 +7,9 @@ logging.basicConfig(level=logging.WARN)
 
 
 def decode_frame(frame):
+    if not isinstance(frame, bytearray) and not isinstance(frame, bytes):
+        raise TypeError('frame must be byte-like type object')
+
     header = frame[0]
     length = frame[2]
     crc = frame[-2]
@@ -71,14 +74,12 @@ def get_data_subpackets(data):
     return subpackets
 
 
-def crc8(data):
-    crc = 0x00
-
-    for x in data:
-        crc ^= x
-        if crc & 0x01:
-            crc = (crc >> 1) ^ 0x8C
-        else:
-            crc = crc >> 1
-
+def crc8(data, crc=0):
+    for i in range(len(data)):
+        crc ^= data[i]
+        for j in range(8):
+            if crc & 1 != 0:
+                crc = (crc >> 1) ^ 0x8C
+            else:
+                crc >>= 1
     return crc
