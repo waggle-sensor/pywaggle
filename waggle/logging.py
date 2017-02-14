@@ -108,6 +108,8 @@ class BeehiveHandler(logging.Handler):
 
         while True:
             try:
+                self.logger.info('Connecting to {}:{}.'.format(parameters.host, parameters.port))
+
                 self.connection = pika.BlockingConnection(parameters)
 
                 self.channel = self.connection.channel()
@@ -123,7 +125,7 @@ class BeehiveHandler(logging.Handler):
                                         exchange='logs.fanout')
                 break
             except pika.exceptions.ConnectionClosed:
-                self.logger.info('Could not connect, retrying in {} seconds.'.format(retry_delay))
+                self.logger.warning('Could not connect, retrying in {} seconds.'.format(retry_delay))
 
                 time.sleep(retry_delay)
 
@@ -151,7 +153,6 @@ class BeehiveHandler(logging.Handler):
 
 
 def getLogger(service, url='amqp://localhost'):
-    assert isinstance(service, str)
     logger = logging.getLogger(service)
     logger.addHandler(BeehiveHandler(url=url))
     return logger
