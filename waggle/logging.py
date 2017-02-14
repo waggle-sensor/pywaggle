@@ -20,6 +20,19 @@ def getpriority(levelno):
         return 2  # critical
 
 
+def getroutingkey(levelno):
+    if levelno <= 10:
+        return 'debug'
+    elif levelno <= 20:
+        return 'info'
+    elif levelno <= 30:
+        return 'warn'
+    elif levelno <= 40:
+        return 'error'
+    else:
+        return 'crit'
+
+
 class JournalHandler(logging.Handler):
 
     def emit(self, record):
@@ -139,12 +152,12 @@ class BeehiveHandler(logging.Handler):
                 if self.max_retry_attempts >= 0 and retry_attempt >= self.max_retry_attempts:
                     raise RuntimeError('Too many connect attempts. Aborting.')
 
-    def publish(self, properties, body):
+    def publish(self, properties, body, routing_key=''):
         while True:
             try:
                 self.channel.basic_publish(properties=properties,
                                            exchange='logs.fanout',
-                                           routing_key='',
+                                           routing_key=routing_key,
                                            body=body)
                 break
             except pika.exceptions.ConnectionClosed:
