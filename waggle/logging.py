@@ -62,6 +62,8 @@ class SlackHandler(logging.Handler):
 
 class BeehiveHandler(logging.Handler):
 
+    logger = logging.getLogger('waggle.logging.BeehiveHandler')
+
     def __init__(self, url='amqp://localhost', max_retry_delay=60, max_retry_attempts=10):
         logging.Handler.__init__(self)
 
@@ -107,6 +109,7 @@ class BeehiveHandler(logging.Handler):
         while True:
             try:
                 self.connection = pika.BlockingConnection(parameters)
+
                 self.channel = self.connection.channel()
 
                 self.channel.exchange_declare(exchange='logs.fanout',
@@ -120,7 +123,7 @@ class BeehiveHandler(logging.Handler):
                                         exchange='logs.fanout')
                 break
             except pika.exceptions.ConnectionClosed:
-                print('could not connect. retrying in {} seconds...'.format(retry_delay))
+                self.logger.info('Could not connect, retrying in {} seconds.'.format(retry_delay))
 
                 time.sleep(retry_delay)
 
@@ -129,10 +132,10 @@ class BeehiveHandler(logging.Handler):
                 if retry_delay > self.max_retry_delay:
                     retry_delay = self.max_retry_delay
 
-                if self.max_retry_attempts >= 0 and retry_attempt > self.max_retry_attempts:
-                    raise RuntimeError('too many connect attempts.')
-
                 retry_attempt += 1
+
+                if self.max_retry_attempts >= 0 and retry_attempt >= self.max_retry_attempts:
+                    raise RuntimeError('Too many connect attempts. Aborting.')
 
     def publish(self, properties, body):
         while True:
