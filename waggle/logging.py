@@ -121,9 +121,13 @@ class BeehiveHandler(logging.Handler):
                 break
             except pika.exceptions.ConnectionClosed:
                 print('could not connect. retrying in {} seconds...'.format(retry_delay))
+
                 time.sleep(retry_delay)
 
-                retry_delay = min(2 * retry_delay, self.max_retry_delay)
+                retry_delay *= 2
+
+                if retry_delay > self.max_retry_delay:
+                    retry_delay = self.max_retry_delay
 
                 if self.max_retry_attempts >= 0 and retry_attempt > self.max_retry_attempts:
                     raise RuntimeError('too many connect attempts.')
