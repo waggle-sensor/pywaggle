@@ -124,10 +124,11 @@ class BeehiveHandler(logging.Handler):
                 time.sleep(retry_delay)
 
                 retry_delay = min(2 * retry_delay, self.max_retry_delay)
-                retry_attempt += 1
 
-                if retry_attempt > self.max_retry_attempts:
+                if self.max_retry_attempts >= 0 and retry_attempt > self.max_retry_attempts:
                     raise RuntimeError('too many connect attempts.')
+
+                retry_attempt += 1
 
     def publish(self, properties, body):
         for attempt in range(3):
