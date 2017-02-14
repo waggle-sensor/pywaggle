@@ -59,18 +59,24 @@ class SlackHandler(logging.Handler):
 
         requests.post(self.url, data=json.dumps(data))
 
+
 class BeehiveHandler(logging.Handler):
 
-    def __init__(self, url='amqp://localhost'):
+    def __init__(self, url='amqp://localhost', max_retry_delay=60, max_retry_attempts=10):
         logging.Handler.__init__(self)
 
         self.url = url
+
+        self.max_retry_delay = max_retry_delay
+        self.max_retry_attempts = max_retry_attempts
+
         try:
             self.model = waggle.platform.hardware()
             self.macaddr = waggle.platform.macaddr()
         except:
-            self.model = ""
-            self.macaddr = ""
+            self.model = ''
+            self.macaddr = ''
+
         self.connect()
 
     def emit(self, record):
@@ -79,25 +85,26 @@ class BeehiveHandler(logging.Handler):
         body = self.format(record)
 
         headers = {
-            'platform' : self.model,
-            'node_id' : self.macaddr,
+            'platform': self.model,
+            'node_id': self.macaddr,
             'name': params['name'],
             'level': params['levelname'].lower(),
             'value': params['levelno'],
         }
 
-        properties = pika.BasicProperties(
-            timestamp=int(time.time() * 1000),
-            delivery_mode=2,
-            headers=headers
-        )
+        properties = pika.BasicProperties(timestamp=int(time.time() * 1000),
+                                          delivery_mode=2,
+                                          headers=headers)
 
         self.publish(properties, body)
 
     def connect(self):
         parameters = pika.URLParameters(self.url)
 
-        for attempt in range(5):
+        retry_delay = 1
+        retry_attempt = 0
+
+        while True:
             try:
                 self.connection = pika.BlockingConnection(parameters)
                 self.channel = self.connection.channel()
@@ -111,12 +118,16 @@ class BeehiveHandler(logging.Handler):
 
                 self.channel.queue_bind(queue='logs',
                                         exchange='logs.fanout')
-            except pika.exceptions.ConnectionClosed:
-                time.sleep(1)
-            else:
                 break
-        else:
-            raise RuntimeError('could not connect')
+            except pika.exceptions.ConnectionClosed:
+                print('could not connect. retrying in {} seconds...'.format(retry_delay))
+                time.sleep(retry_delay)
+
+                retry_delay = min(2 * retry_delay, self.max_retry_delay)
+                retry_attempt += 1
+
+                if retry_attempt > self.max_retry_attempts:
+                    raise RuntimeError('too many connect attempts.')
 
     def publish(self, properties, body):
         for attempt in range(3):
