@@ -131,18 +131,15 @@ class BeehiveHandler(logging.Handler):
                 retry_attempt += 1
 
     def publish(self, properties, body):
-        for attempt in range(3):
+        while True:
             try:
                 self.channel.basic_publish(properties=properties,
                                            exchange='logs.fanout',
                                            routing_key='',
                                            body=body)
+                break
             except pika.exceptions.ConnectionClosed:
                 self.connect()
-            else:
-                break
-        else:
-            raise RuntimeError('could not publish')
 
 
 def getLogger(service, url='amqp://localhost'):
