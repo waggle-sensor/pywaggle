@@ -143,6 +143,7 @@ class BeehiveHandler(logging.Handler):
                                            body=body)
                 break
             except pika.exceptions.ConnectionClosed:
+                time.sleep(1)
                 self.connect()
 
 
