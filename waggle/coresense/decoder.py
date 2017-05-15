@@ -51,7 +51,7 @@ def main():
 
     for subpacket in packet['subpackets']:
         if subpacket['id'] not in sensors_by_id:
-            logger.warn('unknown subpacket id {}'.format(subpacket['id']))
+            logger.warning('unknown subpacket id {}'.format(subpacket['id']))
             continue
 
         sensor = sensors_by_id[subpacket['id']]
