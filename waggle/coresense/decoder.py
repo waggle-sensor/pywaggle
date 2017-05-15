@@ -3,6 +3,9 @@ from format import unpack
 from packet import decode_packet
 import yaml
 from pprint import pprint
+import logging
+
+logger = logging.getLogger('coresense.decoder')
 
 
 def identity(x):
@@ -48,6 +51,7 @@ def main():
 
     for subpacket in packet['subpackets']:
         if subpacket['id'] not in sensors_by_id:
+            logger.warn('unknown subpacket id {}'.format(subpacket['id']))
             continue
 
         sensor = sensors_by_id[subpacket['id']]
