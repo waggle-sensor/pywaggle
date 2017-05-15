@@ -2,8 +2,7 @@ import logging
 from . import format
 from . import spec
 
-
-logging.basicConfig(level=logging.WARN)
+logger = logging.getLogger('coresense.utils')
 
 
 def decode_frame(frame):
@@ -46,9 +45,9 @@ def decode_coresense_data(data):
             data = dict(zip(fields, format.unpack(fmt, sensor_data)))
             yield name, data
         except KeyError:
-            pass
+            logger.warning('Unknown subpacket id {}'.format(sensor_id))
         except Exception:
-            logging.exception('Got an exception while decoding subpackets. sensor = {:02X}, format = {}, data = {}'.format(sensor_id, fmt, repr(sensor_data)))
+            logger.exception('Got an exception while decoding subpackets. sensor = {:02X}, format = {}, data = {}'.format(sensor_id, fmt, repr(sensor_data)))
 
 
 def get_data_subpackets(data):
@@ -69,7 +68,7 @@ def get_data_subpackets(data):
             subpackets.append((sensor_id, sensor_data))
 
     if offset != len(data):
-        logging.warn('Subpacket lengths do not total to payload length! offset = {}, length = {}'.format(offset, len(data)))
+        logger.warning('Subpacket lengths do not total to payload length! offset = {}, length = {}'.format(offset, len(data)))
 
     return subpackets
 
