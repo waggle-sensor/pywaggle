@@ -1,6 +1,7 @@
 import logging
 from . import format
 from . import spec
+from binascii import hexlify
 
 logger = logging.getLogger('coresense.utils')
 
@@ -45,9 +46,11 @@ def decode_coresense_data(data):
             data = dict(zip(fields, format.unpack(fmt, sensor_data)))
             yield name, data
         except KeyError:
-            logger.warning('Unknown subpacket id {}'.format(sensor_id))
+            logger.warning('could not decode subpacket: id={:02X} data={}'.format(sensor_id, hexlify(sensor_data).decode()))
+            continue
         except Exception:
             logger.exception('Got an exception while decoding subpackets. sensor = {:02X}, format = {}, data = {}'.format(sensor_id, fmt, repr(sensor_data)))
+            continue
 
 
 def get_data_subpackets(data):
