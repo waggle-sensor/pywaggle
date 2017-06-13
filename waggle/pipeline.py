@@ -62,29 +62,20 @@ class RabbitMQHandler(PluginHandler):
         else:
             raise ValueError('unsupported data type')
 
-        ident = [
-            self.plugin.plugin_name,
-            self.plugin.plugin_version,
-        ]
-
-        try:
-            ident.append(self.plugin.plugin_instance)
-        except AttributeError:
-            pass
-
         properties = pika.BasicProperties(
             headers=headers,
             delivery_mode=2,
             timestamp=int(time.time() * 1000),
             content_type=content_type,
             type=sensor,
-            app_id=':'.join(ident),
+            app_id=self.plugin.id,
         )
 
         self.channel.basic_publish(properties=properties,
                                    exchange=self.dest_exchange,
                                    routing_key=properties.app_id,
                                    body=body)
+
 
 class Plugin(object):
 
@@ -95,17 +86,27 @@ class Plugin(object):
         if not hasattr(self, 'plugin_version'):
             raise RuntimeError('Plugin version must be specified.')
 
+        id_fields = [
+            self.plugin.plugin_name,
+            self.plugin.plugin_version,
+        ]
+
+        if hasattr(self, 'plugin_instance'):
+            id_fields.append(self.plugin.plugin_instance)
+
+        self.id = ':'.join(id_fields)
+
         # NOTE I strongly dislike this and think it should be handled in a more
         # weakly coupled way. This is worth creating a better design for.
         self.headers = {}
+
         try:
             self.headers['node_id'] = waggle.platform.macaddr()
             self.headers['platform'] = waggle.platform.hardware()
         except:
             pass
 
-        self.logger = logging.getLogger('{}:{}'.format(self.plugin_name,
-                                                       self.plugin_version))
+        self.logger = logging.getLogger(self.id)
         self.logger.setLevel(logging.INFO)
 
         self.handlers = []
