@@ -87,12 +87,12 @@ class Plugin(object):
             raise RuntimeError('Plugin version must be specified.')
 
         id_fields = [
-            self.plugin.plugin_name,
-            self.plugin.plugin_version,
+            self.plugin_name,
+            self.plugin_version,
         ]
 
         if hasattr(self, 'plugin_instance'):
-            id_fields.append(self.plugin.plugin_instance)
+            id_fields.append(self.plugin_instance)
 
         self.id = ':'.join(id_fields)
 
