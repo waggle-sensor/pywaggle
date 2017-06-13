@@ -21,6 +21,7 @@ class CallbackHandler(PluginHandler):
     def send(self, sensor, data, headers={}):
         self.callback(sensor, data)
 
+
 class RabbitMQHandler(PluginHandler):
 
     def __init__(self, url, dest_queue='data'):
@@ -61,14 +62,23 @@ class RabbitMQHandler(PluginHandler):
         else:
             raise ValueError('unsupported data type')
 
+        ident = [
+            self.plugin.plugin_name,
+            self.plugin.plugin_version,
+        ]
+
+        try:
+            ident.append(self.plugin.plugin_instance)
+        except AttributeError:
+            pass
+
         properties = pika.BasicProperties(
             headers=headers,
             delivery_mode=2,
             timestamp=int(time.time() * 1000),
             content_type=content_type,
             type=sensor,
-            app_id=':'.join([self.plugin.plugin_name,
-                             self.plugin.plugin_version])
+            app_id=':'.join(ident),
         )
 
         self.channel.basic_publish(properties=properties,
