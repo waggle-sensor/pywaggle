@@ -14,6 +14,7 @@ class ClientConfig:
             return ClientConfig(**json.load(f))
 
     def __init__(self, **kwargs):
+        self.node = kwargs.get('node', None)
         self.host = kwargs.get('host', 'localhost')
         self.port = kwargs.get('port', None)
         self.username = kwargs.get('username', None)
@@ -53,6 +54,7 @@ class MessageClient:
 
     def __init__(self, name, config):
         self.name = name
+        self.config = config
 
         credentials = pika.PlainCredentials(
             username=config.username,
@@ -94,6 +96,10 @@ class MessageClient:
             content_type=content_type,
             type=topic,
             app_id=self.name)
+
+        # NOTE maintains compatibility for development until id is username.
+        if self.config.node is not None:
+            properties.reply_to = self.config.node
 
         self.channel.basic_publish(properties=properties,
                                    exchange='waggle.data',
