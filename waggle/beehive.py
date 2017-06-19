@@ -102,7 +102,7 @@ class MessageClient:
             properties.reply_to = self.config.node
 
         self.channel.basic_publish(properties=properties,
-                                   exchange='waggle.data',
+                                   exchange='data.fanout',
                                    routing_key=topic,
                                    body=body)
 
