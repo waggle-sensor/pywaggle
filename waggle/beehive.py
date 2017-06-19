@@ -17,8 +17,8 @@ class ClientConfig:
         self.node = kwargs.get('node', None)
         self.host = kwargs.get('host', 'localhost')
         self.port = kwargs.get('port', None)
-        self.username = kwargs.get('username', None)
-        self.password = kwargs.get('password', None)
+        self.username = kwargs.get('username', 'node')
+        self.password = kwargs.get('password', 'waggle')
         self.ssl_enabled = kwargs.get('ssl_enabled', None)
         self.ssl_options = {}
 
