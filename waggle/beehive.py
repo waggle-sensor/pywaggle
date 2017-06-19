@@ -96,7 +96,8 @@ class MessageClient:
             timestamp=timestamp,
             content_type=content_type,
             type=topic,
-            app_id=self.name)
+            app_id=self.name,
+            user_id=self.config.username)
 
         # NOTE maintains compatibility for development until id is username.
         if self.config.node is not None:
