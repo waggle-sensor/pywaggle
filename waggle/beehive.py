@@ -52,9 +52,10 @@ class MessageClient:
 
     logger = logging.getLogger('beehive.MessageClient')
 
-    def __init__(self, name, config):
+    def __init__(self, name, config, exchange='data.fanout'):
         self.name = name
         self.config = config
+        self.exchange = exchange
 
         credentials = pika.PlainCredentials(
             username=config.username,
@@ -102,7 +103,7 @@ class MessageClient:
             properties.reply_to = self.config.node
 
         self.channel.basic_publish(properties=properties,
-                                   exchange='data.fanout',
+                                   exchange=self.exchange,
                                    routing_key=topic,
                                    body=body)
 
