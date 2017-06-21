@@ -145,14 +145,23 @@ class WorkerClient:
     def disconnect(self):
         self.connection.disconnect()
 
+    def add_handler(self, handler, topic=''):
+        def callback(ch, method, headers, body):
+            try:
+                result = handler(headers.type, body)
+            except KeyboardInterrupt:
+                self.stop_working()
+            except:
+                return
+
+            print(result)
+            # self.channel.basic_ack()
+
+        self.channel.basic_consume(callback, topic)
+
     def start_working(self, handler):
         self.channel.queue_declare(queue=self.name, durable=True)
         self.channel.queue_bind(queue=self.name, exchange='plugins-in')
-
-        def callback(ch, method, headers, body):
-            result = handler(headers.type, body)
-            print(result)
-
         self.channel.start_consuming()
 
     def stop_working(self):
