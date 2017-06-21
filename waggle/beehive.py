@@ -95,13 +95,7 @@ class MessageClient:
 
         self.logger.info('publishing {} on {}'.format(body, topic))
 
-        headers = {}
-
-        if self.config.node is not None:
-            headers['node_id'] = self.config.node
-
         properties = pika.BasicProperties(
-            headers=headers,
             delivery_mode=2,
             timestamp=timestamp,
             content_type=content_type,
