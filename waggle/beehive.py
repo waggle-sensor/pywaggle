@@ -116,6 +116,49 @@ class MessageClient:
         raise NotImplementedError('some day...')
 
 
+class WorkerClient:
+
+    logger = logging.getLogger('beehive.WorkerClient')
+
+    def __init__(self, name, config):
+        self.name = name
+        self.config = config
+
+        credentials = pika.PlainCredentials(
+            username=config.username,
+            password=config.password)
+
+        self.parameters = pika.ConnectionParameters(
+            host=config.host,
+            port=config.port,
+            credentials=credentials,
+            ssl=config.ssl_enabled,
+            ssl_options=config.ssl_options,
+            connection_attempts=5,
+            retry_delay=5,
+            socket_timeout=10)
+
+    def connect(self):
+        self.connection = pika.BlockingConnection(self.parameters)
+        self.channel = self.connection.channel()
+
+    def disconnect(self):
+        self.connection.disconnect()
+
+    def start_working(self, handler):
+        self.channel.queue_declare(queue=self.name, durable=True)
+        self.channel.queue_bind(queue=self.name, exchange='plugins-in')
+
+        def callback(ch, method, headers, body):
+            result = handler(headers.type, body)
+            print(result)
+
+        self.channel.start_consuming()
+
+    def stop_working(self):
+        self.channel.stop_consuming()
+
+
 class Beehive(object):
 
     def __init__(self, host):
