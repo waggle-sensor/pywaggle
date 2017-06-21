@@ -14,6 +14,10 @@ class ClientConfig:
             return ClientConfig(**json.load(f))
 
     def __init__(self, **kwargs):
+        """
+        ClientConfig organizes connection and credential information associated
+        to a Beehive server.
+        """
         self.node = kwargs.get('node', None)
         self.host = kwargs.get('host', 'localhost')
         self.port = kwargs.get('port', None)
@@ -91,7 +95,13 @@ class MessageClient:
 
         self.logger.info('publishing {} on {}'.format(body, topic))
 
+        headers = {}
+
+        if self.config.node is not None:
+            headers['node_id'] = self.config.node
+
         properties = pika.BasicProperties(
+            headers=headers,
             delivery_mode=2,
             timestamp=timestamp,
             content_type=content_type,
