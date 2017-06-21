@@ -154,10 +154,10 @@ class WorkerClient:
             except:
                 return
 
+            self.channel.basic_ack(method.delivery_tag)
             print(result)
-            # self.channel.basic_ack()
 
-        self.channel.basic_consume(callback, routing_key=topic, queue=self.name)
+        self.channel.basic_consume(callback, queue=self.name)
 
     def start_working(self, handler):
         self.channel.start_consuming()
