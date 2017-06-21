@@ -157,11 +157,9 @@ class WorkerClient:
             print(result)
             # self.channel.basic_ack()
 
-        self.channel.basic_consume(callback, topic)
+        self.channel.basic_consume(callback, routing_key=topic, queue=self.name)
 
     def start_working(self, handler):
-        self.channel.queue_declare(queue=self.name, durable=True)
-        self.channel.queue_bind(queue=self.name, exchange='plugins-in')
         self.channel.start_consuming()
 
     def stop_working(self):
