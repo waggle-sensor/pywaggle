@@ -4,6 +4,11 @@ import pika
 import ssl
 
 
+def utctimestamp():
+    utcnow = datetime.datetime.utcnow()
+    return int(utcnow.timestamp() * 1000)
+
+
 class ClientConfig:
 
     def __init__(self, host='localhost', port=None, username='node',
@@ -73,12 +78,9 @@ class PluginClient:
         self.connection.close()
 
     def publish(self, topic, body, exchange='data-pipeline-in'):
-        utcnow = datetime.datetime.utcnow()
-        timestamp = int(utcnow.timestamp() * 1000)
-
         properties = pika.BasicProperties(
             delivery_mode=2,
-            timestamp=timestamp,
+            timestamp=utctimestamp(),
             type=topic,
             app_id=self.name,
             user_id=self.config.username)
