@@ -104,18 +104,17 @@ class WorkerClient:
         self.connection = pika.BlockingConnection(config.as_pika_parameters())
         self.channel = self.connection.channel()
 
-        self.callback = callback
-
         def wrapped_callback(ch, method, headers, body):
             try:
-                result = self.callback(headers.type, body)
+                result = callback(headers.type, body)
             except KeyboardInterrupt:
                 self.stop_working()
             except:
                 return
 
+            # TODO forward to plugins-out exchange
+            # self.channel.basic_publish()
             self.channel.basic_ack(method.delivery_tag)
-            print(result)
 
         self.channel.basic_consume(wrapped_callback, queue=self.name)
 
