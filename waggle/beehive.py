@@ -127,7 +127,7 @@ class WorkerClient:
     def close(self):
         self.connection.close()
 
-    def start_working(self, handler):
+    def start_working(self):
         self.channel.start_consuming()
 
     def stop_working(self):
