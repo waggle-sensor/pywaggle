@@ -25,7 +25,8 @@ class ClientConfig:
         # set waggle parameters
         self.node = node
 
-    def as_pika_parameters(self):
+    @property
+    def pika_parameters(self):
         credentials = pika.PlainCredentials(
             username=self.username,
             password=self.password)
@@ -65,7 +66,7 @@ class PluginClient:
         self.name = name
         self.config = config
 
-        self.connection = pika.BlockingConnection(config.as_pika_parameters())
+        self.connection = pika.BlockingConnection(config.pika_parameters)
         self.channel = self.connection.channel()
 
     def close(self):
@@ -102,7 +103,7 @@ class WorkerClient:
         self.name = name
         self.config = config
 
-        self.connection = pika.BlockingConnection(config.as_pika_parameters())
+        self.connection = pika.BlockingConnection(config.pika_parameters)
         self.channel = self.connection.channel()
 
         def wrapped_callback(ch, method, headers, body):
