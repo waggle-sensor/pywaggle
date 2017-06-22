@@ -11,12 +11,13 @@ def utctimestamp():
 
 class ClientConfig:
 
-    def __init__(self, host='localhost', port=None, username='node',
+    def __init__(self, host='localhost', port=None, vhost='/', username='node',
                  password='waggle', cacert=None, cert=None, key=None,
                  node=None):
         # set connection parameters
         self.host = host
         self.port = port
+        self.vhost = vhost
 
         # set credentials
         self.username = username
@@ -57,6 +58,7 @@ class ClientConfig:
         return pika.ConnectionParameters(
             host=self.host,
             port=port,
+            virtual_host=self.vhost,
             credentials=credentials,
             ssl=self.cacert is not None,
             ssl_options=ssl_options,
