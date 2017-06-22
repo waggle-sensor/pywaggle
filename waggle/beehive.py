@@ -118,6 +118,9 @@ class WorkerClient:
 
         self.channel.basic_consume(wrapped_callback, queue=self.name)
 
+    def close(self):
+        self.connection.close()
+
     def start_working(self, handler):
         self.channel.start_consuming()
 
