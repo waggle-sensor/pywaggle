@@ -2,16 +2,10 @@ import requests
 import datetime
 import pika
 import ssl
-import json
 import logging
 
 
 class ClientConfig:
-
-    @staticmethod
-    def fromfile(filename):
-        with open(filename) as f:
-            return ClientConfig(**json.load(f))
 
     def __init__(self, **kwargs):
         """
@@ -52,9 +46,7 @@ class ClientConfig:
                 self.port = 5672
 
 
-class MessageClient:
-
-    logger = logging.getLogger('beehive.MessageClient')
+class BaseClient:
 
     def __init__(self, name, config):
         self.name = name
@@ -80,6 +72,9 @@ class MessageClient:
 
     def disconnect(self):
         self.connection.disconnect()
+
+
+class MessageClient(BaseClient):
 
     def publish(self, topic, body, exchange='data-pipeline-in'):
         utcnow = datetime.datetime.utcnow()
@@ -106,34 +101,7 @@ class MessageClient:
         raise NotImplementedError('some day...')
 
 
-class WorkerClient:
-
-    logger = logging.getLogger('beehive.WorkerClient')
-
-    def __init__(self, name, config):
-        self.name = name
-        self.config = config
-
-        credentials = pika.PlainCredentials(
-            username=config.username,
-            password=config.password)
-
-        self.parameters = pika.ConnectionParameters(
-            host=config.host,
-            port=config.port,
-            credentials=credentials,
-            ssl=config.ssl_enabled,
-            ssl_options=config.ssl_options,
-            connection_attempts=5,
-            retry_delay=5,
-            socket_timeout=10)
-
-    def connect(self):
-        self.connection = pika.BlockingConnection(self.parameters)
-        self.channel = self.connection.channel()
-
-    def disconnect(self):
-        self.connection.disconnect()
+class WorkerClient(BaseClient):
 
     def add_handler(self, handler):
         def callback(ch, method, headers, body):
