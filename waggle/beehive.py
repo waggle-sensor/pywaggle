@@ -83,9 +83,9 @@ class PluginClient:
         properties = pika.BasicProperties(
             delivery_mode=2,
             timestamp=utctimestamp(),
-            type=topic,
             app_id=self.name,
-            user_id=self.config.username)
+            user_id=self.config.username,
+            type=topic)
 
         # NOTE maintains compatibility for development until id is username.
         if self.config.node is not None:
@@ -94,7 +94,7 @@ class PluginClient:
         self.channel.basic_publish(
             properties=properties,
             exchange=exchange,
-            routing_key=topic,
+            routing_key=self.name,
             body=body)
 
     def subscribe(self, topic, callback):
