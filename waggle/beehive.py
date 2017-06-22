@@ -11,13 +11,7 @@ class ClientConfig:
                  node=None):
         # set connection parameters
         self.host = host
-
-        if port is not None:
-            self.port = port
-        elif cacert is not None:
-            self.port = 5671
-        else:
-            self.port = 5672
+        self.port = port
 
         # set credentials
         self.username = username
@@ -47,9 +41,16 @@ class ClientConfig:
         if self.key is not None:
             ssl_options['keyfile'] = self.key
 
+        if self.port is not None:
+            port = self.port
+        elif self.cacert is not None:
+            port = 5671
+        else:
+            port = 5672
+
         return pika.ConnectionParameters(
             host=self.host,
-            port=self.port,
+            port=port,
             credentials=credentials,
             ssl=self.cacert is not None,
             ssl_options=ssl_options,
