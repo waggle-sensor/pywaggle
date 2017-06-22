@@ -2,79 +2,73 @@ import requests
 import datetime
 import pika
 import ssl
-import logging
 
 
 class ClientConfig:
 
-    def __init__(self, **kwargs):
-        """
-        ClientConfig organizes connection and credential information associated
-        to a Beehive server.
-        """
-        self.node = kwargs.get('node', None)
-        self.host = kwargs.get('host', 'localhost')
-        self.port = kwargs.get('port', None)
-        self.username = kwargs.get('username', 'node')
-        self.password = kwargs.get('password', 'waggle')
-        self.ssl_enabled = kwargs.get('ssl_enabled', None)
-        self.ssl_options = {}
+    def __init__(self, host='localhost', port=None, username='node',
+                 password='waggle', cacert=None, cert=None, key=None,
+                 node=None):
+        # set connection parameters
+        self.host = host
 
-        if 'cacert' in kwargs:
-            self.ssl_options['ca_certs'] = kwargs['cacert']
+        if port is not None:
+            self.port = port
+        elif cacert is not None:
+            self.port = 5671
+        else:
+            self.port = 5672
 
-        if 'cert' in kwargs:
-            self.ssl_options['certfile'] = kwargs['cert']
+        # set credentials
+        self.username = username
+        self.password = password
 
-        if 'key' in kwargs:
-            self.ssl_options['keyfile'] = kwargs['key']
+        # set ssl options
+        self.cacert = cacert
+        self.cert = cert
+        self.key = key
 
-        self.ssl_options['cert_reqs'] = ssl.CERT_REQUIRED
+        # set waggle parameters
+        self.node = node
 
-        # set default ssl_enabled, if needed
-        if self.ssl_enabled is None:
-            if 'ca_certs' in self.ssl_options:
-                self.ssl_enabled = True
-            else:
-                self.ssl_enabled = False
+    def as_pika_parameters(self):
+        credentials = pika.PlainCredentials(
+            username=self.username,
+            password=self.password)
 
-        # set default port, if needed
-        if self.port is None:
-            if self.ssl_options:
-                self.port = 5671
-            else:
-                self.port = 5672
+        ssl_options = {'cert_reqs': ssl.CERT_REQUIRED}
+
+        if self.cacert is not None:
+            ssl_options['ca_certs'] = self.cacert
+
+        if self.cert is not None:
+            ssl_options['certfile'] = self.cert
+
+        if self.key is not None:
+            ssl_options['keyfile'] = self.key
+
+        return pika.ConnectionParameters(
+            host=self.host,
+            port=self.port,
+            credentials=credentials,
+            ssl=self.cacert is not None,
+            ssl_options=ssl_options,
+            connection_attempts=5,
+            retry_delay=5,
+            socket_timeout=10)
 
 
-class BaseClient:
+class PluginClient:
 
     def __init__(self, name, config):
         self.name = name
         self.config = config
 
-        credentials = pika.PlainCredentials(
-            username=config.username,
-            password=config.password)
-
-        self.parameters = pika.ConnectionParameters(
-            host=config.host,
-            port=config.port,
-            credentials=credentials,
-            ssl=config.ssl_enabled,
-            ssl_options=config.ssl_options,
-            connection_attempts=5,
-            retry_delay=5,
-            socket_timeout=10)
-
-    def connect(self):
-        self.connection = pika.BlockingConnection(self.parameters)
+        self.connection = pika.BlockingConnection(config.pika_parameters)
         self.channel = self.connection.channel()
 
-    def disconnect(self):
-        self.connection.disconnect()
-
-
-class MessageClient(BaseClient):
+    def close(self):
+        self.connection.close()
 
     def publish(self, topic, body, exchange='data-pipeline-in'):
         utcnow = datetime.datetime.utcnow()
@@ -101,12 +95,20 @@ class MessageClient(BaseClient):
         raise NotImplementedError('some day...')
 
 
-class WorkerClient(BaseClient):
+class WorkerClient:
 
-    def add_handler(self, handler):
-        def callback(ch, method, headers, body):
+    def __init__(self, name, config, callback):
+        self.name = name
+        self.config = config
+
+        self.connection = pika.BlockingConnection(config.as_pika_parameters())
+        self.channel = self.connection.channel()
+
+        self.callback = callback
+
+        def wrapped_callback(ch, method, headers, body):
             try:
-                result = handler(headers.type, body)
+                result = self.callback(headers.type, body)
             except KeyboardInterrupt:
                 self.stop_working()
             except:
@@ -115,7 +117,7 @@ class WorkerClient(BaseClient):
             self.channel.basic_ack(method.delivery_tag)
             print(result)
 
-        self.channel.basic_consume(callback, queue=self.name)
+        self.channel.basic_consume(wrapped_callback, queue=self.name)
 
     def start_working(self, handler):
         self.channel.start_consuming()
@@ -124,7 +126,7 @@ class WorkerClient(BaseClient):
         self.channel.stop_consuming()
 
 
-class Beehive(object):
+class Beehive:
 
     def __init__(self, host):
         self.host = host
