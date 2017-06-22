@@ -56,10 +56,9 @@ class MessageClient:
 
     logger = logging.getLogger('beehive.MessageClient')
 
-    def __init__(self, name, config, exchange='data.fanout'):
+    def __init__(self, name, config):
         self.name = name
         self.config = config
-        self.exchange = exchange
 
         credentials = pika.PlainCredentials(
             username=config.username,
@@ -82,23 +81,13 @@ class MessageClient:
     def disconnect(self):
         self.connection.disconnect()
 
-    def publish(self, topic, value):
+    def publish(self, topic, body, exchange='data-pipeline-in'):
         utcnow = datetime.datetime.utcnow()
         timestamp = int(utcnow.timestamp() * 1000)
-
-        if isinstance(value, bytes) or isinstance(value, bytearray):
-            content_type = 'b'
-            body = bytes(value)
-        else:
-            content_type = 'j'
-            body = json.dumps(value, separators=(',', ':'))
-
-        self.logger.info('publishing {} on {}'.format(body, topic))
 
         properties = pika.BasicProperties(
             delivery_mode=2,
             timestamp=timestamp,
-            content_type=content_type,
             type=topic,
             app_id=self.name,
             user_id=self.config.username)
@@ -107,10 +96,11 @@ class MessageClient:
         if self.config.node is not None:
             properties.reply_to = self.config.node
 
-        self.channel.basic_publish(properties=properties,
-                                   exchange=self.exchange,
-                                   routing_key=topic,
-                                   body=body)
+        self.channel.basic_publish(
+            properties=properties,
+            exchange=exchange,
+            routing_key=topic,
+            body=body)
 
     def subscribe(self, topic, callback):
         raise NotImplementedError('some day...')
@@ -145,7 +135,7 @@ class WorkerClient:
     def disconnect(self):
         self.connection.disconnect()
 
-    def add_handler(self, handler, topic=''):
+    def add_handler(self, handler):
         def callback(ch, method, headers, body):
             try:
                 result = handler(headers.type, body)
