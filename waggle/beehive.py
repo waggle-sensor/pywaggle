@@ -112,7 +112,11 @@ class WorkerClient:
 
         def wrapped_callback(ch, method, headers, body):
             try:
-                result = callback(headers.type, body)
+                result = callback({
+                    'utctimestamp': headers.timestamp,
+                    'type': headers.type,
+                    'body': body,
+                })
             except KeyboardInterrupt:
                 self.stop_working()
             except:
