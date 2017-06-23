@@ -125,12 +125,13 @@ class WorkerClient:
             doc['results_timestamp'] = utctimestamp()
             doc['results'] = results
 
-            ch.basic_publish(
+            self.channel.basic_publish(
                 exchange='plugins-out',
                 routing_key=method.routing_key,
-                body=json.dumps(doc))
+                body=json.dumps(doc),
+                encoding='json')
 
-            ch.basic_ack(
+            self.channel.basic_ack(
                 delivery_tag=method.delivery_tag)
 
         self.channel.basic_consume(wrapped_callback, queue=self.name)
