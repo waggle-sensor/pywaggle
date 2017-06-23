@@ -130,7 +130,8 @@ class WorkerClient:
                 routing_key=method.routing_key,
                 body=json.dumps(doc))
 
-            ch.basic_ack(method.delivery_tag)
+            ch.basic_ack(
+                delivery_tag=method.delivery_tag)
 
         self.channel.basic_consume(wrapped_callback, queue=self.name)
 
