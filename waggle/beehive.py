@@ -113,19 +113,14 @@ class WorkerClient:
         self.channel = self.connection.channel()
 
         def wrapped_callback(ch, method, headers, body):
-            try:
-                doc = {
-                    'timestamp': headers.timestamp,
-                    'type': headers.type,
-                    'body': base64.b64encode(body).decode(),
-                    'encoding': 'base64',
-                }
+            doc = {
+                'timestamp': headers.timestamp,
+                'type': headers.type,
+                'body': base64.b64encode(body).decode(),
+                'encoding': 'base64',
+            }
 
-                results = callback(doc)
-            except KeyboardInterrupt:
-                self.stop_working()
-            except:
-                return
+            results = callback(doc)
 
             doc['results_timestamp'] = utctimestamp()
             doc['results'] = results
