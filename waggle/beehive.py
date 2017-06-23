@@ -4,6 +4,7 @@ import pika
 import ssl
 import json
 import base64
+import logging
 
 
 def utctimestamp():
@@ -74,7 +75,6 @@ class PluginClient:
     def __init__(self, name, config):
         self.name = name
         self.config = config
-
         self.connection = pika.BlockingConnection(config.pika_parameters)
         self.channel = self.connection.channel()
 
@@ -105,18 +105,19 @@ class PluginClient:
 
 class WorkerClient:
 
+    logger = logging.getLogger('WorkerClient')
+
     def __init__(self, name, config, callback, exchange='plugins-out'):
         self.name = name
         self.config = config
-
         self.connection = pika.BlockingConnection(config.pika_parameters)
         self.channel = self.connection.channel()
-
         self.callback = callback
         self.exchange = exchange
 
         def wrapped_callback(ch, method, headers, body):
             doc = {
+                'version': 1,
                 'timestamp': headers.timestamp,
                 'type': headers.type,
                 'body': base64.b64encode(body).decode(),
@@ -134,6 +135,10 @@ class WorkerClient:
                 user_id=headers.user_id,
                 type=headers.type,
                 content_type='json')
+
+            json_doc = json.dumps(doc)
+
+            self.logger.debug('publishing {}'.format(json_doc)
 
             self.channel.basic_publish(
                 properties=properties,
