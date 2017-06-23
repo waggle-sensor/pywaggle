@@ -117,7 +117,7 @@ class WorkerClient:
                 doc = {
                     'timestamp': headers.timestamp,
                     'type': headers.type,
-                    'body': base64.b64encode(body),
+                    'body': base64.b64encode(body).decode(),
                     'encoding': 'base64',
                 }
 
