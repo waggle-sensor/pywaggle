@@ -105,12 +105,15 @@ class PluginClient:
 
 class WorkerClient:
 
-    def __init__(self, name, config, callback):
+    def __init__(self, name, config, callback, exchange='plugins-out'):
         self.name = name
         self.config = config
 
         self.connection = pika.BlockingConnection(config.pika_parameters)
         self.channel = self.connection.channel()
+
+        self.callback = callback
+        self.exchange = exchange
 
         def wrapped_callback(ch, method, headers, body):
             doc = {
@@ -125,13 +128,20 @@ class WorkerClient:
             doc['results_timestamp'] = utctimestamp()
             doc['results'] = results
 
+            properties = pika.BasicProperties(
+                delivery_mode=2,
+                app_id=headers.app_id,
+                user_id=headers.user_id,
+                type=headers.type,
+                content_type='json')
+
             self.channel.basic_publish(
-                exchange='plugins-out',
+                properties=properties,
+                exchange=self.exchange,
                 routing_key=method.routing_key,
                 body=json.dumps(doc))
 
-            self.channel.basic_ack(
-                delivery_tag=method.delivery_tag)
+            self.channel.basic_ack(method.delivery_tag)
 
         self.channel.basic_consume(wrapped_callback, queue=self.name)
 
