@@ -3,6 +3,7 @@ import datetime
 import pika
 import ssl
 import json
+import base64
 
 
 def utctimestamp():
@@ -116,7 +117,8 @@ class WorkerClient:
                 doc = {
                     'timestamp': headers.timestamp,
                     'type': headers.type,
-                    'body': body,
+                    'body': base64.b64encode(body),
+                    'encoding': 'base64',
                 }
 
                 results = callback(doc)
