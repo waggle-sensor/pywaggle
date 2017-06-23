@@ -2,6 +2,7 @@ import requests
 import datetime
 import pika
 import ssl
+import json
 
 
 def utctimestamp():
@@ -112,18 +113,26 @@ class WorkerClient:
 
         def wrapped_callback(ch, method, headers, body):
             try:
-                result = callback({
-                    'utctimestamp': headers.timestamp,
+                doc = {
+                    'timestamp': headers.timestamp,
                     'type': headers.type,
                     'body': body,
-                })
+                }
+
+                results = callback(doc)
             except KeyboardInterrupt:
                 self.stop_working()
             except:
                 return
 
-            # TODO forward to plugins-out exchange
-            # self.channel.basic_publish()
+            doc['results_timestamp'] = utctimestamp()
+            doc['results'] = results
+
+            self.channel.basic_publish(
+                exchange='plugins-out',
+                routing_key=method.routing_key,
+                body=json.dumps(doc))
+
             self.channel.basic_ack(method.delivery_tag)
 
         self.channel.basic_consume(wrapped_callback, queue=self.name)
