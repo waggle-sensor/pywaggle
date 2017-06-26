@@ -138,7 +138,7 @@ class WorkerClient:
 
             json_doc = json.dumps(doc)
 
-            self.logger.debug('publishing {}'.format(json_doc)
+            self.logger.debug('publishing {}'.format(json_doc))
 
             self.channel.basic_publish(
                 properties=properties,
