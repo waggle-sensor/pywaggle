@@ -78,8 +78,7 @@ class PluginClient:
     def __init__(self, name, config):
         self.name = name
         self.config = config
-        self.connection = pika.BlockingConnection(self.config.pika_parameters)
-        self.channel = self.connection.channel()
+        self.connect()
 
     def connect(self):
         while True:
