@@ -38,7 +38,8 @@ class ClientConfig:
     def pika_parameters(self):
         credentials = pika.PlainCredentials(
             username=self.username,
-            password=self.password)
+            password=self.password,
+        )
 
         ssl_options = {'cert_reqs': ssl.CERT_REQUIRED}
 
@@ -67,7 +68,8 @@ class ClientConfig:
             ssl_options=ssl_options,
             connection_attempts=5,
             retry_delay=5,
-            socket_timeout=10)
+            socket_timeout=10,
+        )
 
 
 class PluginClient:
@@ -75,7 +77,11 @@ class PluginClient:
     def __init__(self, name, config):
         self.name = name
         self.config = config
-        self.connection = pika.BlockingConnection(config.pika_parameters)
+        self.connection = pika.BlockingConnection(self.config.pika_parameters)
+        self.channel = self.connection.channel()
+
+    def connect(self):
+        self.connection = pika.BlockingConnection(self.config.pika_parameters)
         self.channel = self.connection.channel()
 
     def close(self):
@@ -87,17 +93,23 @@ class PluginClient:
             timestamp=utctimestamp(),
             app_id=self.name,
             user_id=self.config.username,
-            type=topic)
+            type=topic,
+        )
 
         # NOTE maintains compatibility for development until id is username.
         if self.config.node is not None:
             properties.reply_to = self.config.node
 
-        self.channel.basic_publish(
-            properties=properties,
-            exchange=exchange,
-            routing_key=self.name,
-            body=body)
+        while True:
+            try:
+                return self.channel.basic_publish(
+                    properties=properties,
+                    exchange=exchange,
+                    routing_key=self.name,
+                    body=body,
+                )
+            except pika.exceptions.ConnectionClosed:
+                self.connect()
 
     def subscribe(self, topic, callback):
         raise NotImplementedError('some day...')
