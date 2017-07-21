@@ -1,6 +1,7 @@
 import requests
 import datetime
 import pika
+import time
 import ssl
 import json
 import base64
@@ -81,8 +82,15 @@ class PluginClient:
         self.channel = self.connection.channel()
 
     def connect(self):
-        self.connection = pika.BlockingConnection(self.config.pika_parameters)
-        self.channel = self.connection.channel()
+        while True:
+            try:
+                self.connection = pika.BlockingConnection(self.config.pika_parameters)
+                self.channel = self.connection.channel()
+                break
+            # Hack for now. It seems like a ConnectionClosed can be missed
+            # by pika?
+            except pika.exceptions.ConnectionClosed:
+                time.sleep(5)
 
     def close(self):
         self.connection.close()
