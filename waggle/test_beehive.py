@@ -1,5 +1,4 @@
 import unittest
-
 import ssl
 from .beehive import build_connection_parameters
 
@@ -27,6 +26,7 @@ class TestConnectionParameters(unittest.TestCase):
         self.assertEqual(credentials.username, config['username'])
         self.assertEqual(credentials.password, config['password'])
 
+        self.assertTrue(parameters.ssl)
         self.assertEqual(ssl_options['cert_reqs'], ssl.CERT_REQUIRED)
         self.assertEqual(ssl_options['ca_certs'], config['cacert'])
 
@@ -43,7 +43,7 @@ class TestConnectionParameters(unittest.TestCase):
             'password': 'mypassword',
         }
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(KeyError, 'cacert'):
             build_connection_parameters(config)
 
     def test_build_connection_client_cert(self):
@@ -63,7 +63,3 @@ class TestConnectionParameters(unittest.TestCase):
 
         self.assertEqual(ssl_options['certfile'], config['cert'])
         self.assertEqual(ssl_options['keyfile'], config['key'])
-
-
-if __name__ == '__main__':
-    unittest.main()

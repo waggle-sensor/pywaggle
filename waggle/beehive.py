@@ -19,8 +19,6 @@ def build_connection_parameters(config):
     """
     Builds connection parameters from config dictionary.
     """
-    assert 'cacert' in config
-
     ssl_options = {
         'cert_reqs': ssl.CERT_REQUIRED,
         'ca_certs': config['cacert'],
