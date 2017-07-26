@@ -5,6 +5,72 @@ import ssl
 import json
 import base64
 import logging
+import configparser
+import os
+import os.path
+
+
+def load_profile(name):
+    config = configparser.ConfigParser()
+
+    path = os.path.expanduser(os.environ.get('WAGGLE_PROFILES_FILE', '~/.waggle/profiles'))
+    config.read(path)
+    profile = config[name]
+
+    # override using environmental parameters
+    default_host = os.environ.get('WAGGLE_BEEHIVE_HOST', 'localhost')
+    default_port = os.environ.get('WAGGLE_BEEHIVE_PORT', '5671')
+    default_virtual_host = os.environ.get('WAGGLE_BEEHIVE_VIRTUAL_HOST', '/')
+    default_username = os.environ.get('WAGGLE_BEEHIVE_USERNAME', 'node')
+    default_password = os.environ.get('WAGGLE_BEEHIVE_PASSWORD', 'waggle')
+    default_cacert = os.environ.get('WAGGLE_BEEHIVE_CACERT', '/usr/lib/waggle/SSL/waggleca/cacert.pem')
+
+    # get parameters from profiles entry
+    host = profile.get('beehive_host', default_host)
+    port = int(profile.get('beehive_port', default_port))
+    virtual_host = profile.get('beehive_virtual_host', default_virtual_host)
+    username = profile.get('beehive_username', default_username)
+    password = profile.get('beehive_password', default_password)
+    cacert = profile.get('beehive_cacert', default_cacert)
+
+    return {
+        'host': host,
+        'port': port,
+        'virtual_host': virtual_host,
+        'username': username,
+        'password': password,
+        'cacert': cacert,
+    }
+
+
+class Publisher:
+
+    def __init__(self, name, profile_name='default'):
+        profile = load_profile(profile_name)
+
+        self.parameters = pika.ConnectionParameters(
+            host=profile['host'],
+            port=profile['port'],
+            virtual_host=profile['virtual_host'],
+            credentials=pika.PlainCredentials(
+                username=profile['username'],
+                password=profile['password'],
+            ),
+            connection_attempts=5,
+            retry_delay=5.0,
+            socket_timeout=10.0,
+            ssl=True,
+            ssl_options={
+                'cert_reqs': ssl.CERT_REQUIRED,
+                'ca_certs': profile['cacert'],
+            },
+        )
+
+        self.connection = pika.BlockingConnection(self.parameters)
+        self.channel = self.connection.channel()
+
+    def publish(self):
+        pass
 
 
 def utctimestamp():
@@ -42,6 +108,28 @@ def build_connection_parameters(config):
         ssl=True,
         ssl_options=ssl_options,
     )
+
+
+def pack_message(message):
+    properties = pika.BasicProperties(
+        timestamp=message['timestamp'],
+    )
+
+    body = message['body']
+
+    return {
+        'properties': properties,
+        'exchange': '',
+        'routing_key': '',
+        'body': body,
+    }
+
+
+def unpack_message(properties, body):
+    return {
+        'timestamp': properties.timestamp,
+        'body': body,
+    }
 
 
 class ClientConfig:
@@ -109,6 +197,7 @@ class PluginClient:
     def __init__(self, name, config):
         self.name = name
         self.config = config
+        # self.parameters = build_connection_parameters(config)
         self.connection = pika.BlockingConnection(self.config.pika_parameters)
         self.channel = self.connection.channel()
 

@@ -1,6 +1,7 @@
 import unittest
 import ssl
 from .beehive import build_connection_parameters
+from .beehive import pack_message
 
 
 class TestConnectionParameters(unittest.TestCase):
@@ -63,3 +64,19 @@ class TestConnectionParameters(unittest.TestCase):
 
         self.assertEqual(ssl_options['certfile'], config['cert'])
         self.assertEqual(ssl_options['keyfile'], config['key'])
+
+
+class TestMessage(unittest.TestCase):
+
+    def test_pack_message(self):
+        message = {
+            'timestamp': 123456,
+            'topic': 'sometopic',
+            'body': b'this is a test',
+        }
+
+        internal = pack_message(message)
+
+        self.assertEqual(internal['properties'].timestamp, message['timestamp'])
+        self.assertEqual(internal['properties'].delivery_mode, 2)
+        self.assertEqual(internal['body'], message['body'])
