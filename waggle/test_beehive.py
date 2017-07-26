@@ -1,7 +1,7 @@
 import unittest
 
 import ssl
-from beehive import build_connection_parameters
+from .beehive import build_connection_parameters
 
 
 class TestConnectionParameters(unittest.TestCase):
