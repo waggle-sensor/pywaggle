@@ -1,7 +1,6 @@
 import requests
 import datetime
 import pika
-import time
 import ssl
 import json
 import base64
@@ -9,8 +8,42 @@ import logging
 
 
 def utctimestamp():
+    """
+    Gets number of milliseconds since epoch.
+    """
     utcnow = datetime.datetime.utcnow()
     return int(utcnow.timestamp() * 1000)
+
+
+def build_connection_parameters(config):
+    """
+    Builds connection parameters from config dictionary.
+    """
+    assert 'cacert' in config
+
+    ssl_options = {
+        'cert_reqs': ssl.CERT_REQUIRED,
+        'ca_certs': config['cacert'],
+    }
+
+    if 'cert' in config or 'key' in config:
+        ssl_options['certfile'] = config['cert']
+        ssl_options['keyfile'] = config['key']
+
+    return pika.ConnectionParameters(
+        host=config.get('host', None),
+        port=config.get('port', None),
+        virtual_host=config.get('vhost', None),
+        credentials=pika.PlainCredentials(
+            username=config.get('username', None),
+            password=config.get('password', None),
+        ),
+        connection_attempts=5,
+        retry_delay=5.0,
+        socket_timeout=10.0,
+        ssl=True,
+        ssl_options=ssl_options,
+    )
 
 
 class ClientConfig:
@@ -78,18 +111,8 @@ class PluginClient:
     def __init__(self, name, config):
         self.name = name
         self.config = config
-        self.connect()
-
-    def connect(self):
-        while True:
-            try:
-                self.connection = pika.BlockingConnection(self.config.pika_parameters)
-                self.channel = self.connection.channel()
-                break
-            # Hack for now. It seems like a ConnectionClosed can be missed
-            # by pika?
-            except pika.exceptions.ConnectionClosed:
-                time.sleep(5)
+        self.connection = pika.BlockingConnection(self.config.pika_parameters)
+        self.channel = self.connection.channel()
 
     def close(self):
         self.connection.close()
@@ -107,16 +130,12 @@ class PluginClient:
         if self.config.node is not None:
             properties.reply_to = self.config.node
 
-        while True:
-            try:
-                return self.channel.basic_publish(
-                    properties=properties,
-                    exchange=exchange,
-                    routing_key=self.name,
-                    body=body,
-                )
-            except pika.exceptions.ConnectionClosed:
-                self.connect()
+        return self.channel.basic_publish(
+            properties=properties,
+            exchange=exchange,
+            routing_key=self.name,
+            body=body,
+        )
 
     def subscribe(self, topic, callback):
         raise NotImplementedError('some day...')
