@@ -1,5 +1,8 @@
 from configparser import ConfigParser
 import os.path
+import logging
+
+logger = logging.getLogger(__name__)
 
 CREDENTIAL_PATHS = [
     './credentials',
@@ -8,14 +11,26 @@ CREDENTIAL_PATHS = [
 ]
 
 
-def load(profile='default'):
-    config = ConfigParser()
+def expandpath(p):
+    return os.path.abspath(os.path.expanduser(p))
 
-    for path in CREDENTIAL_PATHS:
+
+def load(profile='default'):
+    for path in map(expandpath, CREDENTIAL_PATHS):
+        config = ConfigParser()
+
         try:
-            config.read(os.path.expanduser(path))
-            return dict(config[profile])
+            logger.debug('reading credentials file {}'.format(path))
+            config.read(path)
         except FileNotFoundError:
+            logger.debug('no credentials file {}'.format(path))
             continue
 
-    raise RuntimeError('no credentials file found')
+        try:
+            logger.debug('reading profile {}'.format(profile))
+            return dict(config[profile])
+        except KeyError:
+            logger.debug('no profile file {} in {}'.format(profile, path))
+            continue
+
+    raise RuntimeError('no profile {} found in any credentials files'.format(profile))
