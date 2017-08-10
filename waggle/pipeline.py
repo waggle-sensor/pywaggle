@@ -26,10 +26,19 @@ class RabbitMQHandler(PluginHandler):
 
     def __init__(self, url, dest_queue='data'):
         self.dest_exchange = dest_queue + '.fanout'
-        self.connection = pika.BlockingConnection(pika.URLParameters(url))
+
+        self.parameters = pika.URLParameters(url)
+
+        # override reconnect parameters
+        self.parameters.connection_attempts = 5
+        self.parameters.retry_delay = 5.0
+        self.parameters.socket_timeout = 2.0
+
+        self.connection = pika.BlockingConnection(self.parameters)
 
         self.channel = self.connection.channel()
 
+        # ensure that destination queues and exchanges are configured
         self.channel.exchange_declare(self.dest_exchange,
                                       exchange_type='fanout',
                                       durable=True)
