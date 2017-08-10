@@ -75,15 +75,15 @@ class SlackHandler(logging.Handler):
 
 class BeehiveHandler(logging.Handler):
 
-    logger = logging.getLogger('waggle.logging.BeehiveHandler')
-
-    def __init__(self, url='amqp://localhost', max_retry_delay=60, max_retry_attempts=10):
+    def __init__(self, url='amqp://localhost'):
         logging.Handler.__init__(self)
 
-        self.url = url
+        self.parameters = pika.URLParameters(url)
 
-        self.max_retry_delay = max_retry_delay
-        self.max_retry_attempts = max_retry_attempts
+        # override reconnect parameters
+        self.parameters.connection_attempts = 5
+        self.parameters.retry_delay = 2.5
+        self.parameters.socket_timeout = 2.5
 
         try:
             self.model = waggle.platform.hardware()
@@ -92,7 +92,19 @@ class BeehiveHandler(logging.Handler):
             self.model = ''
             self.macaddr = ''
 
-        self.connect()
+        self.connection = pika.BlockingConnection(self.parameters)
+
+        self.channel = self.connection.channel()
+
+        self.channel.exchange_declare(exchange='logs.fanout',
+                                      exchange_type='fanout',
+                                      durable=True)
+
+        self.channel.queue_declare(queue='logs',
+                                   durable=True)
+
+        self.channel.queue_bind(queue='logs',
+                                exchange='logs.fanout')
 
     def emit(self, record):
         params = record.__dict__
@@ -113,56 +125,11 @@ class BeehiveHandler(logging.Handler):
 
         self.publish(properties, body)
 
-    def connect(self):
-        parameters = pika.URLParameters(self.url)
-
-        retry_delay = 1
-        retry_attempt = 0
-
-        while True:
-            try:
-                self.logger.info('Connecting to {}:{}.'.format(parameters.host, parameters.port))
-
-                self.connection = pika.BlockingConnection(parameters)
-
-                self.channel = self.connection.channel()
-
-                self.channel.exchange_declare(exchange='logs.fanout',
-                                              exchange_type='fanout',
-                                              durable=True)
-
-                self.channel.queue_declare(queue='logs',
-                                           durable=True)
-
-                self.channel.queue_bind(queue='logs',
-                                        exchange='logs.fanout')
-                break
-            except pika.exceptions.ConnectionClosed:
-                self.logger.warning('Could not connect, retrying in {} seconds.'.format(retry_delay))
-
-                time.sleep(retry_delay)
-
-                retry_delay *= 2
-
-                if retry_delay > self.max_retry_delay:
-                    retry_delay = self.max_retry_delay
-
-                retry_attempt += 1
-
-                if self.max_retry_attempts >= 0 and retry_attempt >= self.max_retry_attempts:
-                    raise RuntimeError('Too many connect attempts. Aborting.')
-
     def publish(self, properties, body, routing_key=''):
-        while True:
-            try:
-                self.channel.basic_publish(properties=properties,
-                                           exchange='logs.fanout',
-                                           routing_key=routing_key,
-                                           body=body)
-                break
-            except pika.exceptions.ConnectionClosed:
-                time.sleep(1)
-                self.connect()
+        self.channel.basic_publish(properties=properties,
+                                   exchange='logs.fanout',
+                                   routing_key=routing_key,
+                                   body=body)
 
 
 def getLogger(service, url='amqp://localhost'):
