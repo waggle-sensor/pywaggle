@@ -10,3 +10,5 @@ def get_spec():
     for packet in contents:
         spec[packet['id']] = packet['params']
     return spec
+
+spec = get_spec()

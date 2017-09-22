@@ -195,6 +195,8 @@ formatsize = {
 
     '3': 6,
     '7': 4,
+
+    'uint8': 1, 
 }
 
 formatdesc = {

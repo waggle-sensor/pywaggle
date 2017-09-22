@@ -1,3 +1,4 @@
-import spec
+from spec import spec
 
-print(spec.get_spec())
+for id in spec:
+    print(id, spec[id])
