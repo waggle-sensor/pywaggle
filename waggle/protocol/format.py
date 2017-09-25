@@ -5,34 +5,33 @@ Example
 
 >>> import format
 
->>> data = format.pack('1122', 32, 55, -123, -321)
+>>> data = format.waggle_pack('1122', [1, 1, 2, 2], [32, 55, -123, -321])
 >>> print(format.unpack(data))
 
 Format Reference
 
-- 1: unsigned 16 bit integer
-- 2: signed 16 bit integer
-- 3: mac address
-- 4: unsigned 24 bit integer
-- 5: signed 24 bit integer
-- 6: fixed point (-31.999, 31.999)
-- 7: array of 4 bytes
-- 8: fixed point (-127.99, 127.99)
-- 9: array of n bytes
+- a: signed integer
+- b: unsigned integer
+- c: hex string
+- d: time epoch
+- e: float
 
 '''
-from functools import partial
+
+from math import ceil
+import struct
+
+from bitstring import BitArray
 
 
-def pack_unsigned_int_into(value, buffer, offset, length):
+def pack_unsigned_int(value, length):
     assert value >= 0
+    length_in_bit = to_bit(length)
+    assert value < pow(2, length_in_bit)
 
-    for i in reversed(range(0, length)):
-        buffer[offset + i] = value & 0xFF
-        value >>= 8
+    return BitArray(length=length_in_bit, uint=value).bin
 
-
-def unpack_unsigned_int_from(buffer, offset, length):
+def unpack_unsigned_int(buffer, offset, length):
     value = 0
 
     for i in range(0, length):
@@ -41,18 +40,7 @@ def unpack_unsigned_int_from(buffer, offset, length):
 
     return value
 
-
-def pack_unsigned_int(value, length):
-    buffer = bytearray(length)
-    pack_unsigned_int_into(value, buffer, 0, length)
-    return buffer
-
-
-def unpack_unsigned_int(buffer):
-    return unpack_unsigned_int_from(buffer, 0, len(buffer))
-
-
-def pack_signed_int_into(value, buffer, offset, length):
+def pack_signed_int(value, buffer, offset, length):
     pack_unsigned_int_into(abs(value), buffer, offset, length)
 
     if value < 0:
@@ -61,7 +49,7 @@ def pack_signed_int_into(value, buffer, offset, length):
         buffer[offset + 0] &= 0x7F
 
 
-def unpack_signed_int_from(buffer, offset, length):
+def unpack_signed_int(buffer, offset, length):
     value = buffer[offset + 0] & 0x7F
 
     for i in range(1, length):
@@ -73,18 +61,7 @@ def unpack_signed_int_from(buffer, offset, length):
 
     return value
 
-
-def pack_signed_int(value, length):
-    buffer = bytearray(length)
-    pack_signed_int_into(value, buffer, 0, length)
-    return buffer
-
-
-def unpack_signed_int(buffer):
-    return unpack_signed_int_from(buffer, 0, len(buffer))
-
-
-def pack_ufloat_into(value, buffer, offset):
+def pack_float(value, buffer, offset, length):
     assert -127.99 <= value <= 127.99
 
     absvalue = abs(value)
@@ -98,7 +75,7 @@ def pack_ufloat_into(value, buffer, offset):
         buffer[offset + 0] |= 0x80
 
 
-def unpack_ufloat_from(buffer, offset):
+def unpack_float(buffer, offset):
     byte1 = buffer[offset + 0]
     byte2 = buffer[offset + 1]
     # have to be careful here, we do not want three decimal placed here.
@@ -108,114 +85,50 @@ def unpack_ufloat_from(buffer, offset):
     return value
 
 
-def pack_lfloat_into(value, buffer, offset):
-    assert -31.999 <= value <= 31.999
-
-    absvalue = abs(value)
-    intpart = int(absvalue)
-    fracpart = int(1000 * (absvalue - intpart))
-
-    buffer[offset + 0] = (intpart & 0b00011111) << 2
-    buffer[offset + 0] |= (fracpart >> 8) & 0b00000011
-    buffer[offset + 1] = fracpart & 0xFF
-
-    if value < 0:
-        buffer[offset + 0] |= 0x80
-
-
-def unpack_lfloat_from(buffer, offset):
-    byte1 = buffer[offset + 0]
-    byte2 = buffer[offset + 1]
-    value = ((byte1 & 0x7c) >> 2) + ((((byte1 & 0x03) << 8) | byte2) * 0.001)
-    if byte1 & 0x80 != 0:
-        value = value * -1
-    return value
-
-
-def pack_macaddr_into(macaddr, buffer, offset):
+def pack_hex_string(macaddr, buffer, offset):
     assert len(macaddr) == 12
 
     for i in range(0, 6):
         buffer[offset + i] = int(macaddr[2*i:2*i+2], 16)
 
 
-def unpack_macaddr_from(buffer, offset):
+def unpack_hex_string(buffer, offset):
     return ''.join(map(format_hex, (buffer[offset + i] for i in range(6))))
 
 
-def format_hex(x):
-    return '{:02X}'.format(x)
+def pack_time_epoch(macaddr, buffer, offset):
+    assert len(macaddr) == 12
+
+    for i in range(0, 6):
+        buffer[offset + i] = int(macaddr[2*i:2*i+2], 16)
 
 
-def pack_uint8array_into(array, buffer, offset):
-    buffer[offset:offset + 4] = array
-
-
-def unpack_uint8array_from(buffer, offset):
-    return buffer[offset:offset + 4]
+def unpack_time_epoch(buffer, offset):
+    return ''.join(map(format_hex, (buffer[offset + i] for i in range(6))))
 
 
 formatpack = {
-    '1': partial(pack_unsigned_int_into, length=2),
-    '2': partial(pack_signed_int_into, length=2),
-
-    '4': partial(pack_unsigned_int_into, length=3),
-    '5': partial(pack_signed_int_into, length=3),
-
-    '6': pack_ufloat_into,
-    '8': pack_lfloat_into,
-
-    '3': pack_macaddr_into,
-    '7': pack_uint8array_into,
+    'a': pack_signed_int,
+    'b': pack_unsigned_int,
+    'c': pack_hex_string,
+    'd': pack_time_epoch,
+    'e': pack_float,
 }
+
 
 formatunpack = {
-    '1': partial(unpack_unsigned_int_from, length=2),
-    '2': partial(unpack_signed_int_from, length=2),
-
-    '4': partial(unpack_unsigned_int_from, length=3),
-    '5': partial(unpack_signed_int_from, length=3),
-
-    '6': unpack_ufloat_from,
-    '8': unpack_lfloat_from,
-
-    '3': unpack_macaddr_from,
-    '7': unpack_uint8array_from,
+    'a': unpack_signed_int,
+    'b': unpack_unsigned_int,
+    'c': unpack_hex_string,
+    'd': unpack_time_epoch,
+    'e': unpack_float,
 }
 
-formatsize = {
-    '1': 2,
-    '2': 2,
+def to_byte(value):
+    return ceil(value / 8)
 
-    '4': 3,
-    '5': 3,
-
-    '6': 2,
-    '8': 2,
-
-    '3': 6,
-    '7': 4,
-
-    'uint8': 1, 
-}
-
-formatdesc = {
-    '1': 'unsigned 16 bit integer',
-    '2': 'signed 16 bit integer',
-
-    '4': 'unsigned 24 bit integer',
-    '5': 'signed 24 bit integer',
-
-    '6': 'fixed point (-31.999, 31.999)',
-    '8': 'fixed point (-127.99, 127.99)',
-
-    '3': 'mac address',
-    '7': 'array of 4 bytes',
-}
-
-
-def calcsize(format):
-    return sum(formatsize[f] for f in format)
+def to_bit(value):
+    return int(value * 8)
 
 
 def unpack_from(format, buffer, offset=0):
@@ -233,20 +146,22 @@ def unpack_from(format, buffer, offset=0):
     return tuple(values)
 
 
-def pack_into(format, buffer, offset, *values):
-    assert len(format) == len(values)
-
-    for f, v in zip(format, values):
-        formatpack[f](v, buffer, offset=offset)
-        offset += formatsize[f]
-
-
-def pack(format, *values):
-    buffer = bytearray(calcsize(format))
-    pack_into(format, buffer, 0, *values)
-    return buffer
-
-
 def unpack(format, buffer):
     assert calcsize(format) == len(buffer)
     return unpack_from(format, buffer, offset=0)
+
+def waggle_pack_into(format, length, values):
+    for f, l, v in zip(format, length, values):
+        yield formatpack[f](v, l)
+
+# =================================================
+# Waggle protocol v 0.5
+# =================================================
+def waggle_pack(format, length, values):
+    assert len(format) == len(values)
+    assert len(format) == len(length)
+
+    packed_values_in_bit = ''.join(waggle_pack_into(format, length, values))
+    return BitArray(bin=packed_values_in_bit).tobytes()
+
+

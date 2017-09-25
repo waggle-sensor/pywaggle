@@ -1,8 +1,8 @@
 # Available formats:
-# int - signed integer
-# uint8 - 8-bit unsigned integer
-# hexstring - hex string
-# timeepoch - time epoch
+# a - signed integer
+# b - unsigned integer
+# c - hex string
+# d - time epoch
 
 # Available conversions:
 # epoch_datetime - date time from time epoch
@@ -19,270 +19,270 @@
   params:
     - name: wagman_id
       length: 6
-      format: hexstring
+      format: c
 
 - id: 0x51
   params:
     - name: wagman_ver_hw_mj
       length: 0.5
-      format: uint
+      format: b
     - name: wagman_ver_hw_mi
       length: 0.5
-      format: uint
+      format: b
 
 - id: 0x52
   params:
     - name: wagman_ver_sw_mj
       length: 1
-      format: uint
+      format: b
     - name: wagman_ver_sw_mi
       length: 1
-      format: uint
+      format: b
     - name: wagman_ver_sw_p
       length: 1
-      format: uint
+      format: b
 
 - id: 0x53
   params:
     - name: wagman_ver_git
       length: 2
-      format: hexstring
+      format: c
 
 - id: 0x54
   params:
     - name: wagman_time_compile
       length: 4
-      format: timeepoch
+      format: d
       conversion: epoch_datetime
 
 - id: 0x55
   params:
     - name: wagman_time_current
       length: 4
-      format: timeepoch
+      format: d
       conversion: epoch_datetime
 
 - id: 0x56
   params:
     - name: wagman_boot_flag
       length: 1
-      format: uint
+      format: b
 
 - id: 0x57
   params:
     - name: wagman_time_lastboot
       length: 4
-      format: timeepoch
+      format: d
       conversion: epoch_datetime
 
 - id: 0x58
   params:
     - name: wagman_bootloader_nc_flag
       length: 1
-      format: uint
+      format: b
 
 - id: 0x59
   params:
     - name: wagman_boot_count
       length: 1
-      format: uint
+      format: b
 
 - id: 0x5A
   params:
     - name: wagman_current_wagman
       length: 2
-      format: uint
+      format: b
       conversion: acs764
     - name: wagman_current_nc
       length: 2
-      format: uint
+      format: b
       conversion: acs764
     - name: wagman_current_ep
       length: 2
-      format: uint
+      format: b
       conversion: acs764
     - name: wagman_current_cs
       length: 2
-      format: uint
+      format: b
       conversion: acs764
     - name: wagman_current_port4
       length: 2
-      format: uint
+      format: b
       conversion: acs764
     - name: wagman_current_port5
       length: 2
-      format: uint
+      format: b
       conversion: acs764
 
 - id: 0x5B
   params:
     - name: wagman_temperature_ncheatsink
       length: 2
-      format: uint
+      format: b
       conversion: MF52C1103F3380_NC
     - name: wagman_temperature_epheatsink
       length: 2
-      format: uint
+      format: b
       conversion: MF52C1103F3380
     - name: wagman_temperature_battery
       length: 2
-      format: uint
+      format: b
       conversion: MF52C1103F3380
     - name: wagman_temperature_brainplate
       length: 2
-      format: uint
+      format: b
       conversion: MF52C1103F3380
     - name: wagman_temperature_powersupply
       length: 2
-      format: uint
+      format: b
       conversion: MF52C1103F3380
 
 - id: 0x5C
   params:
     - name: wagman_htu21d_temperature
       length: 2
-      format: uint
+      format: b
       conversion: HTU21D_temperature
     - name: wagman_htu21d_humidity
       length: 2
-      format: uint
+      format: b
       conversion: HTU21D_humidity
 
 - id: 0x5D
   params:
     - name: wagman_hih4030_humidity
       length: 2
-      format: uint
+      format: b
       conversion: HIH4030
 
 - id: 0x5E
   params:
     - name: wagman_light
       length: 2
-      format: uint
+      format: b
       conversion: photocell
 
 - id: 0x5F
   params:
     - name: wagman_failcount_nc
       length: 1
-      format: uint
+      format: b
     - name: wagman_failcount_ep
       length: 1
-      format: uint
+      format: b
     - name: wagman_failcount_cs
       length: 1
-      format: uint
+      format: b
     - name: wagman_failcount_port4
       length: 1
-      format: uint
+      format: b
     - name: wagman_failcount_port5
       length: 1
-      format: uint
+      format: b
 
 - id: 0x60
   params:
     - name: wagman_enabled_nc
       length: 0.125
-      format: uint
+      format: b
       conversion: bool
     - name: wagman_enabled_ep
       length: 0.125
-      format: uint
+      format: b
       conversion: bool
     - name: wagman_enabled_cs
       length: 0.125
-      format: uint
+      format: b
       conversion: bool
     - name: wagman_enabled_port4
       length: 0.125
-      format: uint
+      format: b
       conversion: bool
     - name: wagman_enabled_port5
       length: 0.125
-      format: uint
+      format: b
       conversion: bool
 
 - id: 0x61
   params:
     - name: wagman_mediaselect_sd_nc
       length: 0.125
-      format: uint
+      format: b
       conversion: bool
     - name: wagman_mediaselect_sd_ep
       length: 0.125
-      format: uint
+      format: b
       conversion: bool
 
 - id: 0x62
   params:
     - name: wagman_heartbeat_nc
       length: 2
-      format: uint
+      format: b
     - name: wagman_heartbeat_ep
       length: 2
-      format: uint
+      format: b
     - name: wagman_heartbeat_cs
       length: 2
-      format: uint
+      format: b
     - name: wagman_heartbeat_port4
       length: 2
-      format: uint
+      format: b
     - name: wagman_heartbeat_port5
       length: 2
-      format: uint
+      format: b
     
 - id: 0x63
   params:
     - name: wagman_lastboot_nc
       length: 4
-      format: timeepoch
+      format: d
     - name: wagman_lastboot_ep
       length: 4
-      format: timeepoch
+      format: d
     - name: wagman_lastboot_cs
       length: 4
-      format: timeepoch
+      format: d
     - name: wagman_lastboot_port4
       length: 4
-      format: timeepoch
+      format: d
     - name: wagman_lastboot_port5
       length: 4
-      format: timeepoch
+      format: d
 
 - id: 0x64
   params:
     - name: wagman_powerfaults_nc
       length: 4
-      format: timeepoch
+      format: d
     - name: wagman_powerfaults_ep
       length: 4
-      format: timeepoch
+      format: d
     - name: wagman_powerfaults_cs
       length: 4
-      format: timeepoch
+      format: d
     - name: wagman_powerfaults_port4
       length: 4
-      format: timeepoch
+      format: d
     - name: wagman_powerfaults_port5
       length: 4
-      format: timeepoch
+      format: d
 
 - id: 0x65
   params:
     - name: wagman_bootattempt_nc
       length: 1
-      format: uint
+      format: b
     - name: wagman_bootattempt_ep
       length: 1
-      format: uint
+      format: b
     - name: wagman_bootattempt_cs
       length: 1
-      format: uint
+      format: b
     - name: wagman_bootattempt_port4
       length: 1
-      format: uint
+      format: b
     - name: wagman_bootattempt_port5
       length: 1
-      format: uint
+      format: b
 

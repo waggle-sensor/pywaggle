@@ -1,6 +1,7 @@
 import logging
 from spec import spec
 import format
+from crc import create_crc
 
 logger = logging.getLogger('protocol.encoder')
 
@@ -28,13 +29,24 @@ def encode_sub_packet(id, data=[]):
         logger.error('Length of the %s must be matched' % (str(data),))
         return None
 
-    total_length = 0.0 # in byte
-    for index, param in enumerate(params):
-        print(param)
-        value = data[index]
-        param_length = param['length']
-        param_format = param['format']
-        yield format.pack(param_format, value)
+    formats = ''.join([param['format'] for param in params])
+    lengths = [param['length'] for param in params]
+    binary = format.waggle_pack(formats, lengths, data)
+    
+    packet_length = len(binary)
+    sub_packet = bytearray(2)
+    sub_packet[0] = id
+    sub_packet[1] = 0x80 | packet_length
+    sub_packet.extend(binary)
+
+    return sub_packet
+
+    # for index, param in enumerate(params):
+    #     print(param)
+    #     value = data[index]
+    #     param_length = param['length']
+    #     param_format = param['format']
+    #     yield format.pack(param_format, value)
 
 
 '''
@@ -49,17 +61,32 @@ def encode_frame(frame_data):
         logger.error('%s must be a dictionary' % (str(frame_data),))
         return None
 
-    subpackets = []
+    body = bytearray()
     for sub_id in frame_data:
         assert isinstance(sub_id, int)
 
         sub_values = frame_data[sub_id]
         encoded = encode_sub_packet(sub_id, sub_values)
+        
         if encoded is not None:
-            subpackets.extend(encoded)
+            body.extend(encoded)
 
-    return subpackets
 
-d = {0x58: [123,]}
+    header = bytearray(3)
+    header[0] = 0xAA
+    
+    body_length = len(body)
+    assert body_length < pow(2, 16)
+    header[1] = (body_length >> 8) & 0xFF
+    header[2] = body_length & 0xFF
+
+    footer = bytearray(2)
+    footer[0] = create_crc(body)
+    footer[1] = 0x55
+
+    return bytes(header + body + footer)
+
+d = {0x5A: [123, 234, 345, 456, 567, 678]}
+# d = {0x60: [1, 0, 1, 0, 1]}
 encoded = encode_frame(d)
 print(encoded)
