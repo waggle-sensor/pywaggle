@@ -41,14 +41,6 @@ def encode_sub_packet(id, data=[]):
 
     return sub_packet
 
-    # for index, param in enumerate(params):
-    #     print(param)
-    #     value = data[index]
-    #     param_length = param['length']
-    #     param_format = param['format']
-    #     yield format.pack(param_format, value)
-
-
 '''
     Encode a frame
     @params:
@@ -85,8 +77,3 @@ def encode_frame(frame_data):
     footer[1] = 0x55
 
     return bytes(header + body + footer)
-
-d = {0x5A: [123, 234, 345, 456, 567, 678]}
-# d = {0x60: [1, 0, 1, 0, 1]}
-encoded = encode_frame(d)
-print(encoded)

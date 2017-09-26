@@ -15,38 +15,56 @@
 # photocell - photocell on Wagman
 # bool - True/False mapped from 1/0
 
+- id: 0x1D
+  params:
+    - name: SHT25_temperature
+      length: 2
+      format: b
+      conversion:
+    - name: SHT25_humidity
+      length: 2
+      format: b
+      conversion:
+
 - id: 0x50
   params:
     - name: wagman_id
       length: 6
       format: c
+      conversion:
 
 - id: 0x51
   params:
     - name: wagman_ver_hw_mj
       length: 0.5
       format: b
+      conversion:
     - name: wagman_ver_hw_mi
       length: 0.5
       format: b
+      conversion:
 
 - id: 0x52
   params:
     - name: wagman_ver_sw_mj
       length: 1
       format: b
+      conversion:
     - name: wagman_ver_sw_mi
       length: 1
       format: b
+      conversion:
     - name: wagman_ver_sw_p
       length: 1
       format: b
+      conversion:
 
 - id: 0x53
   params:
     - name: wagman_ver_git
       length: 2
       format: c
+      conversion:
 
 - id: 0x54
   params:
@@ -67,6 +85,7 @@
     - name: wagman_boot_flag
       length: 1
       format: b
+      conversion:
 
 - id: 0x57
   params:
@@ -80,12 +99,14 @@
     - name: wagman_bootloader_nc_flag
       length: 1
       format: b
+      conversion:
 
 - id: 0x59
   params:
     - name: wagman_boot_count
       length: 1
       format: b
+      conversion:
 
 - id: 0x5A
   params:
@@ -167,18 +188,23 @@
     - name: wagman_failcount_nc
       length: 1
       format: b
+      conversion:
     - name: wagman_failcount_ep
       length: 1
       format: b
+      conversion:
     - name: wagman_failcount_cs
       length: 1
       format: b
+      conversion:
     - name: wagman_failcount_port4
       length: 1
       format: b
+      conversion:
     - name: wagman_failcount_port5
       length: 1
       format: b
+      conversion:
 
 - id: 0x60
   params:
@@ -219,70 +245,90 @@
     - name: wagman_heartbeat_nc
       length: 2
       format: b
+      conversion:
     - name: wagman_heartbeat_ep
       length: 2
       format: b
+      conversion:
     - name: wagman_heartbeat_cs
       length: 2
       format: b
+      conversion:
     - name: wagman_heartbeat_port4
       length: 2
       format: b
+      conversion:
     - name: wagman_heartbeat_port5
       length: 2
       format: b
+      conversion:
     
 - id: 0x63
   params:
     - name: wagman_lastboot_nc
       length: 4
       format: d
+      conversion:
     - name: wagman_lastboot_ep
       length: 4
       format: d
+      conversion:
     - name: wagman_lastboot_cs
       length: 4
       format: d
+      conversion:
     - name: wagman_lastboot_port4
       length: 4
       format: d
+      conversion:
     - name: wagman_lastboot_port5
       length: 4
       format: d
+      conversion:
 
 - id: 0x64
   params:
     - name: wagman_powerfaults_nc
       length: 4
       format: d
+      conversion:
     - name: wagman_powerfaults_ep
       length: 4
       format: d
+      conversion:
     - name: wagman_powerfaults_cs
       length: 4
       format: d
+      conversion:
     - name: wagman_powerfaults_port4
       length: 4
       format: d
+      conversion:
     - name: wagman_powerfaults_port5
       length: 4
       format: d
+      conversion:
 
 - id: 0x65
   params:
     - name: wagman_bootattempt_nc
       length: 1
       format: b
+      conversion:
     - name: wagman_bootattempt_ep
       length: 1
       format: b
+      conversion:
     - name: wagman_bootattempt_cs
       length: 1
       format: b
+      conversion:
     - name: wagman_bootattempt_port4
       length: 1
       format: b
+      conversion:
     - name: wagman_bootattempt_port5
       length: 1
       format: b
+      conversion:
 

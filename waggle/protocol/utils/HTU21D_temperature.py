@@ -4,7 +4,7 @@
 
 def convert(value):
     # get rid of status bits
-    value = value &= 0xFFFC
+    value &= 0xFFFC
 
     t = value / float(pow(2, 16))
     temperature = -46.85 + (175.72 * t)

@@ -25,20 +25,14 @@ from bitstring import BitArray
 
 
 def pack_unsigned_int(value, length):
-    assert value >= 0
     length_in_bit = to_bit(length)
-    assert value < pow(2, length_in_bit)
+    assert 0 <= value < pow(2, length_in_bit)
 
     return BitArray(length=length_in_bit, uint=value).bin
 
 def unpack_unsigned_int(buffer, offset, length):
-    value = 0
-
-    for i in range(0, length):
-        value <<= 8
-        value |= buffer[offset + i]
-
-    return value
+    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    return value.uint
 
 def pack_signed_int(value, buffer, offset, length):
     pack_unsigned_int_into(abs(value), buffer, offset, length)
@@ -154,6 +148,12 @@ def waggle_pack_into(format, length, values):
     for f, l, v in zip(format, length, values):
         yield formatpack[f](v, l)
 
+def waggle_unpack_from(format, length, buffer):
+    offset = 0
+    for f, l in zip(format, length):
+        yield formatunpack[f](buffer, offset, l)
+        offset += l
+
 # =================================================
 # Waggle protocol v 0.5
 # =================================================
@@ -163,5 +163,9 @@ def waggle_pack(format, length, values):
 
     packed_values_in_bit = ''.join(waggle_pack_into(format, length, values))
     return BitArray(bin=packed_values_in_bit).tobytes()
+
+
+def waggle_unpack(format, length, buffer):
+    return waggle_unpack_from(format, length, buffer)
 
 

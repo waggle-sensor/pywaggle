@@ -4,7 +4,7 @@
 
 def convert(value):
     # get rid of status bits
-    value = value &= 0xFFFC
+    value &= 0xFFFC
 
     h = value / float(pow(2, 16))
     humidity = -6.0 + (125.0 * h)
