@@ -34,28 +34,29 @@ def unpack_unsigned_int(buffer, offset, length):
     value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
     return value.uint
 
-def pack_signed_int(value, buffer, offset, length):
-    pack_unsigned_int_into(abs(value), buffer, offset, length)
+def pack_signed_int(value, length):
+    length_in_bit = to_bit(length)
+    assert -1 * pow(2, length_in_bit - 1) <= value < pow(2, length_in_bit - 1)
 
-    if value < 0:
-        buffer[offset + 0] |= 0x80
-    else:
-        buffer[offset + 0] &= 0x7F
+    return BitArray(length=length_in_bit, int=value).bin    
 
 
 def unpack_signed_int(buffer, offset, length):
-    value = buffer[offset + 0] & 0x7F
+    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    return value.int
 
-    for i in range(1, length):
-        value <<= 8
-        value |= buffer[offset + i]
+def pack_float(value, length):
+    assert int(length) == 4 or int(length) == 8
+    assert isinstance(value, float)
 
-    if buffer[offset + 0] & 0x80 != 0:
-        value = -value
+    return BitArray(float=value, length=to_bit(length)).bin
 
-    return value
+def unpack_float(buffer, offset, length):
+    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    return value.float
 
-def pack_float(value, buffer, offset, length):
+
+def pack_special_float(value, buffer, offset, length):
     assert -127.99 <= value <= 127.99
 
     absvalue = abs(value)
@@ -69,7 +70,7 @@ def pack_float(value, buffer, offset, length):
         buffer[offset + 0] |= 0x80
 
 
-def unpack_float(buffer, offset):
+def unpack_special_float(buffer, offset):
     byte1 = buffer[offset + 0]
     byte2 = buffer[offset + 1]
     # have to be careful here, we do not want three decimal placed here.
