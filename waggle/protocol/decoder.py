@@ -48,7 +48,7 @@ def decode_frame(frame):
     return results
 
 
-def decode_data(data):
+def decode_data(data, auto_convert=True):
     for sensor_id, sensor_data in get_data_subpackets(data):
         try:
             params = spec[sensor_id]
@@ -58,8 +58,9 @@ def decode_data(data):
             lengths = [param['length'] for param in params]
             values = []
             for name, conversion, value, in zip(names, conversions, format.waggle_unpack(formats, lengths, sensor_data)):
-                if conversion is not None and conversion is not '':
-                    value = convert(value, conversion)
+                if auto_convert:
+                    if conversion is not None and conversion is not '':
+                        value = convert(value, conversion)
                     
                 values.append(value)
             yield sensor_id, names, values

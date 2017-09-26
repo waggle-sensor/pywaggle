@@ -16,6 +16,9 @@ Format Reference
 - d: time epoch
 - e: float
 
+- f: fixed point (-127.99, 127.99)
+- g: fixed point (-31.999, 31.999)
+
 '''
 
 from math import ceil
@@ -28,22 +31,25 @@ def pack_unsigned_int(value, length):
     length_in_bit = to_bit(length)
     assert 0 <= value < pow(2, length_in_bit)
 
-    return BitArray(length=length_in_bit, uint=value).bin
+    return BitArray(uint=value, length=length_in_bit).bin
+
 
 def unpack_unsigned_int(buffer, offset, length):
     value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
     return value.uint
 
+
 def pack_signed_int(value, length):
     length_in_bit = to_bit(length)
     assert -1 * pow(2, length_in_bit - 1) <= value < pow(2, length_in_bit - 1)
 
-    return BitArray(length=length_in_bit, int=value).bin    
+    return BitArray(int=value, length=length_in_bit).bin    
 
 
 def unpack_signed_int(buffer, offset, length):
     value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
     return value.int
+
 
 def pack_float(value, length):
     assert int(length) == 4 or int(length) == 8
@@ -51,26 +57,45 @@ def pack_float(value, length):
 
     return BitArray(float=value, length=to_bit(length)).bin
 
+
 def unpack_float(buffer, offset, length):
     value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
     return value.float
 
 
-def pack_special_float(value, buffer, offset, length):
+def pack_hex_string(value, length):
+    value = BitArray(hex=value)
+    assert value.length == to_bit(length)
+    return value.bin
+
+
+def unpack_hex_string(buffer, offset, length):
+    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    return value.hex
+
+
+def pack_time_epoch(value, length):
+    return pack_unsigned_int(value, length)
+
+
+def unpack_time_epoch(buffer, offset, length):
+    return unpack_unsigned_int(buffer, offset, length)
+
+
+def pack_float_format6(value, length=2.0):
     assert -127.99 <= value <= 127.99
 
     absvalue = abs(value)
     intpart = int(absvalue)
-    fracpart = int(100 * (absvalue - intpart))
-
-    buffer[offset + 0] = intpart & 0x7F
-    buffer[offset + 1] = fracpart & 0x7F
-
+    fracpart = int(100 * round(absvalue - intpart, 2))
+    packed = ((intpart & 0x7F) << 8) | fracpart & 0x7F
     if value < 0:
-        buffer[offset + 0] |= 0x80
+        packed |= 0x8000
+
+    return BitArray(uint=packed, length=to_bit(length)).bin
 
 
-def unpack_special_float(buffer, offset):
+def unpack_float_format6(buffer, offset, length=2.0):
     byte1 = buffer[offset + 0]
     byte2 = buffer[offset + 1]
     # have to be careful here, we do not want three decimal placed here.
@@ -80,26 +105,28 @@ def unpack_special_float(buffer, offset):
     return value
 
 
-def pack_hex_string(macaddr, buffer, offset):
-    assert len(macaddr) == 12
+def pack_float_format8(value, length=2.0):
+    assert -31.999 <= value <= 31.999
 
-    for i in range(0, 6):
-        buffer[offset + i] = int(macaddr[2*i:2*i+2], 16)
+    absvalue = abs(value)
+    intpart = int(absvalue)
+    fracpart = int(1000 * round(absvalue - intpart, 3))
 
-
-def unpack_hex_string(buffer, offset):
-    return ''.join(map(format_hex, (buffer[offset + i] for i in range(6))))
-
-
-def pack_time_epoch(macaddr, buffer, offset):
-    assert len(macaddr) == 12
-
-    for i in range(0, 6):
-        buffer[offset + i] = int(macaddr[2*i:2*i+2], 16)
+    packed = (((intpart & 0b00011111) << 2) | ((fracpart >> 8) & 0b00000011)) << 8
+    packed |= fracpart & 0xFF
+    
+    if value < 0:
+        packed |= 0x80
+    return BitArray(uint=packed, length=to_bit(length)).bin
 
 
-def unpack_time_epoch(buffer, offset):
-    return ''.join(map(format_hex, (buffer[offset + i] for i in range(6))))
+def unpack_float_format8(buffer, offset, length=2.0):
+    byte1 = buffer[offset + 0]
+    byte2 = buffer[offset + 1]
+    value = ((byte1 & 0x7c) >> 2) + ((((byte1 & 0x03) << 8) | byte2) * 0.001)
+    if byte1 & 0x80 != 0:
+        value = value * -1
+    return value
 
 
 formatpack = {
@@ -108,6 +135,9 @@ formatpack = {
     'c': pack_hex_string,
     'd': pack_time_epoch,
     'e': pack_float,
+
+    'f': pack_float_format6,
+    'g': pack_float_format8,
 }
 
 
@@ -117,37 +147,24 @@ formatunpack = {
     'c': unpack_hex_string,
     'd': unpack_time_epoch,
     'e': unpack_float,
+
+    'f': unpack_float_format6,
+    'g': unpack_float_format8,
 }
+
 
 def to_byte(value):
     return ceil(value / 8)
+
 
 def to_bit(value):
     return int(value * 8)
 
 
-def unpack_from(format, buffer, offset=0):
-    # This helps with compatibility between Python 2 and 3 in terms
-    # of how values in an array are accessed.
-    if not isinstance(buffer, bytearray):
-        buffer = bytearray(buffer)
-
-    values = []
-
-    for f in format:
-        values.append(formatunpack[f](buffer, offset))
-        offset += formatsize[f]
-
-    return tuple(values)
-
-
-def unpack(format, buffer):
-    assert calcsize(format) == len(buffer)
-    return unpack_from(format, buffer, offset=0)
-
 def waggle_pack_into(format, length, values):
     for f, l, v in zip(format, length, values):
         yield formatpack[f](v, l)
+
 
 def waggle_unpack_from(format, length, buffer):
     offset = 0
