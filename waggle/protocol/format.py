@@ -5,8 +5,8 @@ Example
 
 >>> import format
 
->>> data = format.waggle_pack('1122', [1, 1, 2, 2], [32, 55, -123, -321])
->>> print(format.unpack(data))
+>>> data = format.waggle_pack('abcd', [1, 1, 2, 4], [-32, 55, 'abcd', 1506703931])
+>>> print([e for e in format.waggle_unpack('abcd', [1, 1, 2, 4], data)])
 
 Format Reference
 
@@ -169,7 +169,10 @@ def waggle_pack_into(format, length, values):
 def waggle_unpack_from(format, length, buffer):
     offset = 0
     for f, l in zip(format, length):
-        yield formatunpack[f](buffer, offset, l)
+        if l == 0:
+            yield None
+        else:
+            yield formatunpack[f](buffer, offset, l)
         offset += l
 
 # =================================================

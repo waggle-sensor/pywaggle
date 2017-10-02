@@ -5,6 +5,9 @@ from crc import create_crc
 
 logger = logging.getLogger('protocol.encoder')
 
+# protocol_version 1 is used in lower or equal to coresense firmware 3.12
+protocol_version = 2
+
 '''
     Encode a sub packet
     @params:
@@ -68,8 +71,9 @@ def encode_frame(frame_data):
     header[0] = 0xAA
     
     body_length = len(body)
-    assert body_length < pow(2, 16)
-    header[1] = (body_length >> 8) & 0xFF
+    assert body_length < pow(2, 8)
+    sequence_number = 0
+    header[1] = ((sequence_number & 0x0F) << 4) | protocol_version & 0x0F
     header[2] = body_length & 0xFF
 
     footer = bytearray(2)

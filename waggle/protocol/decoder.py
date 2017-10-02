@@ -10,14 +10,17 @@ logger = logging.getLogger('protocol.decoder')
     Decode a frame
     @params:
         - A byte array of the frame
+        - (optional) True for applying conversions
     @return:
         dict {sensorid: values, ...}
 '''
-def decode_frame(frame):
+def decode_frame(frame, required_version=2):
     if not isinstance(frame, bytearray) and not isinstance(frame, bytes):
         raise TypeError('frame must be byte-like type object')
 
     header = frame[0]
+    sequence_number = (frame[1] >> 4) & 0x0F
+    version =  frame[1] & 0x0F
     length = frame[2]
     crc = frame[-2]
     footer = frame[-1]
@@ -28,6 +31,9 @@ def decode_frame(frame):
 
     if footer != 0x55:
         raise RuntimeError('invalid end byte')
+
+    if version != required_version:
+        raise RuntimeError('invalid protocol version: target version is %d' % (required_version,))
 
     if length != len(frame) - 5:
         raise RuntimeError('invalid length')
@@ -48,7 +54,7 @@ def decode_frame(frame):
     return results
 
 
-def decode_data(data, auto_convert=True):
+def decode_data(data):
     for sensor_id, sensor_data in get_data_subpackets(data):
         try:
             params = spec[sensor_id]
@@ -56,14 +62,8 @@ def decode_data(data, auto_convert=True):
             conversions = [param['conversion'] for param in params]
             formats = ''.join([param['format'] for param in params])
             lengths = [param['length'] for param in params]
-            values = []
-            for name, conversion, value, in zip(names, conversions, format.waggle_unpack(formats, lengths, sensor_data)):
-                if auto_convert:
-                    if conversion is not None and conversion is not '':
-                        value = convert(value, conversion)
-                    
-                values.append(value)
-            yield sensor_id, names, values
+
+            yield sensor_id, names, format.waggle_unpack(formats, lengths, sensor_data)
         except KeyError:
             logger.warning('could not decode subpacket: id={:02X} data={}'.format(sensor_id, hexlify(sensor_data).decode()))
             continue

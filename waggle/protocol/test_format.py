@@ -11,7 +11,7 @@ class WaggleFormatTest(unittest.TestCase):
             value = pow(2, x)
             length = float(x + 1) / 8
             packed_bit = format.pack_unsigned_int(value, length)
-            packed_byte = BitArray(bin=packed_bit).tobytes()
+            packed_byte = BitArray(bin=packed_bit).tobytes() 
             unpacked = format.unpack_unsigned_int(packed_byte, 0, length)
             
             self.assertEqual(value, unpacked)
