@@ -197,4 +197,14 @@ orientation.x : 2
 orientation.y : 2
 orientation.z : 2
 index : 4
+
+FC
+Rain Gauge
+tip_count : 1
+
+FB
+Soil Moisture
+dielectric : 6
+conductivity : 6
+temperature : 6
 ''')
