@@ -6,6 +6,23 @@ from binascii import hexlify
 logger = logging.getLogger('coresense.utils')
 
 
+def populate(results):
+    try:
+        tip_count = results['Rain Gauge']['tip_count']
+        results['Rain Gauge']['rain_inches'] = float(tip_count) * 0.01
+    except:
+        pass
+
+    try:
+        dielectric = results['Soil Moisture']['dielectric']
+        volumetric_water_content = 4.3e-6 * dielectric**3 - 5.5e-4 * dielectric**2 + 2.92e-2 * dielectric - 5.3e-2
+        results['Soil Moisture']['volumetric_water_content'] = volumetric_water_content
+    except:
+        pass
+
+    return results
+
+
 def decode_frame(frame):
     if not isinstance(frame, bytearray) and not isinstance(frame, bytes):
         raise TypeError('frame must be byte-like type object')
@@ -36,7 +53,7 @@ def decode_frame(frame):
             results[name] = {}
         results[name].update(values)
 
-    return results
+    return populate(results)
 
 
 def decode_coresense_data(data):
