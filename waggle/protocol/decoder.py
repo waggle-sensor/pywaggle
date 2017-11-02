@@ -1,7 +1,7 @@
 import logging
 from .spec import spec
-import .format
-import .utils
+from . import format
+from . import utils
 from .crc import create_crc
 
 logger = logging.getLogger('protocol.decoder')
