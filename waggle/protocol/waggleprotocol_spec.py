@@ -19,7 +19,7 @@
 # bool - True/False mapped from 1/0
 # TMP112 - TMP112 temperature sensor
 # pr103j2 - PR103J2 temperature sensor
-
+waggleprotocol_spec = '''
 - id: 0xFD
   params:
     - name: metsense_ver_hw_mj
@@ -521,4 +521,4 @@
       length: 1
       format: b
       conversion:
-
+'''
