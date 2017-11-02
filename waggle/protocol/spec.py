@@ -1,6 +1,6 @@
 import yaml
 
-from waggleprotocol_spec import waggleprotocol_spec
+from . import waggleprotocol_spec
 
 def get_spec(spec_str):
     spec = {}
@@ -15,4 +15,4 @@ def get_spec(spec_str):
         spec[packet['id']] = packet['params']
     return spec
 
-spec = get_spec(waggleprotocol_spec)
+spec = get_spec(waggleprotocol_spec.waggleprotocol_spec)
