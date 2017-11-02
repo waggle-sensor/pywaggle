@@ -20,4 +20,5 @@ setup(
         'waggle.protocol.utils',
         'waggle.coresense',
     ],
+    install_package_data=True,
 )
