@@ -10,7 +10,8 @@ setup(
         'crcmod',
         'requests',
         'pyserial',
-        'pyyaml'
+        'pyyaml',
+        'bitstring'
     ],
     packages=[
         'waggle',
