@@ -2739,7 +2739,7 @@ def binary_search(array, value, offset=0):
 
 
 def convert(value):
-	resistance = 47000 * (1023.00/value - 1)  # R_t
+      resistance = 47000 * (1023.00/value - 1)  # R_t
 
       index = binary_search(y, resistance)
       assert index <= len(y)
