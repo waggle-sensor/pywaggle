@@ -74,7 +74,8 @@ def encode_frame(frame_data):
     assert body_length < pow(2, 8)
     sequence_number = 0
     header[1] = ((sequence_number & 0x0F) << 4) | protocol_version & 0x0F
-    header[2] = body_length & 0xFF
+    header[2] = sequence_number
+    header[3] = body_length & 0xFF
 
     footer = bytearray(2)
     footer[0] = create_crc(body)

@@ -19,12 +19,13 @@ def decode_frame(frame, required_version=2):
         raise TypeError('frame must be byte-like type object')
 
     header = frame[0]
-    sequence_number = (frame[1] >> 4) & 0x0F
+    packet_type = (frame[1] >> 4) & 0x0F
     version =  frame[1] & 0x0F
-    length = frame[2]
+    sequence_number = frame[2]
+    length = frame[3]
     crc = frame[-2]
     footer = frame[-1]
-    data = frame[3:-2]
+    data = frame[4:-2]
 
     if header != 0xAA:
         raise RuntimeError('invalid start byte')
