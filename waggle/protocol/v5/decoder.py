@@ -36,7 +36,7 @@ def decode_frame(frame, required_version=2):
     if version != required_version:
         raise RuntimeError('invalid protocol version: target version is %d' % (required_version,))
 
-    if length != len(frame) - 5:
+    if length != len(frame) - 6:
         raise RuntimeError('invalid length')
 
     if crc != create_crc(data):
