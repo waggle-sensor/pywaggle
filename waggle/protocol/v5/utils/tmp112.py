@@ -20,4 +20,8 @@
 # }
 
 def convert(value):
-    return value
+    if (value >> 15) & 0x01 == 0:
+        pass
+    else:
+        pass
+    return value, 'C'

@@ -58,7 +58,7 @@ waggleprotocol_spec = '''
   params:
     - name: metsense_tmp112
       length: 2
-      format: f
+      format: b
       conversion: tmp112
 
 - id: 0x02
