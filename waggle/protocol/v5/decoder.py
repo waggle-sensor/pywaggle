@@ -106,7 +106,7 @@ def convert(value, sensor_id, name):
         return value
     
     try:
-        module = getattr(utils, conversion_name)
+        module = getattr(utils, conversion_name[0])
         return module.convert(value)
     except AttributeError:
         logging.warning('No valid conversion loaded for %s' % (name,))
