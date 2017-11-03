@@ -95,9 +95,18 @@ def get_data_subpackets(data):
 
     return subpackets
 
-def convert(value, name):
+def convert(value, sensor_id, name):
+    if not sensor_id in spec:
+        return value
+
+    conversion_name = [param['conversion'] for param in spec[sensor_id] if param['name'] == name]
+    if len(conversion_name) == 0:
+        return value
+    elif conversion_name[0] is None:
+        return value
+    
     try:
-        module = getattr(utils, name)
+        module = getattr(utils, conversion_name)
         return module.convert(value)
     except AttributeError:
         logging.warning('No valid conversion loaded for %s' % (name,))

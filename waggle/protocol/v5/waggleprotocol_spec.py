@@ -59,25 +59,25 @@ waggleprotocol_spec = '''
     - name: metsense_tmp112
       length: 2
       format: f
-      conversion: TMP112
+      conversion: tmp112
 
 - id: 0x02
   params:
     - name: metsense_htu21d_temperature
       length: 2
       format: b
-      conversion: HTU21D_temperature
+      conversion: htu21d_temperature
     - name: metsense_htu21d_humidity
       length: 2
       format: b
-      conversion: HTU21D_humidity
+      conversion: htu21d_humidity
 
 - id: 0x03
   params:
     - name: metsense_hih4030_humidity
       length: 2
       format: b
-      conversion: HIH4030
+      conversion: hih4030
 
 - id: 0x04
   params:
@@ -330,41 +330,41 @@ waggleprotocol_spec = '''
     - name: wagman_temperature_ncheatsink
       length: 2
       format: b
-      conversion: MF52C1103F3380_NC
+      conversion: mf52c1103f3380_nc
     - name: wagman_temperature_epheatsink
       length: 2
       format: b
-      conversion: MF52C1103F3380
+      conversion: mf52c1103f3380
     - name: wagman_temperature_battery
       length: 2
       format: b
-      conversion: MF52C1103F3380
+      conversion: mf52c1103f3380
     - name: wagman_temperature_brainplate
       length: 2
       format: b
-      conversion: MF52C1103F3380
+      conversion: mf52c1103f3380
     - name: wagman_temperature_powersupply
       length: 2
       format: b
-      conversion: MF52C1103F3380
+      conversion: mf52c1103f3380
 
 - id: 0x5C
   params:
     - name: wagman_htu21d_temperature
       length: 2
       format: b
-      conversion: HTU21D_temperature
+      conversion: htu21d_temperature
     - name: wagman_htu21d_humidity
       length: 2
       format: b
-      conversion: HTU21D_humidity
+      conversion: htu21d_humidity
 
 - id: 0x5D
   params:
     - name: wagman_hih4030_humidity
       length: 2
       format: b
-      conversion: HIH4030
+      conversion: hih4030
 
 - id: 0x5E
   params:
