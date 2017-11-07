@@ -20,8 +20,16 @@
 # }
 
 def convert(value):
-    if (value >> 15) & 0x01 == 0:
-        pass
+    raw_t = value[0x01]['metsense_tmp112']
+
+    if (raw_t >> 15) == 0:
+        # it is a positive temperature
+        h = (raw_t >> 8) << 5
+        l = (raw_t & 0xFF) >> 3
+        temperature = round((((h | l) & 0x0FFF) * 0.0625), 2)
     else:
-        pass
-    return value, 'C'
+        h = (~(raw_t >> 8)) << 5
+        l = (~(raw_t & 0xFF)) >> 3
+        temperature = round((((h | l) & 0x0FFF) * -0.0625), 2)
+
+    return temperature, 'C'

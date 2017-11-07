@@ -58,9 +58,8 @@ def decode_frame(frame, required_version=2):
 def decode_data(data):
     for sensor_id, sensor_data in get_data_subpackets(data):
         try:
-            params = spec[sensor_id]
+            params = spec[sensor_id]['params']
             names = [param['name'] for param in params]
-            conversions = [param['conversion'] for param in params]
             formats = ''.join([param['format'] for param in params])
             lengths = [param['length'] for param in params]
 
@@ -95,20 +94,18 @@ def get_data_subpackets(data):
 
     return subpackets
 
-def convert(value, sensor_id, name):
+def convert(values, sensor_id):
     if not sensor_id in spec:
-        return value
+        return values
 
-    conversion_name = [param['conversion'] for param in spec[sensor_id] if param['name'] == name]
-    if len(conversion_name) == 0:
-        return value
-    elif conversion_name[0] is None:
-        return value
+    conversion_name = spec[sensor_id]['conversion']
+    if conversion_name is None:
+        return values
     
     try:
-        module = getattr(utils, conversion_name[0])
-        return module.convert(value)
+        module = getattr(utils, conversion_name)
+        return module.convert(values)
     except AttributeError:
-        logging.warning('No valid conversion loaded for %s' % (name,))
-    return value
+        logging.warning('No valid conversion loaded for %s' % (sensor_id,))
+    return values
     

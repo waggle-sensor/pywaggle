@@ -2728,19 +2728,20 @@ points = [(float(t[0]), float(t[1])) for t in [tuple(l.split(' ')) for l in [lin
 x, y = zip(*points)
 
 def binary_search(array, value, offset=0):
-      half_array = array[int(len(array)/2)]
-      # print(offset)
-      if len(array) == 1:
-            return offset
-      elif value <= half_array:
-            return binary_search(array[int(len(array)/2):], value, offset=offset+int(len(array)/2))
-      else:
-            return binary_search(array[:int(len(array)/2)], value, offset=offset)
+    half_array = array[int(len(array)/2)]
+    # print(offset)
+    if len(array) == 1:
+        return offset
+    elif value <= half_array:
+        return binary_search(array[int(len(array)/2):], value, offset=offset+int(len(array)/2))
+    else:
+        return binary_search(array[:int(len(array)/2)], value, offset=offset)
 
 
 def convert(value):
-      resistance = 47000 * (1023.00/value - 1)  # R_t
+    raw_r = value[0x05]['metsense_pr103j2_temperature']
+    resistance = 47000 * (1023.00/raw_r - 1)  # R_t
 
-      index = binary_search(y, resistance)
-      assert index <= len(y)
-      return x[index], 'C'
+    index = binary_search(y, resistance)
+    assert index <= len(y)
+    return x[index], 'C'
