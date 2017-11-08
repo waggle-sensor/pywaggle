@@ -2745,7 +2745,6 @@ def convert(value):
     index = binary_search(y, resistance)
     assert index <= len(y)
 
-    value['metsense_pr103j2_temperature'] = []
-    value['metsense_pr103j2_temperature'].extend((x[index], 'C'))
+    value['metsense_pr103j2_temperature'] = (x[index], 'C')
 
     return value

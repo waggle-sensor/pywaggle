@@ -19,6 +19,7 @@ Format Reference
 - f: fixed point (-127.99, 127.99)
 - g: fixed point (-31.999, 31.999)
 
+- h: string
 '''
 
 from math import ceil
@@ -128,6 +129,8 @@ def unpack_float_format8(buffer, offset, length=2.0):
         value = value * -1
     return value
 
+def unpack_string(value, offset, length):
+    return value.decode("utf-8").strip()
 
 formatpack = {
     'a': pack_signed_int,
@@ -150,6 +153,8 @@ formatunpack = {
 
     'f': unpack_float_format6,
     'g': unpack_float_format8,
+
+    'h': unpack_string
 }
 
 

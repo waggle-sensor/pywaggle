@@ -22,9 +22,7 @@ def convert(value):
     h = raw_h / float(pow(2, 16))
     humidity = -6.0 + (125.0 * h)
 
-    value['metsense_htu21d_temperature'] = []
-    value['metsense_htu21d_temperature'].extend((round(temperature, 2), 'C'))
-    value['metsense_htu21d_humidity'] = []
-    value['metsense_htu21d_humidity'].extend((round(humidity, 2), '%RH'))
+    value['metsense_htu21d_temperature'] = (round(temperature, 2), 'C')
+    value['metsense_htu21d_humidity'] = (round(humidity, 2), '%RH')
 
     return value

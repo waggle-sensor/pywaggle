@@ -25,8 +25,7 @@ def convert(value):
     if converted_value > 128.0:
         converted_value -= 256.0
 
-    value['lightsense_tmp421'] = []
-    value['lightsense_tmp421'].extend((converted_value, 'C'))
+    value['lightsense_tmp421'] = (converted_value, 'C')
     
 
     return value

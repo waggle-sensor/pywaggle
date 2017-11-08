@@ -132,13 +132,13 @@ waggleprotocol_spec = '''
   params:
     - name: lightsense_hmc5883l_hx
       length: 2
-      format: b
+      format: a
     - name: lightsense_hmc5883l_hz
       length: 2
-      format: b
+      format: a
     - name: lightsense_hmc5883l_hy
       length: 2
-      format: b
+      format: a
 
 - id: 0x0B
   conversion: hih6130
@@ -192,15 +192,22 @@ waggleprotocol_spec = '''
       length: 2
       format: b
 
-- id: 0x1D
-  conversion: 
+# - id: 0x1D
+#   conversion: 
+#   params:
+#     - name: metsense_sht25_temperature
+#       length: 2
+#       format: b
+#     - name: metsense_sht25_humidity
+#       length: 2
+#       format: b
+
+- id: 0x2A
+  conversion: chemsense
   params:
-    - name: metsense_sht25_temperature
-      length: 2
-      format: b
-    - name: metsense_sht25_humidity
-      length: 2
-      format: b
+    - name: chemsense_raw
+      length: 59
+      format: h
 
 - id: 0x50
   conversion: 

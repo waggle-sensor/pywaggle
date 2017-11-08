@@ -11,6 +11,7 @@ def convert(value):
 
     irrad = round(value_voltage_divider / 0.001944, 4)   # 405.1 unit: mA/lux
 
-    value['lightsense_apds_9006_020_light'] = (irrad, 'lux')
+    # value['lightsense_apds_9006_020_light'] = (irrad, 'lux')
+    value['lightsense_apds_9006_020_light'] = (raw_l, 'raw')
 
     return value

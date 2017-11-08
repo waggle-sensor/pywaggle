@@ -19,7 +19,6 @@ def convert(value):
         1.0 * c1 * pow(10, -6) * raw_t + \
         -1.5 * c0 * pow(10, -2)), 2)
 
-    value['metsense_tsys01_temperature'] = []
-    value['metsense_tsys01_temperature'].extend((temperature, 'C'))
+    value['metsense_tsys01_temperature'] = (temperature, 'C')
 
     return value

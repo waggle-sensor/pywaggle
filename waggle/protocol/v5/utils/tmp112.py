@@ -32,7 +32,6 @@ def convert(value):
         l = (~(raw_t & 0xFF)) >> 3
         temperature = round((((h | l) & 0x0FFF) * -0.0625), 2)
 
-    value['metsense_tmp112'] = []
-    value['metsense_tmp112'].extend((temperature, 'C'))
+    value['metsense_tmp112'] = (temperature, 'C')
 
     return value

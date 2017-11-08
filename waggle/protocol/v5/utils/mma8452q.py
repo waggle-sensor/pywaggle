@@ -12,12 +12,8 @@ def convert(value):
             gcount -= 0x1000
         raw[i] = round(gcount / ((1 << 12) / 4) , 4)
 
-    value['metsense_mma8452q_acc_x'] = []
-    value['metsense_mma8452q_acc_y'] = []
-    value['metsense_mma8452q_acc_z'] = []
-
-    value['metsense_mma8452q_acc_x'].extend((raw[0], 'gx'))
-    value['metsense_mma8452q_acc_y'].extend((raw[1], 'gy'))
-    value['metsense_mma8452q_acc_z'].extend((raw[2], 'gz'))
+    value['metsense_mma8452q_acc_x'] = (raw[0], 'gx')
+    value['metsense_mma8452q_acc_y'] = (raw[1], 'gy')
+    value['metsense_mma8452q_acc_z'] = (raw[2], 'gz')
 
     return value

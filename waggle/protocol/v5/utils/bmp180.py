@@ -60,11 +60,7 @@ def convert(value):
     x2 = int(-7357 * p) >> 16
     pressure = int(p + ((x1 + x2 + 3791) >> 4)) / 100
 
-
-    value['metsense_bmp180_temperature'] = []
-    value['metsense_bmp180_pressure'] = [] 
-
-    value['metsense_bmp180_temperature'].extend((temperature, 'C'))
-    value['metsense_bmp180_pressure'].extend((pressure, 'hPa'))
+    value['metsense_bmp180_temperature'] = (temperature, 'C')
+    value['metsense_bmp180_pressure'] = (pressure, 'hPa')
 
     return value
