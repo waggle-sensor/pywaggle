@@ -2739,9 +2739,13 @@ def binary_search(array, value, offset=0):
 
 
 def convert(value):
-    raw_r = value[0x05]['metsense_pr103j2_temperature']
+    raw_r = value['metsense_pr103j2_temperature']
     resistance = 47000 * (1023.00/raw_r - 1)  # R_t
 
     index = binary_search(y, resistance)
     assert index <= len(y)
-    return x[index], 'C'
+
+    value['metsense_pr103j2_temperature'] = []
+    value['metsense_pr103j2_temperature'].extend((x[index], 'C'))
+
+    return value

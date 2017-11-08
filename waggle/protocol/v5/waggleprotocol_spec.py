@@ -102,13 +102,13 @@ waggleprotocol_spec = '''
   params:
     - name: metsense_mma8452q_acc_x
       length: 2
-      format: a
+      format: b
     - name: metsense_mma8452q_acc_y
       length: 2
-      format: a
+      format: b
     - name: metsense_mma8452q_acc_z
       length: 2
-      format: a
+      format: b
 #    - name: metsense_mma8452q_vibration
 #      length: 0
 #      format: e
@@ -133,10 +133,10 @@ waggleprotocol_spec = '''
     - name: lightsense_hmc5883l_hx
       length: 2
       format: b
-    - name: lightsense_hmc5883l_hy
+    - name: lightsense_hmc5883l_hz
       length: 2
       format: b
-    - name: lightsense_hmc5883l_hz
+    - name: lightsense_hmc5883l_hy
       length: 2
       format: b
 
@@ -153,21 +153,21 @@ waggleprotocol_spec = '''
 - id: 0x0C
   conversion: apds_9006_020
   params:
-    - name: lightsense_apds_9006_020
+    - name: lightsense_apds_9006_020_light
       length: 2
       format: b
 
 - id: 0x0D
   conversion: tsl260
   params:
-    - name: lightsense_tsl260
+    - name: lightsense_tsl260_light
       length: 2
       format: b
 
 - id: 0x0E
   conversion: tsl250rdls
   params:
-    - name: lightsense_tsl250
+    - name: lightsense_tsl250_light
       length: 2
       format: b
 
@@ -185,7 +185,7 @@ waggleprotocol_spec = '''
       length: 2
       format: b
 
-- id: 0x11
+- id: 0x13
   conversion: tmp421
   params:
     - name: lightsense_tmp421

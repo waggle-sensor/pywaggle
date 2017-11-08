@@ -15,9 +15,14 @@
 # GND
 
 def convert(value):
+    raw_p = value['wagman_light']
     v_in = 5.0
     r2 = 23000.0
 
-    v = float(value) / 1024.0 * 5.0
+    v = float(raw_p) / 1024.0 * 5.0
     r_photo = r2 * (v_in / v - 1)
-    return int(r_photo), 'ohm'
+
+    value['wagman_light'] = []
+    value['wagman_light'].extend((int(r_photo), 'ohm'))
+
+    return value

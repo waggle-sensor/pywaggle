@@ -5,8 +5,8 @@
 # humidity = -6 + 125 * raw_value / 2^16
 
 def convert(value):
-    raw_t = value[0x02]['metsense_htu21d_temperature']
-    raw_h = value[0x02]['metsense_htu21d_humidity']
+    raw_t = value['metsense_htu21d_temperature']
+    raw_h = value['metsense_htu21d_humidity']
 
     raw_t &= 0xFFFC
     raw_h &= 0xFFFC
@@ -22,6 +22,9 @@ def convert(value):
     h = raw_h / float(pow(2, 16))
     humidity = -6.0 + (125.0 * h)
 
+    value['metsense_htu21d_temperature'] = []
+    value['metsense_htu21d_temperature'].extend((round(temperature, 2), 'C'))
+    value['metsense_htu21d_humidity'] = []
+    value['metsense_htu21d_humidity'].extend((round(humidity, 2), '%RH'))
 
-
-    return round(temperature, 2), 'C', round(humidity, 2), '%RH'
+    return value

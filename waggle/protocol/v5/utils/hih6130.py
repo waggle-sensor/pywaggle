@@ -7,14 +7,20 @@
 # 125 C = 2^14 - 1 counts
 
 def convert(value):
-    raw_t = value[0x0B]['lightsense_hih6130_temperature']
-    raw_h = value[0x0B]['lightsense_hih6130_humidity']
+    raw_t = value['lightsense_hih6130_temperature']
+    raw_h = value['lightsense_hih6130_humidity']
 
-    masked_t = (raw_t >> 2) & 0x3FFF
-    temperature = float(masked_t / 4) * 1.0071415e-2 - 40.0
+    # masked_t = (raw_t >> 2) & 0x3FFF
+    temperature = float(raw_t / 4) * 1.0071415e-2 - 40.0
 
-    # masked_h = raw_h & 0x3FFF
-    humidity = float(raw_h) * 6.103888e-3
+    masked_h = raw_h & 0x3FFF
+    humidity = float(masked_h) * 6.103888e-3
 
 
-    return temperature, 'C', humidity, '%RH'
+    value['lightsense_hih6130_temperature'] = []
+    value['lightsense_hih6130_humidity'] = []
+
+    value['lightsense_hih6130_temperature'].extend((round(temperature, 2), 'C'))
+    value['lightsense_hih6130_humidity'].extend((round(humidity, 2), '%RH'))
+
+    return value

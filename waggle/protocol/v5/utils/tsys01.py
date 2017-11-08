@@ -10,7 +10,7 @@ def convert(value):
 
 
     # assert len(coefficients) == 5
-    raw_t = value[0x09]['metsense_tsys01_temperature']
+    raw_t = value['metsense_tsys01_temperature']
     raw_t >>= 8
 
     temperature = round((-2.0 * c4 * pow(10, -21) * pow(raw_t, 4) + \
@@ -19,4 +19,7 @@ def convert(value):
         1.0 * c1 * pow(10, -6) * raw_t + \
         -1.5 * c0 * pow(10, -2)), 2)
 
-    return temperature, 'C'
+    value['metsense_tsys01_temperature'] = []
+    value['metsense_tsys01_temperature'].extend((temperature, 'C'))
+
+    return value

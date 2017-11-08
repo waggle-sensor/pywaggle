@@ -27,12 +27,12 @@ def convert(value):
     mode = 3
 
     # raw reading
-    raw_t = value[0x04]['metsense_bmp180_temperature']
-    raw_p = value[0x04]['metsense_bmp180_pressure']
+    raw_t = value['metsense_bmp180_temperature']
+    raw_p = value['metsense_bmp180_pressure']
     raw_p >>= (8 - mode)
 
     # temperature
-    x1 = ((raw - ac6) * ac5) >> 15
+    x1 = ((raw_t - ac6) * ac5) >> 15
     x2 = (mc << 11) / (x1 + md)
     raw_t = x1 + x2
     temperature = int(raw_t + 8) >> 4
@@ -48,7 +48,7 @@ def convert(value):
     x2 = (b1 * (int(raw_t * raw_t) >> 12)) >> 16;
     x3 = ((x1 + x2) + 2) >> 2;
     b4 = (ac4 * (x3 + 32768)) >> 15;
-    b7 = ((raw - b3) * (50000 >> mode));
+    b7 = ((raw_p - b3) * (50000 >> mode));
 
     if (b7 < 0x80000000):
         p = (b7 << 1) / b4
@@ -61,4 +61,10 @@ def convert(value):
     pressure = int(p + ((x1 + x2 + 3791) >> 4)) / 100
 
 
-    return temperature, 'C', pressure, 'hPa'
+    value['metsense_bmp180_temperature'] = []
+    value['metsense_bmp180_pressure'] = [] 
+
+    value['metsense_bmp180_temperature'].extend((temperature, 'C'))
+    value['metsense_bmp180_pressure'].extend((pressure, 'hPa'))
+
+    return value
