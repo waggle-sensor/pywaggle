@@ -227,8 +227,8 @@ waggleprotocol_spec = '''
   conversion: alpha_raw
   params:
     - name: alpha_firmware
-      length: 3
-      format: c
+      length: 2
+      format: h
 
 - id: 0x50
   conversion: 

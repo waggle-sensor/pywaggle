@@ -45,10 +45,10 @@ def decode_frame(frame, required_version=2):
     # merge resulting entries
     results = {}
 
-    for sensor_id, names, values in decode_data(data):
+    for sensor_id, names, values in decode_data(data):\
         if sensor_id not in results:
             results[sensor_id] = {}
-            
+
         for name, value in zip(names, values):
             results[sensor_id][name] = value
 
@@ -56,6 +56,7 @@ def decode_frame(frame, required_version=2):
 
 
 def decode_data(data):
+    print("data ", data)
     for sensor_id, sensor_data in get_data_subpackets(data):
         try:
             params = spec[sensor_id]['params']
