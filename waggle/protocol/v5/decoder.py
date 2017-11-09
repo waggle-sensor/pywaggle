@@ -48,7 +48,7 @@ def decode_frame(frame, required_version=2):
     for sensor_id, names, values in decode_data(data):
         if sensor_id not in results:
             results[sensor_id] = {}
-        
+            
         for name, value in zip(names, values):
             results[sensor_id][name] = value
 
@@ -62,6 +62,10 @@ def decode_data(data):
             names = [param['name'] for param in params]
             formats = ''.join([param['format'] for param in params])
             lengths = [param['length'] for param in params]
+
+            if sensor_data is None:
+                yield sensor_id, names, ['invalid']*len(names)
+                continue
 
             yield sensor_id, names, format.waggle_unpack(formats, lengths, sensor_data)
         except KeyError:
@@ -88,6 +92,8 @@ def get_data_subpackets(data):
 
         if valid:
             subpackets.append((sensor_id, sensor_data))
+        else:
+            subpackets.append((sensor_id, None))
 
     if offset != len(data):
         logger.warning('Subpacket lengths do not total to payload length! offset = {}, length = {}'.format(offset, len(data)))

@@ -209,6 +209,27 @@ waggleprotocol_spec = '''
       length: 59
       format: h
 
+- id: 0x2B
+  conversion: alpha_status
+  params:
+    - name: alpha_status
+      length: 1
+      format: a
+
+- id: 0x29
+  conversion: alpha_raw
+  params:
+    - name: alpha_serial
+      length: 20
+      format: c
+
+- id: 0x30
+  conversion: alpha_raw
+  params:
+    - name: alpha_firmware
+      length: 3
+      format: c
+
 - id: 0x50
   conversion: 
   params:
