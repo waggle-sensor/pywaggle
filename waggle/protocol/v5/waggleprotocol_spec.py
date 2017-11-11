@@ -7,6 +7,9 @@
 # f: fixed point (-127.99, 127.99)
 # g: fixed point (-31.999, 31.999)
 
+# h - string
+# i - byte
+
 # Available conversions:
 # epoch_datetime - date time from time epoch
 # acs764 - ACS764 current sensor on Wagman
@@ -202,6 +205,13 @@ waggleprotocol_spec = '''
 #       length: 2
 #       format: b
 
+- id: 0x16
+  conversion: chemsense_config
+  params:
+    - name: chemsense_config
+      length: 1514
+      format: i
+
 - id: 0x2A
   conversion: chemsense
   params:
@@ -216,19 +226,33 @@ waggleprotocol_spec = '''
       length: 1
       format: a
 
+- id: 0x28
+  conversion: alpha_histo
+  params:
+    - name: alpha_histo
+      length: 62
+      format: i
+
 - id: 0x29
   conversion: alpha_raw
   params:
     - name: alpha_serial
       length: 20
-      format: c
+      format: h
 
 - id: 0x30
   conversion: alpha_raw
   params:
     - name: alpha_firmware
       length: 2
-      format: h
+      format: i
+
+- id: 0x31
+  conversion: alpha_config
+  params:
+    - name: alpha_config
+      length: 128
+      format: i
 
 - id: 0x50
   conversion: 
