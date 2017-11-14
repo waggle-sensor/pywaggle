@@ -226,6 +226,26 @@ waggleprotocol_spec = '''
       length: 1
       format: a
 
+- id: 0x2C
+  conversion: onset_rain
+  params:
+    - name: onset_rain
+      length: 1
+      format: b
+
+- id: 0x2D
+  conversion: decagon_soil
+  params:
+    - name: dielectric
+      length: 2
+      format: a
+    - name: volumatric_water_content
+      length: 2
+      format: a
+    - name: temperature
+      length: 2
+      format: a
+
 - id: 0x28
   conversion: alpha_histo
   params:

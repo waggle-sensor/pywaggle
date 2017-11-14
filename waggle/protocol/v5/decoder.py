@@ -58,12 +58,10 @@ def decode_frame(frame, required_version=2):
             results[sensor_id] = {}
 
         for name, value in zip(names, values):
-            print(value, type(value), value[-1])
             if name not in results[sensor_id]:
                 results[sensor_id][name] = value
             else:
                 results[sensor_id][name] += value
-                print(results[sensor_id][name], 'hello')
 
 
     return results
