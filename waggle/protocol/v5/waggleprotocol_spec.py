@@ -120,8 +120,8 @@ waggleprotocol_spec = '''
   conversion: spv1840lr5h-b
   params:
     - name: metsense_spv1840lr5h-b
-      length: 2
-      format: b
+      length: 128
+      format: i
 
 - id: 0x09
   conversion: tsys01

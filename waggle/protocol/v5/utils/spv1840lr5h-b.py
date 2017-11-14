@@ -6,7 +6,18 @@
 import math
 
 def convert(value):
-    value_voltage = value * 5.0 / 1024.0
-    raw = value_voltage / 453.3333 - 1.65
-    db = math.log10(raw) * 20.0
-    return db, 'dB'
+    raw_s = value['metsense_spv1840lr5h-b']
+
+    def convert_to_db(value):
+        value_voltage = value * 5.0 / 1024.0
+        raw = value_voltage / 453.3333 - 1.65
+        return math.log10(raw) * 20.0
+
+    reading = []
+    for i in range(1, len(raw_s), 2):
+        value = (raw_s[i - 1] << 8) | raw_s[i]
+        reading[i] = convert_to_db(value)
+
+    value['metsense_spv1840lr5h-b'] = (sum(reading)/len(reading), 'dB')
+
+    return value
