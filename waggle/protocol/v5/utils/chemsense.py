@@ -11,7 +11,6 @@ def convert(value):
 
     for i in range(len(textlist)):
         a_data = textlist[i].split('=')
-        print(a_data)
 
         if len(a_data) == 2:
             key = a_data[0]
