@@ -131,7 +131,7 @@ def unpack_float_format8(buffer, offset, length=2.0):
     return value
 
 def unpack_string(value, offset, length):
-    return value.decode("utf-8").strip()
+    return value.decode("utf-8")
 
 def unpack_byte(value, offset, length):
     return value.strip()

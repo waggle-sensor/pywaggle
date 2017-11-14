@@ -15,32 +15,40 @@ logger = logging.getLogger('protocol.decoder')
         dict {sensorid: values, ...}
 '''
 def decode_frame(frame, required_version=2):
+    HEADER_SIZE = 4
+    FOOTER_SIZE = 2
+    data = bytearray()
+
     if not isinstance(frame, bytearray) and not isinstance(frame, bytes):
         raise TypeError('frame must be byte-like type object')
 
-    header = frame[0]
-    packet_type = (frame[1] >> 4) & 0x0F
-    version =  frame[1] & 0x0F
-    sequence_number = frame[2]
-    length = frame[3]
-    crc = frame[-2]
-    footer = frame[-1]
-    data = frame[4:-2]
+    while len(frame) != 0:
+        header = frame[0]
+        packet_type = (frame[1] >> 4) & 0x0F
+        version =  frame[1] & 0x0F
+        sequence_number = frame[2] & 0x7F
+        length = frame[3]
+        crc = frame[HEADER_SIZE + length]
+        footer = frame[HEADER_SIZE + length + 1]
+        subdata = frame[HEADER_SIZE:HEADER_SIZE + length]
 
-    if header != 0xAA:
-        raise RuntimeError('invalid start byte')
+        if header != 0xAA:
+            raise RuntimeError('invalid start byte')
 
-    if footer != 0x55:
-        raise RuntimeError('invalid end byte')
+        if footer != 0x55:
+            raise RuntimeError('invalid end byte')
 
-    if version != required_version:
-        raise RuntimeError('invalid protocol version: target version is %d' % (required_version,))
+        if version != required_version:
+            raise RuntimeError('invalid protocol version: target version is %d' % (required_version,))
 
-    if length != len(frame) - 6:
-        raise RuntimeError('invalid length')
+        if length != len(subdata):
+            raise RuntimeError('invalid length')
 
-    if crc != create_crc(data):
-        raise RuntimeError('invalid crc')
+        if not check_crc(crc, subdata):
+            raise RuntimeError('invalid crc')
+
+        data.extend(subdata)
+        frame = frame[HEADER_SIZE + length + FOOTER_SIZE:]
 
     # merge resulting entries
     results = {}
@@ -50,7 +58,13 @@ def decode_frame(frame, required_version=2):
             results[sensor_id] = {}
 
         for name, value in zip(names, values):
-            results[sensor_id][name] = value
+            print(value, type(value), value[-1])
+            if name not in results[sensor_id]:
+                results[sensor_id][name] = value
+            else:
+                results[sensor_id][name] += value
+                print(results[sensor_id][name], 'hello')
+
 
     return results
 
@@ -84,13 +98,13 @@ def get_data_subpackets(data):
     while offset < len(data):
         sensor_id = data[offset + 0]
         length = data[offset + 1] & 0x7F
-        valid = data[offset + 1] & 0x80 == 0x80
+        valid = data[offset + 1] & 0x80
         offset += 2
 
         sensor_data = data[offset:offset + length]
         offset += length
 
-        if valid:
+        if valid == 0x80:
             subpackets.append((sensor_id, sensor_data))
         else:
             subpackets.append((sensor_id, None))
@@ -115,3 +129,6 @@ def convert(values, sensor_id):
         logging.warning('No valid conversion loaded for %s' % (sensor_id,))
     return values
     
+def check_crc(crc, data):
+    return True if crc == create_crc(data) else False
+

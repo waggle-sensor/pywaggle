@@ -216,7 +216,7 @@ waggleprotocol_spec = '''
   conversion: chemsense
   params:
     - name: chemsense_raw
-      length: 59
+      length:
       format: h
 
 - id: 0x2B
