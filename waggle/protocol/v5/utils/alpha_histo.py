@@ -43,8 +43,8 @@ def decode(data):
     }
 
     if temperature > 200:
-        values['pressure'] = pressure
+        values['pressure'] = (pressure, 'Pa')
     else:
-        values['temperature'] = temperature
+        values['temperature'] = (temperature, 'C')
 
     return values
