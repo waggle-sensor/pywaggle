@@ -1,4 +1,5 @@
 import logging
+import math
 from .spec import spec
 from . import format
 from .crc import create_crc
@@ -19,9 +20,9 @@ protocol_version = 2
 '''
 def encode_sub_packet(id, data=[]):
     try:
-        params = spec[id]
+        params = spec[id]['params']
     except KeyError:
-        logger.error('ID %d is unknown')
+        logger.error('ID %d is unknown' % (id,))
         return None
     
     if not isinstance(data, list):
@@ -56,7 +57,9 @@ def encode_frame(frame_data):
         logger.error('%s must be a dictionary' % (str(frame_data),))
         return None
 
+    bodies = []
     body = bytearray()
+    max_body_length = pow(2, 8) - 1
     for sub_id in frame_data:
         assert isinstance(sub_id, int)
 
@@ -64,21 +67,37 @@ def encode_frame(frame_data):
         encoded = encode_sub_packet(sub_id, sub_values)
         
         if encoded is not None:
+            if len(body) + len(encoded) > max_body_length:
+                bodies.append(body)
+                body = bytearray()
             body.extend(encoded)
 
-
-    header = bytearray(3)
-    header[0] = 0xAA
+    bodies.append(body)
     
     body_length = len(body)
-    assert body_length < pow(2, 8)
-    sequence_number = 0
-    header[1] = ((sequence_number & 0x0F) << 4) | protocol_version & 0x0F
-    header[2] = sequence_number
-    header[3] = body_length & 0xFF
+    waggle_packet = bytearray()
+    packet_type = 1 # sensor reading
+    for index, body in enumerate(bodies):
+        body_length = len(body)
 
-    footer = bytearray(2)
-    footer[0] = create_crc(body)
-    footer[1] = 0x55
+        header = bytearray(3)
+        header[0] = 0xAA
+        header[1] = ((packet_type & 0x0F) << 4) | protocol_version & 0x0F
+        header[2] = body_length + 1
+        
+        packet_body = bytearray(1)
+        if index + 1 == len(bodies):
+            packet_body[0] = index | 0x80
+        else:
+            packet_body[0] = index
+        packet_body.extend(body)
 
-    return bytes(header + body + footer)
+        footer = bytearray(2)
+        footer[0] = create_crc(packet_body)
+        footer[1] = 0x55
+
+        waggle_packet.extend(header)
+        waggle_packet.extend(packet_body)
+        waggle_packet.extend(footer)
+
+    return bytes(waggle_packet)

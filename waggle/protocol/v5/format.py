@@ -130,11 +130,25 @@ def unpack_float_format8(buffer, offset, length=2.0):
         value = value * -1
     return value
 
-def unpack_string(value, offset, length):
-    return value.decode("utf-8")
+def pack_string(value, length):
+    if isinstance(value, str):
+        value = value.encode()
+    value = BitArray(value)
+    assert value.length == to_bit(length)
+    return value.bin
 
-def unpack_byte(value, offset, length):
-    return value.strip()
+def unpack_string(buffer, offset, length):
+    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    return value.tobytes().decode()
+
+def pack_byte(value, length):
+    value = BitArray(value)
+    assert value.length == to_bit(length)
+    return value.bin
+
+def unpack_byte(buffer, offset, length):
+    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    return value.tobytes()
 
 formatpack = {
     'a': pack_signed_int,
@@ -145,6 +159,9 @@ formatpack = {
 
     'f': pack_float_format6,
     'g': pack_float_format8,
+
+    'h': pack_string,
+    'i': pack_byte
 }
 
 

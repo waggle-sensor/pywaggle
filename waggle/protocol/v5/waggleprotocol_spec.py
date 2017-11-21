@@ -195,15 +195,15 @@ waggleprotocol_spec = '''
       length: 2
       format: b
 
-# - id: 0x1D
-#   conversion: 
-#   params:
-#     - name: metsense_sht25_temperature
-#       length: 2
-#       format: b
-#     - name: metsense_sht25_humidity
-#       length: 2
-#       format: b
+- id: 0x1D
+  conversion: 
+  params:
+    - name: metsense_sht25_temperature
+      length: 2
+      format: b
+    - name: metsense_sht25_humidity
+      length: 2
+      format: b
 
 - id: 0x16
   conversion: chemsense_config

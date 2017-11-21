@@ -1,7 +1,7 @@
 import unittest
 
-import decoder
-import encoder
+from waggle.protocol.v5 import decoder
+from waggle.protocol.v5 import encoder
 
 class WaggleProtocolTestUnit(unittest.TestCase):
 
