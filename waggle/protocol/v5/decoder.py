@@ -15,7 +15,7 @@ logger = logging.getLogger('protocol.decoder')
         dict {sensorid: values, ...}
 '''
 def decode_frame(frame, required_version=2):
-    HEADER_SIZE = 4
+    HEADER_SIZE = 3
     FOOTER_SIZE = 2
     data = bytearray()
 
@@ -26,8 +26,8 @@ def decode_frame(frame, required_version=2):
         header = frame[0]
         packet_type = (frame[1] >> 4) & 0x0F
         version =  frame[1] & 0x0F
-        sequence_number = frame[2] & 0x7F
-        length = frame[3]
+        sequence_number = frame[3] & 0x7F
+        length = frame[2]
         crc = frame[HEADER_SIZE + length]
         footer = frame[HEADER_SIZE + length + 1]
         subdata = frame[HEADER_SIZE:HEADER_SIZE + length]
@@ -47,6 +47,7 @@ def decode_frame(frame, required_version=2):
         if not check_crc(crc, subdata):
             raise RuntimeError('invalid crc')
 
+        subdata = frame[HEADER_SIZE + 1:HEADER_SIZE + length]
         data.extend(subdata)
         frame = frame[HEADER_SIZE + length + FOOTER_SIZE:]
 
