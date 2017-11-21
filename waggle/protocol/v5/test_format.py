@@ -1,6 +1,6 @@
 import unittest
 
-import format
+from waggle.protocol.v5 import format
 from bitstring import BitArray
 
 class WaggleFormatTest(unittest.TestCase):
