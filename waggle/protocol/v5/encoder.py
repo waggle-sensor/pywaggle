@@ -5,6 +5,7 @@ from . import format
 from .crc import create_crc
 
 logger = logging.getLogger('protocol.encoder')
+sequence = 0
 
 # protocol_version 1 is used in lower or equal to coresense firmware 3.12
 protocol_version = 2
@@ -76,7 +77,7 @@ def encode_frame(frame_data):
     
     body_length = len(body)
     waggle_packet = bytearray()
-    packet_type = 1 # sensor reading
+    packet_type = 0 # sensor reading
     for index, body in enumerate(bodies):
         body_length = len(body)
 
@@ -99,5 +100,10 @@ def encode_frame(frame_data):
         waggle_packet.extend(header)
         waggle_packet.extend(packet_body)
         waggle_packet.extend(footer)
+
+        if sequence < 0x7F:
+            sequence += 1
+        else:
+            sequence = 0
 
     return bytes(waggle_packet)

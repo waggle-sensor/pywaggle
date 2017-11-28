@@ -138,6 +138,8 @@ def pack_string(value, length):
     return value.bin
 
 def unpack_string(buffer, offset, length):
+    if length == None:
+        length = len(buffer)
     value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
     return value.tobytes().decode()
 
