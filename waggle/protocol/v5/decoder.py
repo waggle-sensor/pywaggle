@@ -98,7 +98,12 @@ def get_data_subpackets(data):
         sensor_id = data[offset + 0]
         length = data[offset + 1] & 0x7F
         valid = data[offset + 1] & 0x80
-        offset += 2
+        
+        if sensor_id != 0x11:
+            offset += 2
+        else:
+            offset += 1
+            length += 1
 
         sensor_data = data[offset:offset + length]
         offset += length
