@@ -23,6 +23,13 @@
 # TMP112 - TMP112 temperature sensor
 # pr103j2 - PR103J2 temperature sensor
 waggleprotocol_spec = '''
+- id: 0x11
+  conversion: busreading
+  params:
+    - name: bus_reading
+      length:
+      format: i
+
 - id: 0xFF
   conversion:
   params:
