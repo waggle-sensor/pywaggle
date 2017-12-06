@@ -22,8 +22,6 @@
 def convert(value):
     raw_t = value['metsense_tmp112']
 
-    print(raw_t)
-
     if (raw_t >> 15) == 0:
         # it is a positive temperature
         h = (raw_t >> 8) << 5
