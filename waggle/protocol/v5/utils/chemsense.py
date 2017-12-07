@@ -33,4 +33,6 @@ def convert(value):
             else:
                 chem_dict[key] = (int(val), 'raw')
 
+        if len(chem_dict) == 0:
+            chem_dict['chemMac'] = ('Chemsense not included', 'No unit')
     return chem_dict

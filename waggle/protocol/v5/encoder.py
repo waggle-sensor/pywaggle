@@ -108,15 +108,3 @@ def encode_frame(frame_data):
             sequence = 0
 
     return bytes(waggle_packet)
-
-
-def coresense_encode_frame(sensors):
-    # Packaging
-    buffer = bytearray()
-    for i in range(0,len(sensors), 2):
-        data.append(sensors[i]) # call function type
-        if (sensors[i] == 0x05):
-            data.append(0x01) # ack --> 0 1bit, 7-bit parameter length
-            data.append(sensors[i + 1])
-
-    return buffer
