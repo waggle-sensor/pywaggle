@@ -124,7 +124,10 @@ def convert(values, sensor_id):
 
     conversion_name = spec[sensor_id]['conversion']
     if conversion_name is None:
-        return values
+        raw_values = {}
+        for key, value in values.items():
+            raw_values[key] = (value, '')
+        return raw_values
     
     try:
         module = getattr(utils, conversion_name)

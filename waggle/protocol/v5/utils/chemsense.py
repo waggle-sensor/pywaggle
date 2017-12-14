@@ -19,7 +19,7 @@ def convert(value):
             if 'SQN' in key:
                 continue
             elif 'BAD' in key:
-                chem_dict['ChemMac'] = val
+                chem_dict['ChemMac'] = (val, 'mac')
             elif 'SH' in key or 'HD' in key or 'LP' in key or 'AT' in key or 'LT' in key:
                 val = float(val)/100.0
                 if 'T' in key:
