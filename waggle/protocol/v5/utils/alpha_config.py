@@ -27,9 +27,9 @@ def unpack_structs(structs, data):
         values = struct.unpack_from(fmt, data, offset)
 
         if len(values) == 1:
-            results[key] = (values[0], 'No unit')
+            results[key] = (values[0], '')
         else:
-            results[key] = (values, 'No unit')
+            results[key] = (values, '')
         offset += struct.calcsize(fmt)
 
     return results

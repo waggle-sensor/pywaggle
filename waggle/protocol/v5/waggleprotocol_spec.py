@@ -14,7 +14,6 @@
 # epoch_datetime - date time from time epoch
 # acs764 - ACS764 current sensor on Wagman
 # MF52C1103F3380 - MF52 thermistor on Wagman
-# MF52C1103F3380_NC - MF52 thermistor on Wagman for nodecontroller
 # HTU21D_temperature - HTU21D sensor on Wagman
 # HTU21D_humidity - HTU21D sensor on Wagman
 # HIH4030 - HIH4030 humidity

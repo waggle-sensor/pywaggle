@@ -1,14 +1,11 @@
 # Conversion from int to bool
 
 def convert(value):
-    name = ''
-    val = 0
+    returns = {}
     for key, raw in value.items():
-        name = key
-        val = raw
-    raw_b = value[key]
+        if raw == 1:
+            returns[key] = (True, '')
+        else:
+            returns[key] = (False, '')
 
-    if raw_b == 1:
-        return True
-    else:
-        return False
+    return returns

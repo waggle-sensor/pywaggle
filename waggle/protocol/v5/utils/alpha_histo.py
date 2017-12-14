@@ -28,23 +28,21 @@ def decode(data):
     sampling_period = struct.unpack_from('<f', data, offset=44)[0]
     checksum = struct.unpack_from('<H', data, offset=48)[0]
     pmvalues = struct.unpack_from('<3f', data, offset=50)
-
-    assert pmvalues[0] <= pmvalues[1] <= pmvalues[2]
+    pmvalues.sort()
 
     values = {
-        'bins': bincounts,
-        'mtof': mtof,
-        'sample flow rate': sample_flow_rate,
-        'sampling period': sampling_period,
-        'pm1': pmvalues[0],
-        'pm2.5': pmvalues[1],
-        'pm10': pmvalues[2],
-        'error': sum(bincounts) & 0xFFFF != checksum,
+        'bins': (bincounts, 'counts'),
+        'mtof': (mtof, 'us'),
+        'sample flow rate': (sample_flow_rate, 'ml/s'),
+        'sampling period': (sampling_period, 's'),
+        'pm1': (pmvalues[0], 'ug/m3'),
+        'pm2.5': (pmvalues[1], 'ug/m3'),
+        'pm10': (pmvalues[2], 'ug/m3'),
     }
 
-    if temperature > 200:
-        values['pressure'] = (pressure, 'Pa')
-    else:
-        values['temperature'] = (temperature, 'C')
+    # if temperature > 200:
+    #     values['pressure'] = (pressure, 'Pa')
+    # else:
+    #     values['temperature'] = (temperature, 'C')
 
     return values

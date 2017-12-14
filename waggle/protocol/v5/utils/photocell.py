@@ -22,7 +22,6 @@ def convert(value):
     v = float(raw_p) / 1024.0 * 5.0
     r_photo = r2 * (v_in / v - 1)
 
-    value['wagman_light'] = []
-    value['wagman_light'].extend((int(r_photo), 'ohm'))
+    value['wagman_light'] = (int(r_photo), 'ohm')
 
     return value

@@ -3,11 +3,8 @@
 import time
 
 def convert(value, format='%Y %m %d %H:%M:%S'):
-    name = ''
-    val = 0
+    returns = {}
     for key, raw in value.items():
-        name = key
-        val = raw
-    raw_e = value[key]
+        returns[key] = (time.strftime(format, time.gmtime(raw)), 'UTC')
     
-    return time.strftime(format, time.gmtime(raw_e)), 'UTC'
+    return returns
