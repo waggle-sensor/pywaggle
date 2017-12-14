@@ -12,7 +12,7 @@ def key_unit(k):
 
 def convert_pair(key, val):
     if 'BAD' in key:
-        return 'id', val, 'mac'
+        return 'id', val, ''
     if 'SH' in key or 'HD' in key or 'LP' in key or 'AT' in key or 'LT' in key:
         return key, float(val)/100.0, key_unit(key)
     if 'SVL' in key or 'SIR' in key or 'SUV' in key:
