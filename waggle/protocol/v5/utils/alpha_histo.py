@@ -27,8 +27,7 @@ def decode(data):
     temperature = pressure / 10.0
     sampling_period = struct.unpack_from('<f', data, offset=44)[0]
     checksum = struct.unpack_from('<H', data, offset=48)[0]
-    pmvalues = struct.unpack_from('<3f', data, offset=50)
-    pmvalues.sort()
+    pmvalues = sorted(list(struct.unpack_from('<3f', data, offset=50)))
 
     values = {
         'bins': (bincounts, 'counts'),
