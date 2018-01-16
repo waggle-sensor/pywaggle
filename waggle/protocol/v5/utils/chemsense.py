@@ -21,11 +21,9 @@ def convert_pair(key, val):
 
 
 def convert(value):
-    raw_s = value['chemsense_raw']
-
     chem_dict = {}
 
-    for pair in raw_s.split():
+    for pair in value['chemsense_raw'].split():
         try:
             key, val = pair.split('=')
         except ValueError:

@@ -24,9 +24,7 @@ def decode_frame(frame, required_version=2):
 
     while len(frame) != 0:
         header = frame[0]
-        packet_type = (frame[1] >> 4) & 0x0F
-        version =  frame[1] & 0x0F
-        sequence_number = frame[3] & 0x7F
+        version = frame[1] & 0x0F
         length = frame[2]
         crc = frame[HEADER_SIZE + length]
         footer = frame[HEADER_SIZE + length + 1]
@@ -64,7 +62,6 @@ def decode_frame(frame, required_version=2):
             else:
                 results[sensor_id][name] += value
 
-
     return results
 
 
@@ -77,14 +74,10 @@ def decode_data(data):
             lengths = [param['length'] for param in params]
 
             if sensor_data is None:
-                yield sensor_id, names, ['invalid']*len(names)
-                continue
-
-            yield sensor_id, names, format.waggle_unpack(formats, lengths, sensor_data)
-        except KeyError:
-            logger.warning('could not decode subpacket: id={:02X} data={}'.format(sensor_id, hexlify(sensor_data).decode()))
-            continue
-        except Exception:
+                yield sensor_id, names, ['invalid'] * len(names)
+            else:
+                yield sensor_id, names, list(format.waggle_unpack(formats, lengths, sensor_data))
+        except Exception as exc:
             logger.exception('Got an exception while decoding subpackets. sensor = {:02X}, data = {}'.format(sensor_id, repr(sensor_data)))
             continue
 
@@ -98,7 +91,7 @@ def get_data_subpackets(data):
         sensor_id = data[offset + 0]
         length = data[offset + 1] & 0x7F
         valid = data[offset + 1] & 0x80
-        
+
         if sensor_id != 0x11:
             offset += 2
         else:
@@ -118,6 +111,7 @@ def get_data_subpackets(data):
 
     return subpackets
 
+
 def convert(values, sensor_id):
     if not sensor_id in spec:
         return values
@@ -128,14 +122,14 @@ def convert(values, sensor_id):
         for key, value in values.items():
             raw_values[key] = (value, '')
         return raw_values
-    
+
     try:
         module = getattr(utils, conversion_name)
         return module.convert(values)
     except AttributeError:
         logging.warning('No valid conversion loaded for %s' % (sensor_id,))
     return values
-    
-def check_crc(crc, data):
-    return True if crc == create_crc(data) else False
 
+
+def check_crc(crc, data):
+    return crc == create_crc(data)
