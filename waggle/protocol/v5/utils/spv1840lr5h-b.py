@@ -16,12 +16,14 @@ def convert(value):
 
         count = 0
         if ptp <= 1:
+            # sound level is lower than the lower limit of analogRead
+            # need to figure out how to estimate analogRead level
             for i in range(len(value)):
                 ele = value[i] - mn
                 if ele != 0:
                     count = count + 1
             if count == 0:
-                count = 0.8
+                count = 1
             ptp = count / len(value)
 
         value_voltage = ptp * 5.0 / 1024.0
