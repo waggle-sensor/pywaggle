@@ -5,23 +5,38 @@
 
 import math
 
+
 def convert(value):
     raw_s = value['metsense_spv1840lr5h-b']
 
-    # def convert_to_db(value):
-    #     value_voltage = value * 5.0 / 1024.0
-    #     raw = value_voltage / 453.3333 - 1.65
-    #     return math.log10(-raw)*-20
-    #     # return math.log10(raw) * 20.0
+    def convert_to_db(value):
+        mx = max(value)
+        mn = min(value)
+        ptp = mx - mn
 
-    # reading = []
-    # for i in range(1, len(raw_s), 2):
-    #     value = (raw_s[i - 1] << 8) | raw_s[i]
-    #     reading.append(convert_to_db(value))
+        count = 0
+        if ptp <= 1:
+            # sound level is lower than the lower limit of analogRead
+            # need to figure out how to estimate analogRead level
+            for i in range(len(value)):
+                ele = value[i] - mn
+                if ele != 0:
+                    count = count + 1
+            if count == 0:
+                count = 1
+            ptp = count / len(value)
 
-    # value['metsense_spv1840lr5h-b'] = (sum(reading)/len(reading), 'dB')
+        value_voltage = ptp * 5.0 / 1024.0
+        Pa = value_voltage / 0.03560778
+        dBSPL = 20 * math.log10(Pa / 0.0002)
+        return dBSPL
 
+    reading = []
+    for i in range(1, len(raw_s), 2):
+        value_raw = (raw_s[i - 1] << 8) | raw_s[i]
+        reading.append(value_raw)
 
-    value['metsense_spv1840lr5h-b'] = (round(sum(raw_s)/len(raw_s), 2), 'dB')
+    value_dB = convert_to_db(reading)
+    value['metsense_spv1840lr5h-b'] = (round(value_dB, 2), 'dB')
 
     return value
