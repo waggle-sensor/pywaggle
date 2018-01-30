@@ -5,9 +5,9 @@ def convert(value):
         if key == 'alpha_firmware':
             raw_f = value['alpha_firmware']
             version = str(raw_f[0]) + '.' + str(raw_f[1])
-            value['alpha_firmware'] = (version, 'No unit')
+            value['alpha_firmware'] = (version, '')
         elif key == 'alpha_serial':
             raw_s = value['alpha_serial']
-            value['alpha_serial'] = (raw_s, 'No unit')
+            value['alpha_serial'] = (raw_s, '')
 
     return value

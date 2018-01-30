@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='waggle',
-    version='0.23.1',
+    version='0.23.2',
     description='Python Waggle Module',
     url='https://github.com/waggle-sensor/pywaggle',
     install_requires=[
@@ -16,6 +16,7 @@ setup(
     packages=[
         'waggle',
         'waggle.platform',
+        'waggle.protocol.utils',
         'waggle.protocol.v4',
         'waggle.protocol.v5',
         'waggle.protocol.v5.utils',

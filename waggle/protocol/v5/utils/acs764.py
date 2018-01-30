@@ -10,18 +10,12 @@
 def convert(value):
     LSB = 15.66
 
-    value['wagman_current_wagman'] = []
-    value['wagman_current_nc'] = []
-    value['wagman_current_ep'] = []
-    value['wagman_current_cs'] = []
-    value['wagman_current_port4'] = []
-    value['wagman_current_port5'] = []
-
-    value['wagman_current_wagman'].extend((value['wagman_current_wagman'] * LSB, 'mA'))
-    value['wagman_current_nc'].extend((value['wagman_current_nc'] * LSB, 'mA'))
-    value['wagman_current_ep'].extend((value['wagman_current_ep'] * LSB, 'mA'))
-    value['wagman_current_cs'].extend((value['wagman_current_cs'] * LSB, 'mA'))
-    value['wagman_current_port4'].extend((value['wagman_current_port4'] * LSB, 'mA'))
-    value['wagman_current_port5'].extend((value['wagman_current_port5'] * LSB, 'mA'))
-
-    return value
+    values = {
+        'wagman_current_wagman': (value['wagman_current_wagman'] * LSB, 'mA'),
+        'wagman_current_nc': (value['wagman_current_nc'] * LSB, 'mA'),
+        'wagman_current_ep': (value['wagman_current_ep'] * LSB, 'mA'),
+        'wagman_current_cs': (value['wagman_current_cs'] * LSB, 'mA'),
+        'wagman_current_port4': (value['wagman_current_port4'] * LSB, 'mA'),
+        'wagman_current_port5': (value['wagman_current_port5'] * LSB, 'mA'),
+    }
+    return values

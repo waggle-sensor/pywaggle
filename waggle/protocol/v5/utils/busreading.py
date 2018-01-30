@@ -29,11 +29,11 @@ def convert(value):
             val = data
 
         key = 'bus' + str(idx)
-        value[key] = {}
-        value[key]['bus_type'] = bus_type[b_type]
-        value[key]['bus_address'] = b_address
-        value[key]['bus_reading'] = val
-
+        bus_value = {}
+        bus_value['bus_type'] = (bus_type[b_type], '')
+        bus_value['bus_address'] = (b_address, '')
+        bus_value['bus_reading'] = (val, '')
+        value[key] = (bus_value, '')
         idx += 1
 
     return value

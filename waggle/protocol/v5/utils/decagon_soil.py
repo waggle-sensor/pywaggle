@@ -5,7 +5,7 @@ def convert(value):
     raw_vwc = value['volumatric_water_content']
     raw_t = value['temperature']
 
-    value['dielectric'] = (raw_d / 50.000000, 'no unit')
+    value['dielectric'] = (raw_d / 50.000000, '')
 
     if raw_vwc < 700:
         value['volumatric_water_content'] = (raw_vwc / 100.0, 'dS/m')

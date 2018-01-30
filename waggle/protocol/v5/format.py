@@ -45,7 +45,7 @@ def pack_signed_int(value, length):
     length_in_bit = to_bit(length)
     assert -1 * pow(2, length_in_bit - 1) <= value < pow(2, length_in_bit - 1)
 
-    return BitArray(int=value, length=length_in_bit).bin    
+    return BitArray(int=value, length=length_in_bit).bin
 
 
 def unpack_signed_int(buffer, offset, length):
@@ -116,7 +116,7 @@ def pack_float_format8(value, length=2.0):
 
     packed = (((intpart & 0b00011111) << 2) | ((fracpart >> 8) & 0b00000011)) << 8
     packed |= fracpart & 0xFF
-    
+
     if value < 0:
         packed |= 0x80
     return BitArray(uint=packed, length=to_bit(length)).bin
@@ -200,11 +200,14 @@ def waggle_pack_into(format, length, values):
 def waggle_unpack_from(format, length, buffer):
     offset = 0
     for f, l in zip(format, length):
-        if l == 0:
-            yield None
+        value = formatunpack[f](buffer, offset, l)
+        yield value
+
+        # for variable length values, increment by unpacked length
+        if l is None:
+            offset += len(value)
         else:
-            yield formatunpack[f](buffer, offset, l)
-        offset += l
+            offset += l
 
 # =================================================
 # Waggle protocol v 0.5
@@ -219,5 +222,3 @@ def waggle_pack(format, length, values):
 
 def waggle_unpack(format, length, buffer):
     return waggle_unpack_from(format, length, buffer)
-
-

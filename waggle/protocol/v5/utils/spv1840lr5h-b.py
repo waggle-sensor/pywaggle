@@ -14,17 +14,18 @@ def convert(value):
         mn = min(value)
         ptp = mx - mn
 
-        count = 0
-        if ptp <= 1:
-            # sound level is lower than the lower limit of analogRead
-            # need to figure out how to estimate analogRead level
-            for i in range(len(value)):
-                ele = value[i] - mn
-                if ele != 0:
-                    count = count + 1
-            if count == 0:
-                count = 1
-            ptp = count / len(value)
+        # count = 0
+        if ptp < 1:
+            ptp = 0.82
+            # # sound level is lower than the lower limit of analogRead
+            # # need to figure out how to estimate analogRead level
+            # for i in range(len(value)):
+                # ele = value[i] - mn
+                # if ele != 0:
+                    # count = count + 1
+            # if count == 0:
+                # count = 1
+            # ptp = count / len(value)
 
         value_voltage = ptp * 5.0 / 1024.0
         Pa = value_voltage / 0.03560778
@@ -36,6 +37,8 @@ def convert(value):
         value_raw = (raw_s[i - 1] << 8) | raw_s[i]
         reading.append(value_raw)
 
+    # if value_dB is lower than 55 dB, the value_dB is a guessed value not measured value
+    # becasue of the lower limit of sensor reading through analogRead function
     value_dB = convert_to_db(reading)
     value['metsense_spv1840lr5h-b'] = (round(value_dB, 2), 'dB')
 
