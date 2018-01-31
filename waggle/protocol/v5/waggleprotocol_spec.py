@@ -29,6 +29,13 @@ waggleprotocol_spec = '''
       length:
       format: i
 
+- id: 0x12
+  conversion: disabled
+  params:
+    - name: disabled_sensor
+      length: 2
+      format: c
+
 - id: 0xFF
   conversion:
   params:
@@ -271,14 +278,14 @@ waggleprotocol_spec = '''
       format: i
 
 - id: 0x50
-  conversion: 
+  conversion:
   params:
     - name: wagman_id
       length: 6
       format: c
 
 - id: 0x51
-  conversion: 
+  conversion:
   params:
     - name: wagman_ver_hw_mj
       length: 0.5
@@ -290,7 +297,7 @@ waggleprotocol_spec = '''
       conversion:
 
 - id: 0x52
-  conversion: 
+  conversion:
   params:
     - name: wagman_ver_sw_mj
       length: 1
@@ -303,7 +310,7 @@ waggleprotocol_spec = '''
       format: b
 
 - id: 0x53
-  conversion: 
+  conversion:
   params:
     - name: wagman_ver_git
       length: 2
@@ -324,7 +331,7 @@ waggleprotocol_spec = '''
       format: d
 
 - id: 0x56
-  conversion: 
+  conversion:
   params:
     - name: wagman_boot_flag
       length: 1
@@ -338,14 +345,14 @@ waggleprotocol_spec = '''
       format: d
 
 - id: 0x58
-  conversion: 
+  conversion:
   params:
     - name: wagman_bootloader_nc_flag
       length: 1
       format: b
 
 - id: 0x59
-  conversion: 
+  conversion:
   params:
     - name: wagman_boot_count
       length: 1
@@ -417,7 +424,7 @@ waggleprotocol_spec = '''
       format: b
 
 - id: 0x5F
-  conversion: 
+  conversion:
   params:
     - name: wagman_failcount_nc
       length: 1
@@ -465,7 +472,7 @@ waggleprotocol_spec = '''
       format: b
 
 - id: 0x62
-  conversion: 
+  conversion:
   params:
     - name: wagman_heartbeat_nc
       length: 2
@@ -482,9 +489,9 @@ waggleprotocol_spec = '''
     - name: wagman_heartbeat_port5
       length: 2
       format: b
-    
+
 - id: 0x63
-  conversion: 
+  conversion:
   params:
     - name: wagman_lastboot_nc
       length: 4
@@ -503,7 +510,7 @@ waggleprotocol_spec = '''
       format: d
 
 - id: 0x64
-  conversion: 
+  conversion:
   params:
     - name: wagman_powerfaults_nc
       length: 4
@@ -522,7 +529,7 @@ waggleprotocol_spec = '''
       format: d
 
 - id: 0x65
-  conversion: 
+  conversion:
   params:
     - name: wagman_bootattempt_nc
       length: 1
