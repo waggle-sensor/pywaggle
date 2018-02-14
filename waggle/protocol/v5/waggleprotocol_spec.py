@@ -679,16 +679,370 @@ waggleprotocol_spec = '''
 - id: 0x7C
   conversion:
   params:
-    - name: nc_alphasense
+    - name: nc_devices_alphasense
       length: 0.125
       format: uint
-    - name: nc_metsense
+    - name: nc_devices_metsense
       length: 0.125
       format: uint
-    - name: nc_modem
+    - name: nc_devices_modem
       length: 0.125
       format: uint
-    - name: nc_wagman
+    - name: nc_devices_wagman
       length: 0.125
+      format: uint
+
+- id: 0x7D
+  conversion:
+  params:
+    - name: nc_ver_core_mj
+      length: 1
+      format: uint
+    - name: nc_ver_core_mi
+      length: 1
+      format: uint
+    - name: nc_ver_core_p
+      length: 1
+      format: uint
+    - name: nc_ver_nodecontroller_mj
+      length: 1
+      format: uint
+    - name: nc_ver_nodecontroller_mi
+      length: 1
+      format: uint
+    - name: nc_ver_nodecontroller_p
+      length: 1
+      format: uint
+    - name: nc_ver_pluginmanager_mj
+      length: 1
+      format: uint
+    - name: nc_ver_pluginmanager_mi
+      length: 1
+      format: uint
+    - name: nc_ver_pluginmanager_p
+      length: 1
+      format: uint
+
+- id: 0x7E
+  conversion:
+  params:
+    - name: nc_rabbitmq_queues_data
+      length: 0.125
+      format: uint
+    - name: nc_rabbitmq_exchages_data
+      length: 0.125
+      format: uint
+    - name: nc_rabbitmq_shovels_data
+      length: 0.125
+      format: uint
+    - name: nc_rabbitmq_shovels_images
+      length: 0.125
+      format: uint
+
+- id: 0x7F
+  conversion:
+  params:
+    - name: nc_service_rabbitmq_uptime
+      length: 4
+      format: epoch
+    - name: nc_service_rabbitmq_exitcode
+      length: 1
+      format: uint
+    - name: nc_service_rabbitmq_state
+      length: 0.5
+      format: uint
+    - name: nc_service_rabbitmq_substate
+      length: 0.5
+      format: uint
+    - name: nc_service_init_uptime
+      length: 4
+      format: epoch
+    - name: nc_service_init_exitcode
+      length: 1
+      format: uint
+    - name: nc_service_init_state
+      length: 0.5
+      format: uint
+    - name: nc_service_init_substate
+      length: 0.5
+      format: uint
+    - name: nc_service_heartbeat_uptime
+      length: 4
+      format: epoch
+    - name: nc_service_heartbeat_exitcode
+      length: 1
+      format: uint
+    - name: nc_service_heartbeat_state
+      length: 0.5
+      format: uint
+    - name: nc_service_heartbeat_substate
+      length: 0.5
+      format: uint
+    - name: nc_service_epoch_uptime
+      length: 4
+      format: epoch
+    - name: nc_service_epoch_exitcode
+      length: 1
+      format: uint
+    - name: nc_service_epoch_state
+      length: 0.5
+      format: uint
+    - name: nc_service_epoch_substate
+      length: 0.5
+      format: uint
+    - name: nc_service_reversetunnel_uptime
+      length: 4
+      format: epoch
+    - name: nc_service_reversetunnel_exitcode
+      length: 1
+      format: uint
+    - name: nc_service_reversetunnel_state
+      length: 0.5
+      format: uint
+    - name: nc_service_reversetunnel_substate
+      length: 0.5
+      format: uint
+    - name: nc_service_wagmandriver_uptime
+      length: 4
+      format: epoch
+    - name: nc_service_wagmandriver_exitcode
+      length: 1
+      format: uint
+    - name: nc_service_wagmandriver_state
+      length: 0.5
+      format: uint
+    - name: nc_service_wagmandriver_substate
+      length: 0.5
+      format: uint
+    - name: nc_service_wwan_uptime
+      length: 4
+      format: epoch
+    - name: nc_service_wwan_exitcode
+      length: 1
+      format: uint
+    - name: nc_service_wwan_state
+      length: 0.5
+      format: uint
+    - name: nc_service_wwan_substate
+      length: 0.5
+      format: uint
+
+- id: 0x80
+  conversion:
+  params:
+    - name: ep_node_id
+      length: 12
+      format: hex
+
+- id: 0x81
+  conversion:
+  params:
+    - name: ep_boot_id
+      length: 32
+      format: hex
+
+- id: 0x82
+  conversion:
+  params:
+    - name: ep_cpu_temp
+      length: 2
+      format: float_2
+
+- id: 0x83
+  conversion:
+  params:
+    - name: ep_ram_total
+      length: 2
+      format: float_2
+    - name: ep_ram_free
+      length: 2
+      format: float_2
+
+- id: 0x84
+  conversion:
+  params:
+    - name: ep_current_disk_name
+      length: 7
+      format: str
+    - name: ep_current_disk_type
+      length: 2
+      format: str
+    - name: ep_alternate_disk_name
+      length: 7
+      format: str
+    - name: ep_alternate_disk_type
+      length: 2
+      format: str
+    - name: ep_partition1_total
+      length: 2
+      format: float_2
+    - name: ep_partition1_used
+      length: 1
+      format: uint
+    - name: ep_partition2_total
+      length: 2
+      format: float_2
+    - name: ep_partition2_used
+      length: 1
+      format: uint
+    - name: ep_partition3_total
+      length: 2
+      format: float_2
+    - name: ep_partition3_used
+      length: 1
+      format: uint
+
+- id: 0x85
+  conversion:
+  params:
+    - name: ep_current_time
+      length: 4
+      format: epoch
+
+- id: 0x86
+  conversion:
+  params:
+    - name: ep_uptime
+      length: 4
+      format: uint
+    - name: ep_idletime
+      length: 4
+      format: uint
+
+- id: 0x87
+  conversion:
+  params:
+    - name: ep_load_1
+      length: 2
+      format: float_2
+    - name: ep_load_5
+      length: 2
+      format: float_2
+    - name: ep_load_10
+      length: 2
+      format: float_2
+
+- id: 0x88
+  conversion:
+  params:
+    - name: ep_ipaddress
+      length: 15
+      format: str
+
+- id: 0x89
+  conversion:
+  params:
+    - name: ep_hbmode
+      length: 6
+      format: str
+
+- id: 0x8A
+  conversion:
+  params:
+    - name: ep_lock_fs
+      length: 0.125
+      format: uint
+    - name: ep_lock_pw
+      length: 0.125
+      format: uint
+
+- id: 0x8B
+  conversion:
+  params:
+    - name: ep_devices_camera_bottom
+      length: 0.125
+      format: uint
+    - name: ep_devices_camera_top
+      length: 0.125
+      format: uint
+    - name: ep_devices_microphone
+      length: 0.125
+      format: uint
+
+- id: 0x8C
+  conversion:
+  params:
+    - name: ep_ver_core_mj
+      length: 1
+      format: uint
+    - name: ep_ver_core_mi
+      length: 1
+      format: uint
+    - name: ep_ver_core_p
+      length: 1
+      format: uint
+    - name: ep_ver_edgeprocessor_mj
+      length: 1
+      format: uint
+    - name: ep_ver_edgeprocessor_mi
+      length: 1
+      format: uint
+    - name: ep_ver_edgeprocessor_p
+      length: 1
+      format: uint
+    - name: ep_ver_pluginmanager_mj
+      length: 1
+      format: uint
+    - name: ep_ver_pluginmanager_mi
+      length: 1
+      format: uint
+    - name: ep_ver_pluginmanager_p
+      length: 1
+      format: uint
+
+- id: 0x8D
+  conversion:
+  params:
+    - name: ep_rabbitmq_queues_data
+      length: 0.125
+      format: uint
+    - name: ep_rabbitmq_queues_images
+      length: 0.125
+      format: uint
+    - name: ep_rabbitmq_exchanges_data
+      length: 0.125
+      format: uint
+    - name: ep_rabbitmq_exchanges_images
+      length: 0.125
+      format: uint
+
+- id: 0x8E
+  conversion:
+  params:
+    - name: ep_service_rabbitmq_uptime
+      length: 4
+      format: epoch
+    - name: ep_service_rabbitmq_exitcode
+      length: 1
+      format: uint
+    - name: ep_service_rabbitmq_state
+      length: 0.5
+      format: uint
+    - name: ep_service_rabbitmq_substate
+      length: 0.5
+      format: uint
+    - name: ep_service_init_uptime
+      length: 4
+      format: epoch
+    - name: ep_service_init_exitcode
+      length: 1
+      format: uint
+    - name: ep_service_init_state
+      length: 0.5
+      format: uint
+    - name: ep_service_init_substate
+      length: 0.5
+      format: uint
+    - name: ep_service_heartbeat_uptime
+      length: 4
+      format: epoch
+    - name: ep_service_heartbeat_exitcode
+      length: 1
+      format: uint
+    - name: ep_service_heartbeat_state
+      length: 0.5
+      format: uint
+    - name: ep_service_heartbeat_substate
+      length: 0.5
       format: uint
 '''
