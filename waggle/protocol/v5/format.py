@@ -5,22 +5,14 @@ Example
 
 >>> import format
 
->>> data = format.waggle_pack('abcd', [1, 1, 2, 4], [-32, 55, 'abcd', 1506703931])
+>>> data = format.waggle_pack(['int', 'uint', 'hex', 'epoch'], [1, 1, 2, 4], [-32, 55, 'abcd', 1506703931])
 >>> print([e for e in format.waggle_unpack('abcd', [1, 1, 2, 4], data)])
 
 Format Reference
 
-- a: signed integer
-- b: unsigned integer
-- c: hex string
-- d: time epoch
-- e: float
+- float_2: fixed point (-127.99, 127.99)
+- float_3: fixed point (-31.999, 31.999)
 
-- f: fixed point (-127.99, 127.99)
-- g: fixed point (-31.999, 31.999)
-
-- h: string
-- i: byte
 '''
 
 from math import ceil
@@ -155,32 +147,32 @@ def unpack_byte(buffer, offset, length):
     return value.tobytes()
 
 formatpack = {
-    'a': pack_signed_int,
-    'b': pack_unsigned_int,
-    'c': pack_hex_string,
-    'd': pack_time_epoch,
-    'e': pack_float,
+    'int': pack_signed_int,
+    'uint': pack_unsigned_int,
+    'hex': pack_hex_string,
+    'epoch': pack_time_epoch,
+    'float': pack_float,
 
-    'f': pack_float_format6,
-    'g': pack_float_format8,
+    'float_2': pack_float_format6,
+    'float_3': pack_float_format8,
 
-    'h': pack_string,
-    'i': pack_byte
+    'str': pack_string,
+    'byte': pack_byte
 }
 
 
 formatunpack = {
-    'a': unpack_signed_int,
-    'b': unpack_unsigned_int,
-    'c': unpack_hex_string,
-    'd': unpack_time_epoch,
-    'e': unpack_float,
+    'int': unpack_signed_int,
+    'uint': unpack_unsigned_int,
+    'hex': unpack_hex_string,
+    'epoch': unpack_time_epoch,
+    'float': unpack_float,
 
-    'f': unpack_float_format6,
-    'g': unpack_float_format8,
+    'float_2': unpack_float_format6,
+    'float_3': unpack_float_format8,
 
-    'h': unpack_string,
-    'i': unpack_byte
+    'str': unpack_string,
+    'byte': unpack_byte
 }
 
 

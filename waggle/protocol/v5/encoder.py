@@ -35,7 +35,7 @@ def encode_sub_packet(id, data=[]):
         logger.error('Length of the %s must be matched' % (str(data),))
         return None
 
-    formats = ''.join([param['format'] for param in params])
+    formats = [param['format'] for param in params]
     lengths = [param['length'] for param in params]
     binary = format.waggle_pack(formats, lengths, data)
 
@@ -55,6 +55,7 @@ def encode_sub_packet(id, data=[]):
         A byte array of the frame
 '''
 def encode_frame(frame_data):
+    global sequence
     if not isinstance(frame_data, dict):
         logger.error('%s must be a dictionary' % (str(frame_data),))
         return None

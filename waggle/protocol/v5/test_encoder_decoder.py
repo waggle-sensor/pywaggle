@@ -8,9 +8,11 @@ class WaggleProtocolTestUnit(unittest.TestCase):
     def test_encode(self):
         data = {
             0x50: ['010203040506'],
-            0x1D: [100, 30],
+            # 0x1D: [100, 30],
             0x5A: [123, 234, 345, 456, 567, 678],
             0x07: [123, 234, 345],
+            0x7C: [False, True, False, True],
+            0x78: ['%15s' % ('abcde',)]
         }    
         encoded_data = encoder.encode_frame(data)
         decoded_data = decoder.decode_frame(encoded_data)

@@ -70,7 +70,7 @@ def decode_data(data):
         try:
             params = spec[sensor_id]['params']
             names = [param['name'] for param in params]
-            formats = ''.join([param['format'] for param in params])
+            formats = [param['format'] for param in params]
             lengths = [param['length'] for param in params]
 
             if sensor_data is None:
