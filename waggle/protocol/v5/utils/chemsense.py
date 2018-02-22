@@ -53,7 +53,7 @@ def chemical_sensor(ky, IpA):
         Minv = float(imported_data[mid_dict['BAD']][ky]['Mvalue'])
 
         InA = float(IpA)/1000.0 - baseline*math.exp((Tavg - Tzero) / Minv)
-        converted = InA / sensitivity
+        converted = round(InA / sensitivity, 6)
         return converted, 'ppm'
     else:
         return IpA, 'raw'
@@ -92,7 +92,7 @@ def convert(value):
         mid_dict[key] = val
 
     for key, value in mid_dict.items():
-        k, v, u = convert_pair(key, val)
+        k, v, u = convert_pair(key, value)
         chem_dict['chemsense_' + k.lower()] = (v, u)
 
     return chem_dict
