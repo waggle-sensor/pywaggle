@@ -3,33 +3,27 @@
 
 import math
 
-import dataset
-import xlrd
-
 mid_dict = {}
 imported_data = {}
 
 def import_data():
     xl_data = {}
-    # directory of the sensor calibration data
-    directory = "/home/sager/Downloads/calib_data.xlsx"
 
-    db = dataset.connect()
-    xl = xlrd.open_workbook(directory, "rb")
+    importcsv = './calib_data.csv'
+    with open(inputcsv) as cal:
+        for row in cal:
+            rowValues = row.strip().split(';')
+            chem_id = rowValues[1]
 
-    for i, sheet in enumerate(xl.sheets()):
-        for rownum in range(sheet.nrows):
-            rowValues = sheet.row_values(rownum)
-            if '088' in str(rowValues[0]):
-                xl_data[str(rowValues[1])] = {
-                    'IRR':{'sensitivity': rowValues[9], 'baseline40': rowValues[30], 'Mvalue': rowValues[44]},   # IRR = RESP, baseline = Izero@25C
-                    'IAQ': {'sensitivity': rowValues[10], 'baseline40': rowValues[31], 'Mvalue': rowValues[45]},
-                    'SO2': {'sensitivity': rowValues[11], 'baseline40': rowValues[32], 'Mvalue': rowValues[46]},
-                    'H2S': {'sensitivity': rowValues[12], 'baseline40': rowValues[33], 'Mvalue': rowValues[47]},
-                    'OZO': {'sensitivity': rowValues[13], 'baseline40': rowValues[34], 'Mvalue': rowValues[48]},
-                    'NO2': {'sensitivity': rowValues[14], 'baseline40': rowValues[35], 'Mvalue': rowValues[49]},
-                    'CMO': {'sensitivity': rowValues[15], 'baseline40': rowValues[36], 'Mvalue': rowValues[50]}
-                }
+            xl_data[chem_id] = {
+                'IRR': {'sensitivity': rowValues[-42], 'baseline40': rowValues[-21], 'Mvalue': rowValues[-7]},   # IRR = RESP, baseline = Izero@25C
+                'IAQ': {'sensitivity': rowValues[-41], 'baseline40': rowValues[-20], 'Mvalue': rowValues[-6]},
+                'SO2': {'sensitivity': rowValues[-40], 'baseline40': rowValues[-19], 'Mvalue': rowValues[-5]},
+                'H2S': {'sensitivity': rowValues[-39], 'baseline40': rowValues[-18], 'Mvalue': rowValues[-4]},
+                'OZO': {'sensitivity': rowValues[-38], 'baseline40': rowValues[-17], 'Mvalue': rowValues[-3]},
+                'NO2': {'sensitivity': rowValues[-37], 'baseline40': rowValues[-16], 'Mvalue': rowValues[-2]},
+                'CMO': {'sensitivity': rowValues[-36], 'baseline40': rowValues[-15], 'Mvalue': rowValues[-1]}
+            }
 
     return xl_data
 
