@@ -34,7 +34,7 @@ waggleprotocol_spec = '''
   params:
     - name: disabled_sensor
       length: 2
-      format: c
+      format: hex
 
 - id: 0xFF
   conversion:

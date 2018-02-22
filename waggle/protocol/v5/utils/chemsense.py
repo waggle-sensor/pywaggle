@@ -3,7 +3,7 @@
 
 import math
 
-import waggle.protocol.v5.res.chemsense_calib_data
+from waggle.protocol.v5.res import chemsense_calib_data
 
 mid_dict = {}
 imported_data = {}
@@ -12,7 +12,7 @@ def import_data():
     xl_data = {}
 
     rows = chemsense_calib_data.chemsense_calib_data_raw.strip().split('\n')
-    for row in row:
+    for row in rows:
         rowValues = row.strip().split(';')
         chem_id = rowValues[1]
 
@@ -46,11 +46,11 @@ def chemical_sensor(ky, IpA):
         imported_data = import_data()
 
     if mid_dict['BAD'] in imported_data:
-        Tavg = (float(mid_dict['AT0']) + float(mid_dict['AT1']) + float(mid_dict['AT2']) + float(mid_dict['AT3']) + float(mid_dict['LTM'])) / 500.0
+        Tavg = (float(mid_dict['AT0']) + float(mid_dict['AT1']) + float(mid_dict['AT2']) + float(mid_dict['AT3'])) / 400.0
 
-        sensitivity = imported_data[mid_dict['BAD']][ky]['sensitivity']
-        baseline = imported_data[mid_dict['BAD']][ky]['baseline40']
-        Minv = imported_data[mid_dict['BAD']][ky]['Mvalue']
+        sensitivity = float(imported_data[mid_dict['BAD']][ky]['sensitivity'])
+        baseline = float(imported_data[mid_dict['BAD']][ky]['baseline40'])
+        Minv = float(imported_data[mid_dict['BAD']][ky]['Mvalue'])
 
         InA = float(IpA)/1000.0 - baseline*math.exp((Tavg - Tzero) / Minv)
         converted = InA / sensitivity
