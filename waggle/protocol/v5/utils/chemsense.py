@@ -3,27 +3,28 @@
 
 import math
 
+import waggle.protocol.v5.res.chemsense_calib_data
+
 mid_dict = {}
 imported_data = {}
 
 def import_data():
     xl_data = {}
 
-    importcsv = './calib_data.csv'
-    with open(inputcsv) as cal:
-        for row in cal:
-            rowValues = row.strip().split(';')
-            chem_id = rowValues[1]
+    rows = chemsense_calib_data.chemsense_calib_data_raw.strip().split('\n')
+    for row in row:
+        rowValues = row.strip().split(';')
+        chem_id = rowValues[1]
 
-            xl_data[chem_id] = {
-                'IRR': {'sensitivity': rowValues[-42], 'baseline40': rowValues[-21], 'Mvalue': rowValues[-7]},   # IRR = RESP, baseline = Izero@25C
-                'IAQ': {'sensitivity': rowValues[-41], 'baseline40': rowValues[-20], 'Mvalue': rowValues[-6]},
-                'SO2': {'sensitivity': rowValues[-40], 'baseline40': rowValues[-19], 'Mvalue': rowValues[-5]},
-                'H2S': {'sensitivity': rowValues[-39], 'baseline40': rowValues[-18], 'Mvalue': rowValues[-4]},
-                'OZO': {'sensitivity': rowValues[-38], 'baseline40': rowValues[-17], 'Mvalue': rowValues[-3]},
-                'NO2': {'sensitivity': rowValues[-37], 'baseline40': rowValues[-16], 'Mvalue': rowValues[-2]},
-                'CMO': {'sensitivity': rowValues[-36], 'baseline40': rowValues[-15], 'Mvalue': rowValues[-1]}
-            }
+        xl_data[chem_id] = {
+            'IRR': {'sensitivity': rowValues[-42], 'baseline40': rowValues[-21], 'Mvalue': rowValues[-7]},   # IRR = RESP, baseline = Izero@25C
+            'IAQ': {'sensitivity': rowValues[-41], 'baseline40': rowValues[-20], 'Mvalue': rowValues[-6]},
+            'SO2': {'sensitivity': rowValues[-40], 'baseline40': rowValues[-19], 'Mvalue': rowValues[-5]},
+            'H2S': {'sensitivity': rowValues[-39], 'baseline40': rowValues[-18], 'Mvalue': rowValues[-4]},
+            'OZO': {'sensitivity': rowValues[-38], 'baseline40': rowValues[-17], 'Mvalue': rowValues[-3]},
+            'NO2': {'sensitivity': rowValues[-37], 'baseline40': rowValues[-16], 'Mvalue': rowValues[-2]},
+            'CMO': {'sensitivity': rowValues[-36], 'baseline40': rowValues[-15], 'Mvalue': rowValues[-1]}
+        }
 
     return xl_data
 

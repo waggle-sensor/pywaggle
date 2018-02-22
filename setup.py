@@ -20,6 +20,7 @@ setup(
         'waggle.protocol.v4',
         'waggle.protocol.v5',
         'waggle.protocol.v5.utils',
+        'waggle.protocol.v5.res',
         'waggle.coresense',
     ],
 )
