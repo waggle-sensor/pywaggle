@@ -23,7 +23,7 @@ def convert(value):
     # elif 4.5 < ML8511_val:
     #     ML8511_val += 0.25
 
-    # value['lightsense_ml8511'] = (ML8511_val, 'index')
-    value['lightsense_ml8511'] = (raw_l, 'raw')
+    value['lightsense_ml8511'] = (ML8511_val, 'mW/cm3')
+    # value['lightsense_ml8511'] = (raw_l, 'raw')
 
     return value

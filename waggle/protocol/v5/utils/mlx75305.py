@@ -10,7 +10,7 @@ def convert(value):
 
     converted_value = round((value_voltage_divider - 0.09234) / 0.007, 2)   #with gain 1, the factor is 7mA/(uW/cm^2)
 
-    # value['lightsense_mlx75305'] = (converted_value, 'uW/cm^2')
-    value['lightsense_mlx75305'] = (raw_l, 'raw')
+    value['lightsense_mlx75305'] = (converted_value, 'uW/cm^2')
+    # value['lightsense_mlx75305'] = (raw_l, 'raw')
 
     return value

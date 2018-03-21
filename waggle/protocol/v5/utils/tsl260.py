@@ -11,7 +11,7 @@ def convert(value):
     # input unit: V, irrad unit: uW/cm^2
     irrad = round((value_voltage_divider - 0.006250) / 0.058, 4)
 
-    # value['lightsense_tsl260_light'] = (irrad, 'uW/cm^2')
-    value['lightsense_tsl260_light'] = (raw_l, 'raw')
+    value['lightsense_tsl260_light'] = (irrad, 'uW/cm^2')
+    # value['lightsense_tsl260_light'] = (raw_l, 'raw')
 
     return value
