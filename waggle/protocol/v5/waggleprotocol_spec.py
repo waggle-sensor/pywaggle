@@ -274,6 +274,13 @@ waggleprotocol_spec = '''
       length: 128
       format: byte
 
+- id: 0x36
+  conversion: pms7003
+  params:
+    - name: pms7003_particle
+      length: 32
+      format: hex
+
 - id: 0x50
   conversion:
   params:
