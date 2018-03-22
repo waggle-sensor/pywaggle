@@ -53,7 +53,7 @@ def convert(value):
     if (b7 < 0x80000000):
         p = (b7 << 1) / b4
     else:
-        p = (b7 / b4) << 1
+        p = int(b7 / b4) << 1
 
     x1 = (int(p) >> 8) * (int(p) >> 8)
     x1 = (x1 * 3038) >> 16

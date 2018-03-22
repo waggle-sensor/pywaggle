@@ -277,9 +277,57 @@ waggleprotocol_spec = '''
 - id: 0x36
   conversion: pms7003
   params:
-    - name: pms7003_particle
-      length: 32
+    - name: header
+      length: 2
       format: hex
+    - name: frame_length
+      length: 2
+      format: uint
+    - name: pm1_cf1
+      length: 2
+      format: uint
+    - name: pm25_cf1
+      length: 2
+      format: uint
+    - name: pm10_cf1
+      length: 2
+      format: uint
+    - name: pm1_atm
+      length: 2
+      format: uint
+    - name: pm25_atm
+      length: 2
+      format: uint
+    - name: pm10_atm
+      length: 2
+      format: uint
+    - name: point_3um_particle
+      length: 2
+      format: uint
+    - name: point_5um_particle
+      length: 2
+      format: uint
+    - name: 1um_particle
+      length: 2
+      format: uint
+    - name: 2_5um_particle
+      length: 2
+      format: uint
+    - name: 5um_particle
+      length: 2
+      format: uint
+    - name: 10um_particle
+      length: 2
+      format: uint
+    - name: version
+      length: 1
+      format: uint
+    - name: error_code
+      length: 1
+      format: uint
+    - name: check_sum
+      length: 2
+      format: uint
 
 - id: 0x50
   conversion:
