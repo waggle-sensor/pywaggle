@@ -1107,4 +1107,24 @@ waggleprotocol_spec = '''
     - name: ep_service_heartbeat_substate
       length: 0.5
       format: uint
+
+- id: 0x90
+  conversion:
+  params:
+    - name: net_broadband_rx
+      length: 4
+      format: uint
+    - name: net_broadband_tx
+      length: 4
+      format: uint
+
+- id: 0x91
+  conversion:
+  params:
+    - name: net_lan_rx
+      length: 4
+      format: uint
+    - name: net_lan_tx
+      length: 4
+      format: uint
 '''

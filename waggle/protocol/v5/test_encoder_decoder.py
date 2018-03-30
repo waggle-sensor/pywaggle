@@ -1,9 +1,12 @@
 import unittest
+from waggle.protocol.v5.decoder import decode_frame
+from waggle.protocol.v5.encoder import encode_frame
 
-from waggle.protocol.v5 import decoder
-from waggle.protocol.v5 import encoder
 
 class WaggleProtocolTestUnit(unittest.TestCase):
+
+    def test_empty(self):
+        self.assertEqual(decode_frame(encode_frame({})), {})
 
     def test_encode(self):
         data = {
@@ -13,22 +16,20 @@ class WaggleProtocolTestUnit(unittest.TestCase):
             0x07: [123, 234, 345],
             0x7C: [False, True, False, True],
             0x78: ['%15s' % ('abcde',)]
-        }    
-        encoded_data = encoder.encode_frame(data)
-        decoded_data = decoder.decode_frame(encoded_data)
+        }
+
+        encoded_data = encode_frame(data)
+        decoded_data = decode_frame(encoded_data)
+
         for sensor in data:
             # self.assertIn(decoded_data, sensor)
             decoded_values = decoded_data.get(sensor)
-            print(decoded_values)
+
             self.assertNotEqual(decoded_values, None)
             self.assertIsInstance(decoded_values, dict)
             decoded_values = list(decoded_values.values())
             original_values = data[sensor]
-            print('%s encoded/decoded to %s' % (str(original_values), str(decoded_values)))
             self.assertEqual(len(decoded_values), len(original_values))
-
-            
-        # self.assertEqual()
 
 
 if __name__ == '__main__':
