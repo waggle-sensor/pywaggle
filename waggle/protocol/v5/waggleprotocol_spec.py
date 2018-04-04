@@ -514,10 +514,10 @@ waggleprotocol_spec = '''
 - id: 0x61
   conversion: bool
   params:
-    - name: wagman_mediaselect_sd_nc
+    - name: wagman_mediaselect_nc
       length: 1
       format: str
-    - name: wagman_mediaselect_sd_ep
+    - name: wagman_mediaselect_ep
       length: 1
       format: str
 
