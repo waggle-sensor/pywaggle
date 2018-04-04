@@ -31,7 +31,7 @@ class WaggleProtocolTestUnit(unittest.TestCase):
         net_broadband_tx 654321
         '''
 
-        encoded_data = encode_frame_from_flat_string(text, True)
+        encoded_data = encode_frame_from_flat_string(text, verbose=True)
         decoded_data = decode_frame(encoded_data)
 
         values = flatten_sensor_values(decoded_data)
