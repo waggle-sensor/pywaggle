@@ -340,13 +340,11 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: wagman_ver_hw_mj
-      length: 0.5
+      length: 1
       format: uint
-      conversion:
     - name: wagman_ver_hw_mi
-      length: 0.5
+      length: 1
       format: uint
-      conversion:
 
 - id: 0x52
   conversion:
@@ -373,14 +371,14 @@ waggleprotocol_spec = '''
   params:
     - name: wagman_time_compile
       length: 4
-      format: epoch
+      format: uint
 
 - id: 0x55
   conversion: epoch_datetime
   params:
     - name: wagman_time_current
       length: 4
-      format: epoch
+      format: uint
 
 - id: 0x56
   conversion:
@@ -394,7 +392,7 @@ waggleprotocol_spec = '''
   params:
     - name: wagman_uptime
       length: 4
-      format: epoch
+      format: uint
 
 - id: 0x58
   conversion:
@@ -498,48 +496,48 @@ waggleprotocol_spec = '''
   conversion: bool
   params:
     - name: wagman_enabled_nc
-      length: 0.125
+      length: 1
       format: uint
     - name: wagman_enabled_ep
-      length: 0.125
+      length: 1
       format: uint
     - name: wagman_enabled_cs
-      length: 0.125
+      length: 1
       format: uint
     - name: wagman_enabled_port4
-      length: 0.125
+      length: 1
       format: uint
     - name: wagman_enabled_port5
-      length: 0.125
+      length: 1
       format: uint
 
 - id: 0x61
   conversion: bool
   params:
     - name: wagman_mediaselect_sd_nc
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: wagman_mediaselect_sd_ep
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x62
   conversion:
   params:
     - name: wagman_heartbeat_nc
-      length: 4
+      length: 1
       format: uint
     - name: wagman_heartbeat_ep
-      length: 4
+      length: 1
       format: uint
     - name: wagman_heartbeat_cs
-      length: 4
+      length: 1
       format: uint
     - name: wagman_heartbeat_port4
-      length: 4
+      length: 1
       format: uint
     - name: wagman_heartbeat_port5
-      length: 4
+      length: 1
       format: uint
 
 - id: 0x63
@@ -547,38 +545,38 @@ waggleprotocol_spec = '''
   params:
     - name: wagman_lastboot_nc
       length: 4
-      format: epoch
+      format: uint
     - name: wagman_lastboot_ep
       length: 4
-      format: epoch
+      format: uint
     - name: wagman_lastboot_cs
       length: 4
-      format: epoch
+      format: uint
     - name: wagman_lastboot_port4
       length: 4
-      format: epoch
+      format: uint
     - name: wagman_lastboot_port5
       length: 4
-      format: epoch
+      format: uint
 
 - id: 0x64
   conversion:
   params:
     - name: wagman_powerfaults_nc
       length: 4
-      format: epoch
+      format: uint
     - name: wagman_powerfaults_ep
       length: 4
-      format: epoch
+      format: uint
     - name: wagman_powerfaults_cs
       length: 4
-      format: epoch
+      format: uint
     - name: wagman_powerfaults_port4
       length: 4
-      format: epoch
+      format: uint
     - name: wagman_powerfaults_port5
       length: 4
-      format: epoch
+      format: uint
 
 - id: 0x65
   conversion:
@@ -609,66 +607,60 @@ waggleprotocol_spec = '''
 - id: 0x70
   conversion:
   params:
-    - name: nc_node_id
-      length: 12
+    - name: nc_machine_id
+      length: 16
       format: hex
 
 - id: 0x71
   conversion:
   params:
     - name: nc_boot_id
-      length: 32
+      length: 16
       format: hex
 
 - id: 0x72
   conversion:
   params:
     - name: nc_cpu_temp
-      length: 2
-      format: float_2
+      length: 3
+      format: uint
 
 - id: 0x73
   conversion:
   params:
     - name: nc_ram_total
-      length: 2
-      format: float_2
+      length: 4
+      format: uint
     - name: nc_ram_free
-      length: 2
-      format: float_2
+      length: 4
+      format: uint
 
 - id: 0x74
   conversion:
   params:
-    - name: nc_current_disk_name
-      length: 7
-      format: str
     - name: nc_current_disk_type
-      length: 2
-      format: str
-    - name: nc_alternate_disk_name
-      length: 7
+      length: 1
       format: str
     - name: nc_alternate_disk_type
-      length: 2
+      length: 1
       format: str
     - name: nc_partition1_total
-      length: 2
-      format: float_2
+      length: 3
+      format: uint
     - name: nc_partition1_used
-      length: 1
+      length: 3
       format: uint
     - name: nc_partition2_total
-      length: 2
-      format: float_2
+      length: 3
+      format: uint
     - name: nc_partition2_used
-      length: 1
+      length: 3
       format: uint
     - name: nc_partition3_total
-      length: 2
-      format: float_2
+      length: 3
+      format: uint
     - name: nc_partition3_used
-      length: 1
+      length: 3
       format: uint
 
 - id: 0x75
@@ -676,7 +668,7 @@ waggleprotocol_spec = '''
   params:
     - name: nc_current_time
       length: 4
-      format: epoch
+      format: uint
 
 - id: 0x76
   conversion:
@@ -692,14 +684,14 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: nc_load_1
-      length: 2
-      format: float_2
+      length: 4
+      format: float
     - name: nc_load_5
-      length: 2
-      format: float_2
+      length: 4
+      format: float
     - name: nc_load_10
-      length: 2
-      format: float_2
+      length: 4
+      format: float
 
 - id: 0x78
   conversion:
@@ -712,47 +704,47 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: nc_hbmode
-      length: 6
+      length: 1
       format: str
 
 - id: 0x7A
   conversion:
   params:
     - name: nc_lock_fs
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_lock_pw
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x7B
   conversion:
   params:
     - name: nc_beehive_ping
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_beehive_sshd
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_local_sshd
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x7C
   conversion:
   params:
     - name: nc_devices_alphasense
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_devices_metsense
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_devices_modem
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_devices_wagman
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x7D
   conversion:
@@ -789,169 +781,163 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: nc_rabbitmq_queues_data
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_rabbitmq_exchages_data
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_rabbitmq_shovels_data
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: nc_rabbitmq_shovels_images
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x7F
   conversion:
   params:
     - name: nc_service_rabbitmq_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: nc_service_rabbitmq_exitcode
       length: 1
-      format: uint
+      format: int
     - name: nc_service_rabbitmq_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_rabbitmq_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_init_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: nc_service_init_exitcode
       length: 1
-      format: uint
+      format: int
     - name: nc_service_init_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_init_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_heartbeat_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: nc_service_heartbeat_exitcode
       length: 1
-      format: uint
+      format: int
     - name: nc_service_heartbeat_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_heartbeat_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_epoch_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: nc_service_epoch_exitcode
       length: 1
-      format: uint
+      format: int
     - name: nc_service_epoch_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_epoch_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_reversetunnel_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: nc_service_reversetunnel_exitcode
       length: 1
-      format: uint
+      format: int
     - name: nc_service_reversetunnel_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_reversetunnel_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_wagmandriver_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: nc_service_wagmandriver_exitcode
       length: 1
-      format: uint
+      format: int
     - name: nc_service_wagmandriver_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_wagmandriver_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_wwan_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: nc_service_wwan_exitcode
       length: 1
-      format: uint
+      format: int
     - name: nc_service_wwan_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: nc_service_wwan_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x80
   conversion:
   params:
-    - name: ep_node_id
-      length: 12
+    - name: ep_machine_id
+      length: 16
       format: hex
 
 - id: 0x81
   conversion:
   params:
     - name: ep_boot_id
-      length: 32
+      length: 16
       format: hex
 
 - id: 0x82
   conversion:
   params:
     - name: ep_cpu_temp
-      length: 2
-      format: float_2
+      length: 3
+      format: uint
 
 - id: 0x83
   conversion:
   params:
     - name: ep_ram_total
-      length: 2
-      format: float_2
+      length: 4
+      format: uint
     - name: ep_ram_free
-      length: 2
-      format: float_2
+      length: 4
+      format: uint
 
 - id: 0x84
   conversion:
   params:
-    - name: ep_current_disk_name
-      length: 7
-      format: str
     - name: ep_current_disk_type
-      length: 2
-      format: str
-    - name: ep_alternate_disk_name
-      length: 7
+      length: 1
       format: str
     - name: ep_alternate_disk_type
-      length: 2
+      length: 1
       format: str
     - name: ep_partition1_total
-      length: 2
-      format: float_2
+      length: 3
+      format: uint
     - name: ep_partition1_used
-      length: 1
+      length: 3
       format: uint
     - name: ep_partition2_total
-      length: 2
-      format: float_2
+      length: 3
+      format: uint
     - name: ep_partition2_used
-      length: 1
+      length: 3
       format: uint
     - name: ep_partition3_total
-      length: 2
-      format: float_2
+      length: 3
+      format: uint
     - name: ep_partition3_used
-      length: 1
+      length: 3
       format: uint
 
 - id: 0x85
@@ -959,7 +945,7 @@ waggleprotocol_spec = '''
   params:
     - name: ep_current_time
       length: 4
-      format: epoch
+      format: uint
 
 - id: 0x86
   conversion:
@@ -975,14 +961,14 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: ep_load_1
-      length: 2
-      format: float_2
+      length: 4
+      format: float
     - name: ep_load_5
-      length: 2
-      format: float_2
+      length: 4
+      format: float
     - name: ep_load_10
-      length: 2
-      format: float_2
+      length: 4
+      format: float
 
 - id: 0x88
   conversion:
@@ -995,31 +981,31 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: ep_hbmode
-      length: 6
+      length: 1
       format: str
 
 - id: 0x8A
   conversion:
   params:
     - name: ep_lock_fs
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: ep_lock_pw
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x8B
   conversion:
   params:
     - name: ep_devices_camera_bottom
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: ep_devices_camera_top
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: ep_devices_microphone
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x8C
   conversion:
@@ -1056,57 +1042,57 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: ep_rabbitmq_queues_data
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: ep_rabbitmq_queues_images
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: ep_rabbitmq_exchanges_data
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
     - name: ep_rabbitmq_exchanges_images
-      length: 0.125
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x8E
   conversion:
   params:
     - name: ep_service_rabbitmq_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: ep_service_rabbitmq_exitcode
       length: 1
-      format: uint
+      format: int
     - name: ep_service_rabbitmq_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: ep_service_rabbitmq_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: ep_service_init_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: ep_service_init_exitcode
       length: 1
-      format: uint
+      format: int
     - name: ep_service_init_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: ep_service_init_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: ep_service_heartbeat_uptime
       length: 4
-      format: epoch
+      format: uint
     - name: ep_service_heartbeat_exitcode
       length: 1
-      format: uint
+      format: int
     - name: ep_service_heartbeat_state
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
     - name: ep_service_heartbeat_substate
-      length: 0.5
-      format: uint
+      length: 1
+      format: str
 
 - id: 0x90
   conversion:

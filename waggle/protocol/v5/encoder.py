@@ -3,6 +3,7 @@ import math
 from .spec import spec
 from . import format
 from .crc import create_crc
+from .helper import *
 
 logger = logging.getLogger('protocol.encoder')
 sequence = 0
@@ -109,3 +110,74 @@ def encode_frame(frame_data):
             sequence = 0
 
     return bytes(waggle_packet)
+
+
+'''
+    Encode a frame
+    @params:
+        - lines of string 'nc_machine_id 1234...\nnc_boot_id 123....'
+    @return:
+        A byte array of the frame
+'''
+def encode_frame_from_flat_string(frame_data, verbose=False):
+    global sequence
+
+    if not isinstance(frame_data, str):
+        print('Input must be string. Abort.')
+        return None
+
+    keys = []
+    values = []
+    list_of_inputs = frame_data.split('\n')
+    for line in list_of_inputs:
+        key, value = get_key_value(line)
+        if key is not None and value is not None:
+            keys.append(key)
+            values.append(value)
+        else:
+            if verbose:
+                print('Could not parse %s' % (line,))
+
+    finished = []
+    dict_data = {}
+    number_of_keys = len(keys)
+    for i in range(0, number_of_keys):
+        key = keys[i]
+        if key == '':
+            continue
+        value = values[i]
+
+        # Check if sensor ID for the key exists
+        sensor_id = find_sensor_id_from_param_name(spec, key)
+        if sensor_id is None:
+            if verbose:
+                print('Sensor ID not exist for %s' % (key,))
+            continue
+
+        # Check if all required params exists in the list of inputs
+        required_params, required_types = find_param_names_and_types_of_sensor(spec, sensor_id)
+        required_values = []
+        for j in range(i, number_of_keys):
+            key_in_search = keys[j]
+            
+            if key_in_search in required_params:
+                index = required_params.index(key_in_search)
+                value_in_search = values[j]
+                conversion_type = required_types[index]
+                # Convert the value into proper type
+                converted_value_in_search = try_converting(value_in_search, conversion_type)
+                if converted_value_in_search is not None:
+                    required_values.append(converted_value_in_search)
+                else:
+                    if verbose:
+                        print('%s is not type of %s' % (value_in_search, conversion_type))
+                    continue
+                # Prevent the key from being called later
+                keys[j] = ''
+        if len(required_params) != len(required_values):
+            if verbose:
+                print('Not all params exists for %s' % (str(sensor_id),))
+            continue
+
+        dict_data[sensor_id] = required_values
+    return encode_frame(dict_data)
