@@ -3,6 +3,15 @@ from waggle.protocol.v5.decoder import decode_frame
 from waggle.protocol.v5.encoder import encode_frame_from_flat_string
 
 
+def flatten_sensor_values(sensor_values):
+    flattened_values = {}
+
+    for sensor_values in sensor_values.values():
+        flattened_values.update(sensor_values)
+
+    return flattened_values
+
+
 class WaggleProtocolTestUnit(unittest.TestCase):
 
     def test_empty(self):
@@ -25,10 +34,8 @@ class WaggleProtocolTestUnit(unittest.TestCase):
         encoded_data = encode_frame_from_flat_string(text, True)
         decoded_data = decode_frame(encoded_data)
 
-        values = {}
-
-        for sensor_values in decoded_data.values():
-            values.update(sensor_values)
+        values = flatten_sensor_values(decoded_data)
+        print(values)
 
         self.assertAlmostEqual(values['nc_load_1'], 0.74)
         self.assertAlmostEqual(values['nc_load_5'], 0.53)
