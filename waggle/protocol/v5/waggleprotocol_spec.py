@@ -562,19 +562,19 @@ waggleprotocol_spec = '''
 - id: 0x64
   conversion:
   params:
-    - name: wagman_powerfaults_nc
+    - name: wagman_powerfault_nc
       length: 4
       format: uint
-    - name: wagman_powerfaults_ep
+    - name: wagman_powerfault_ep
       length: 4
       format: uint
-    - name: wagman_powerfaults_cs
+    - name: wagman_powerfault_cs
       length: 4
       format: uint
-    - name: wagman_powerfaults_port4
+    - name: wagman_powerfault_port4
       length: 4
       format: uint
-    - name: wagman_powerfaults_port5
+    - name: wagman_powerfault_port5
       length: 4
       format: uint
 
