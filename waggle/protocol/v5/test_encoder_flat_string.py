@@ -3,10 +3,6 @@ from waggle.protocol.v5.decoder import decode_frame
 from waggle.protocol.v5.encoder import encode_frame_from_flat_string
 
 
-def almostzero(a, b):
-    pass
-
-
 class WaggleProtocolTestUnit(unittest.TestCase):
 
     def test_empty(self):
