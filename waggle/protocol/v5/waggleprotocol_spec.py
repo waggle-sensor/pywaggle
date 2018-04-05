@@ -696,9 +696,18 @@ waggleprotocol_spec = '''
 - id: 0x78
   conversion:
   params:
-    - name: nc_ipaddress
-      length: 15
-      format: str
+    - name: nc_ipaddress_octet1
+      length: 1
+      format: uint
+    - name: nc_ipaddress_octet2
+      length: 1
+      format: uint
+    - name: nc_ipaddress_octet3
+      length: 1
+      format: uint
+    - name: nc_ipaddress_octet4
+      length: 1
+      format: uint
 
 - id: 0x79
   conversion:
@@ -767,13 +776,13 @@ waggleprotocol_spec = '''
     - name: nc_ver_nodecontroller_p
       length: 1
       format: uint
-    - name: nc_ver_pluginmanager_mj
+    - name: nc_ver_plugin_manager_mj
       length: 1
       format: uint
-    - name: nc_ver_pluginmanager_mi
+    - name: nc_ver_plugin_manager_mi
       length: 1
       format: uint
-    - name: nc_ver_pluginmanager_p
+    - name: nc_ver_plugin_manager_p
       length: 1
       format: uint
 
@@ -783,7 +792,7 @@ waggleprotocol_spec = '''
     - name: nc_rabbitmq_queues_data
       length: 1
       format: str
-    - name: nc_rabbitmq_exchages_data
+    - name: nc_rabbitmq_exchanges_data
       length: 1
       format: str
     - name: nc_rabbitmq_shovels_data
@@ -973,9 +982,18 @@ waggleprotocol_spec = '''
 - id: 0x88
   conversion:
   params:
-    - name: ep_ipaddress
-      length: 15
-      format: str
+    - name: ep_ipaddress_octet1
+      length: 1
+      format: uint
+    - name: ep_ipaddress_octet2
+      length: 1
+      format: uint
+    - name: ep_ipaddress_octet3
+      length: 1
+      format: uint
+    - name: ep_ipaddress_octet4
+      length: 1
+      format: uint
 
 - id: 0x89
   conversion:
@@ -1019,22 +1037,13 @@ waggleprotocol_spec = '''
     - name: ep_ver_core_p
       length: 1
       format: uint
-    - name: ep_ver_edgeprocessor_mj
+    - name: ep_ver_edge_processor_mj
       length: 1
       format: uint
-    - name: ep_ver_edgeprocessor_mi
+    - name: ep_ver_edge_processor_mi
       length: 1
       format: uint
-    - name: ep_ver_edgeprocessor_p
-      length: 1
-      format: uint
-    - name: ep_ver_pluginmanager_mj
-      length: 1
-      format: uint
-    - name: ep_ver_pluginmanager_mi
-      length: 1
-      format: uint
-    - name: ep_ver_pluginmanager_p
+    - name: ep_ver_edge_processor_p
       length: 1
       format: uint
 

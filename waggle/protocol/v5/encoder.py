@@ -39,6 +39,10 @@ def encode_sub_packet(id, data=[]):
 
     formats = [param['format'] for param in params]
     lengths = [param['length'] for param in params]
+    print('encoding', str(id))
+    print(data)
+    print(formats)
+    print(lengths)
     binary = format.waggle_pack(formats, lengths, data)
 
     packet_length = len(binary)
@@ -158,7 +162,6 @@ def encode_frame_from_flat_string(frame_data, verbose=False):
         # Check if all required params exists in the list of inputs
         required_params, required_types = find_param_names_and_types_of_sensor(spec, sensor_id)
         required_values = [None] * len(required_params)
-        print(required_params)
         for j in range(i, number_of_keys):
             key_in_search = keys[j]
 
@@ -182,5 +185,4 @@ def encode_frame_from_flat_string(frame_data, verbose=False):
             continue
 
         dict_data[sensor_id] = required_values
-    print(dict_data)
     return encode_frame(dict_data)
