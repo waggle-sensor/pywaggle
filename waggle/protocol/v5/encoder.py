@@ -5,8 +5,6 @@ from .crc import create_crc
 from .helper import get_key_value, find_sensor_id_from_param_name, find_param_names_and_types_of_sensor, try_converting
 
 logger = logging.getLogger('protocol.encoder')
-sequence = 0
-coresense_sequence = 0
 
 # protocol_version 1 is used in lower or equal to coresense firmware 3.12
 protocol_version = 2
@@ -39,10 +37,6 @@ def encode_sub_packet(id, data=[]):
 
     formats = [param['format'] for param in params]
     lengths = [param['length'] for param in params]
-    print('encoding', str(id))
-    print(data)
-    print(formats)
-    print(lengths)
     binary = format.waggle_pack(formats, lengths, data)
 
     packet_length = len(binary)
@@ -62,7 +56,6 @@ def encode_frame(frame_data):
     @return:
         A byte array of the frame
     '''
-    global sequence
     if not isinstance(frame_data, dict):
         logger.error('%s must be a dictionary' % (str(frame_data),))
         return None
@@ -77,14 +70,13 @@ def encode_frame(frame_data):
         encoded = encode_sub_packet(sub_id, sub_values)
 
         if encoded is not None:
-            if len(body) + len(encoded) > max_body_length:
+            if len(body) + len(encoded) >= max_body_length:
                 bodies.append(body)
                 body = bytearray()
             body.extend(encoded)
 
     bodies.append(body)
 
-    body_length = len(body)
     waggle_packet = bytearray()
     packet_type = 0  # sensor reading
     for index, body in enumerate(bodies):
@@ -95,6 +87,7 @@ def encode_frame(frame_data):
         header[1] = ((packet_type & 0x0F) << 4) | protocol_version & 0x0F
         header[2] = body_length + 1
 
+        # Sequence
         packet_body = bytearray(1)
         if index + 1 == len(bodies):
             packet_body[0] = index | 0x80
@@ -110,11 +103,6 @@ def encode_frame(frame_data):
         waggle_packet.extend(packet_body)
         waggle_packet.extend(footer)
 
-        if sequence < 0x7F:
-            sequence += 1
-        else:
-            sequence = 0
-
     return bytes(waggle_packet)
 
 
@@ -126,7 +114,6 @@ def encode_frame_from_flat_string(frame_data, verbose=False):
     @return:
         A byte array of the frame
     '''
-    global sequence
 
     if not isinstance(frame_data, str):
         print('Input must be string. Abort.')
