@@ -29,6 +29,18 @@ class WaggleProtocolTestUnit(unittest.TestCase):
         nc_ram_free 291328
         net_broadband_rx 123456
         net_broadband_tx 654321
+        ep_service_heartbeat_exitcode 0
+        ep_service_heartbeat_state a
+        ep_service_heartbeat_substate r
+        ep_service_heartbeat_uptime 1522795300
+        ep_service_init_exitcode 1
+        ep_service_init_state i
+        ep_service_init_substate d
+        ep_service_init_uptime 1522795300
+        ep_service_rabbitmq_exitcode 0
+        ep_service_rabbitmq_state a
+        ep_service_rabbitmq_substate r
+        ep_service_rabbitmq_uptime 1522876954
         '''
 
         encoded_data = encode_frame_from_flat_string(text, verbose=True)

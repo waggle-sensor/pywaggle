@@ -157,7 +157,8 @@ def encode_frame_from_flat_string(frame_data, verbose=False):
 
         # Check if all required params exists in the list of inputs
         required_params, required_types = find_param_names_and_types_of_sensor(spec, sensor_id)
-        required_values = []
+        required_values = [None] * len(required_params)
+        print(required_params)
         for j in range(i, number_of_keys):
             key_in_search = keys[j]
 
@@ -168,17 +169,18 @@ def encode_frame_from_flat_string(frame_data, verbose=False):
                 # Convert the value into proper type
                 converted_value_in_search = try_converting(value_in_search, conversion_type)
                 if converted_value_in_search is not None:
-                    required_values.append(converted_value_in_search)
+                    required_values[index] = converted_value_in_search
                 else:
                     if verbose:
                         print('%s is not type of %s' % (value_in_search, conversion_type))
                     continue
                 # Prevent the key from being called later
                 keys[j] = ''
-        if len(required_params) != len(required_values):
+        if None in required_values:
             if verbose:
                 print('Not all params exists for %s' % (str(sensor_id),))
             continue
 
         dict_data[sensor_id] = required_values
+    print(dict_data)
     return encode_frame(dict_data)

@@ -796,88 +796,88 @@ waggleprotocol_spec = '''
 - id: 0x7F
   conversion:
   params:
-    - name: nc_services_rabbitmq_uptime
+    - name: nc_service_rabbitmq_uptime
       length: 4
       format: uint
-    - name: nc_services_rabbitmq_exitcode
+    - name: nc_service_rabbitmq_exitcode
       length: 1
       format: int
-    - name: nc_services_rabbitmq_state
+    - name: nc_service_rabbitmq_state
       length: 1
       format: str
-    - name: nc_services_rabbitmq_substate
+    - name: nc_service_rabbitmq_substate
       length: 1
       format: str
-    - name: nc_services_init_uptime
+    - name: nc_service_init_uptime
       length: 4
       format: uint
-    - name: nc_services_init_exitcode
+    - name: nc_service_init_exitcode
       length: 1
       format: int
-    - name: nc_services_init_state
+    - name: nc_service_init_state
       length: 1
       format: str
-    - name: nc_services_init_substate
+    - name: nc_service_init_substate
       length: 1
       format: str
-    - name: nc_services_heartbeat_uptime
+    - name: nc_service_heartbeat_uptime
       length: 4
       format: uint
-    - name: nc_services_heartbeat_exitcode
+    - name: nc_service_heartbeat_exitcode
       length: 1
       format: int
-    - name: nc_services_heartbeat_state
+    - name: nc_service_heartbeat_state
       length: 1
       format: str
-    - name: nc_services_heartbeat_substate
+    - name: nc_service_heartbeat_substate
       length: 1
       format: str
-    - name: nc_services_epoch_uptime
+    - name: nc_service_epoch_uptime
       length: 4
       format: uint
-    - name: nc_services_epoch_exitcode
+    - name: nc_service_epoch_exitcode
       length: 1
       format: int
-    - name: nc_services_epoch_state
+    - name: nc_service_epoch_state
       length: 1
       format: str
-    - name: nc_services_epoch_substate
+    - name: nc_service_epoch_substate
       length: 1
       format: str
-    - name: nc_services_reversetunnel_uptime
+    - name: nc_service_reversetunnel_uptime
       length: 4
       format: uint
-    - name: nc_services_reversetunnel_exitcode
+    - name: nc_service_reversetunnel_exitcode
       length: 1
       format: int
-    - name: nc_services_reversetunnel_state
+    - name: nc_service_reversetunnel_state
       length: 1
       format: str
-    - name: nc_services_reversetunnel_substate
+    - name: nc_service_reversetunnel_substate
       length: 1
       format: str
-    - name: nc_services_wagmandriver_uptime
+    - name: nc_service_wagmandriver_uptime
       length: 4
       format: uint
-    - name: nc_services_wagmandriver_exitcode
+    - name: nc_service_wagmandriver_exitcode
       length: 1
       format: int
-    - name: nc_services_wagmandriver_state
+    - name: nc_service_wagmandriver_state
       length: 1
       format: str
-    - name: nc_services_wagmandriver_substate
+    - name: nc_service_wagmandriver_substate
       length: 1
       format: str
-    - name: nc_services_wwan_uptime
+    - name: nc_service_wwan_uptime
       length: 4
       format: uint
-    - name: nc_services_wwan_exitcode
+    - name: nc_service_wwan_exitcode
       length: 1
       format: int
-    - name: nc_services_wwan_state
+    - name: nc_service_wwan_state
       length: 1
       format: str
-    - name: nc_services_wwan_substate
+    - name: nc_service_wwan_substate
       length: 1
       format: str
 
@@ -1057,40 +1057,40 @@ waggleprotocol_spec = '''
 - id: 0x8E
   conversion:
   params:
-    - name: ep_services_rabbitmq_uptime
+    - name: ep_service_rabbitmq_uptime
       length: 4
       format: uint
-    - name: ep_services_rabbitmq_exitcode
+    - name: ep_service_rabbitmq_exitcode
       length: 1
       format: int
-    - name: ep_services_rabbitmq_state
+    - name: ep_service_rabbitmq_state
       length: 1
       format: str
-    - name: ep_services_rabbitmq_substate
+    - name: ep_service_rabbitmq_substate
       length: 1
       format: str
-    - name: ep_services_init_uptime
+    - name: ep_service_init_uptime
       length: 4
       format: uint
-    - name: ep_services_init_exitcode
+    - name: ep_service_init_exitcode
       length: 1
       format: int
-    - name: ep_services_init_state
+    - name: ep_service_init_state
       length: 1
       format: str
-    - name: ep_services_init_substate
+    - name: ep_service_init_substate
       length: 1
       format: str
-    - name: ep_services_heartbeat_uptime
+    - name: ep_service_heartbeat_uptime
       length: 4
       format: uint
-    - name: ep_services_heartbeat_exitcode
+    - name: ep_service_heartbeat_exitcode
       length: 1
       format: int
-    - name: ep_services_heartbeat_state
+    - name: ep_service_heartbeat_state
       length: 1
       format: str
-    - name: ep_services_heartbeat_substate
+    - name: ep_service_heartbeat_substate
       length: 1
       format: str
 
