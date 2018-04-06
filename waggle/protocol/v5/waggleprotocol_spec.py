@@ -454,17 +454,17 @@ waggleprotocol_spec = '''
   params:
     - name: wagman_htu21d_temperature
       length: 2
-      format: uint
+      format: int
     - name: wagman_htu21d_humidity
       length: 2
-      format: uint
+      format: int
 
 - id: 0x5D
   conversion: hih4030
   params:
     - name: wagman_hih4030_humidity
       length: 2
-      format: uint
+      format: int
 
 - id: 0x5E
   conversion: photocell
