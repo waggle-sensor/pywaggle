@@ -279,7 +279,7 @@ waggleprotocol_spec = '''
   params:
     - name: pms7003_header
       length: 2
-      format: hex
+      format: byte
     - name: pms7003_frame_length
       length: 2
       format: uint
