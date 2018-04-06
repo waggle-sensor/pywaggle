@@ -11,7 +11,7 @@ imported_data = {}
 def import_data():
     xl_data = {}
 
-    rows = chemsense_calib_data.chemsense_calib_data_raw.strip().split('\n')
+    rows = chemsense_empty_data.chemsense_empty_data_raw.strip().split('\n')
     for row in rows:
         rowValues = row.strip().split(';')
         chem_id = rowValues[1]
