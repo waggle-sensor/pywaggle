@@ -3,7 +3,7 @@
 
 import math
 
-from waggle.protocol.v5.res import chemsense_calib_data
+from waggle.protocol.v5.res import chemsense_empty_data
 
 mid_dict = {}
 imported_data = {}
