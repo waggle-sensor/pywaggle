@@ -1046,6 +1046,15 @@ waggleprotocol_spec = '''
     - name: ep_ver_edge_processor_p
       length: 1
       format: uint
+    - name: ep_ver_plugin_manager_mj
+      length: 1
+      format: uint
+    - name: ep_ver_plugin_manager_mi
+      length: 1
+      format: uint
+    - name: ep_ver_plugin_manager_p
+      length: 1
+      format: uint
 
 - id: 0x8D
   conversion:
