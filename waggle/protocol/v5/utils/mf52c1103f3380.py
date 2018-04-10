@@ -8,48 +8,56 @@
 
 import math
 
+
 def convert(value):
-    value['wagman_temperature_ncheatsink'] = calculation_nc(value['wagman_temperature_ncheatsink'])
-    value['wagman_temperature_epheatsink'] = calculation_others(value['wagman_temperature_epheatsink'])
-    value['wagman_temperature_battery'] = calculation_others(value['wagman_temperature_battery'])
-    value['wagman_temperature_brainplate'] = calculation_others(value['wagman_temperature_brainplate'])
-    value['wagman_temperature_powersupply'] = calculation_others(value['wagman_temperature_powersupply'])
+    conversions = [
+        ('wagman_temperature_ncheatsink', calculation_nc),
+        ('wagman_temperature_epheatsink', calculation_others),
+        ('wagman_temperature_battery', calculation_others),
+        ('wagman_temperature_brainplate', calculation_others),
+        ('wagman_temperature_powersupply', calculation_others),
+    ]
+
+    for p, f in conversions:
+        value[p] = f(value[p])
 
     return value
+
 
 def calculation_others(value):
     A = 0.00088570897
     B = 0.00025163902
     C = 0.00000019289731
 
-    v_in = 1.8  # v
+    Vin = 1.8  # v
     R = 23000.0 # 23k ohm
 
     LSB = 0.0000625 # 6.25 uV for 16-bit ADC converter
 
     # The Wagman firmware right-shifts the value by 5 bits
     value = value << 5
-    v = value * LSB
+    V = value * LSB
 
     rt = R * (Vin / V - 1)
     logrt = math.log(rt)
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
-    return (round(tempC, 2), 'C')
+    return tempC, 'C'
+
 
 def calculation_nc(value):
     A = 0.00088570897
     B = 0.00025163902
     C = 0.00000019289731
 
-    v_in = 5.0  # v
+    Vin = 5.0  # v
     R = 23000.0 # 23k ohm
 
     # The Wagman firmware right-shifts the value by 5 bits
-    v = value / 1024.0 * 5.0
+    V = value / 1024.0 * 5.0
 
     rt = R * (Vin / V - 1)
     logrt = math.log(rt)
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
-    return (round(tempC, 2), 'C')
+    return tempC, 'C'
