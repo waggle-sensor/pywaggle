@@ -1141,4 +1141,51 @@ waggleprotocol_spec = '''
     - name: net_usb_tx
       length: 4
       format: uint
+
+- id: 0x92
+  conversion:
+  params:
+    - name: net_usb_rx
+      length: 4
+      format: uint
+    - name: net_usb_tx
+      length: 4
+      format: uint
+
+- id: 0x93
+  conversion:
+  params:
+    - name: audio_spl_octave1
+      length: 4
+      format: float
+    - name: audio_spl_octave2
+      length: 4
+      format: float
+    - name: audio_spl_octave3
+      length: 4
+      format: float
+    - name: audio_spl_octave4
+      length: 4
+      format: float
+    - name: audio_spl_octave5
+      length: 4
+      format: float
+    - name: audio_spl_octave6
+      length: 4
+      format: float
+    - name: audio_spl_octave7
+      length: 4
+      format: float
+    - name: audio_spl_octave8
+      length: 4
+      format: float
+    - name: audio_spl_octave9
+      length: 4
+      format: float
+    - name: audio_spl_octave10
+      length: 4
+      format: float
+    - name: audio_spl_octave_total
+      length: 4
+      format: float
 '''
