@@ -113,7 +113,7 @@ def get_data_subpackets(data):
 
 
 def convert(values, sensor_id):
-    if not sensor_id in spec:
+    if sensor_id not in spec:
         return values
 
     conversion_name = spec[sensor_id]['conversion']

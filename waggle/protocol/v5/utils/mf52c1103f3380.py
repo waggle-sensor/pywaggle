@@ -38,7 +38,11 @@ def calculation_others(value):
     value = value << 5
     V = value * LSB
 
-    rt = R * (Vin / V - 1)
+    try:
+        rt = R * (Vin / V - 1)
+    except ZeroDivisionError:
+        return float('nan'), 'C'
+
     logrt = math.log(rt)
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
@@ -56,7 +60,11 @@ def calculation_nc(value):
     # The Wagman firmware right-shifts the value by 5 bits
     V = value / 1024.0 * 5.0
 
-    rt = R * (Vin / V - 1)
+    try:
+        rt = R * (Vin / V - 1)
+    except ZeroDivisionError:
+        return float('nan'), 'C'
+
     logrt = math.log(rt)
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
