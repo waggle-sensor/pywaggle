@@ -1142,16 +1142,6 @@ waggleprotocol_spec = '''
       length: 4
       format: uint
 
-- id: 0x92
-  conversion:
-  params:
-    - name: net_usb_rx
-      length: 4
-      format: uint
-    - name: net_usb_tx
-      length: 4
-      format: uint
-
 - id: 0x93
   conversion:
   params:
