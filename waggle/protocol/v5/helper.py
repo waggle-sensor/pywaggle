@@ -1,5 +1,6 @@
 import binascii
 
+
 '''
     Helper functions
 '''
