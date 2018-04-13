@@ -1,3 +1,5 @@
+import binascii
+
 '''
     Helper functions
 '''
@@ -40,6 +42,8 @@ def try_converting(value, type):
             return float(value)
         elif 'epoch' in type:
             return int(value)
+        elif 'byte' in type:
+            return binascii.unhexlify(value)
         else:
             return value
     except Exception:
