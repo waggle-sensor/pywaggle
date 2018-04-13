@@ -1195,12 +1195,12 @@ waggleprotocol_spec = '''
     length: 1
     format: uint
   - name: image_histogram_r
-    length: 255
+    length: 85
     format: byte
   - name: image_histogram_g
-    length: 255
+    length: 85
     format: byte
   - name: image_histogram_b
-    length: 255
+    length: 85
     format: byte
 '''
