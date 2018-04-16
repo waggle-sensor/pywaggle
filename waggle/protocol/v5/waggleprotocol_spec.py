@@ -388,7 +388,6 @@ waggleprotocol_spec = '''
       format: uint
 
 - id: 0x57
-  conversion: epoch_datetime
   params:
     - name: wagman_uptime
       length: 4
