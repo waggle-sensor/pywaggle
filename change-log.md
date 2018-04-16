@@ -1,5 +1,26 @@
 ## Change logs
 
+### 0.23.x (2018-04-16)
+#### New features
+* `image_average_color` and `image_histogram` are added
+
+Encoding packets from string type input
+```
+data = 'wagman_ver_git 1ef3'
+print(encode_frame_from_flat_string(data))
+b'\xaa\x02\x05\x80S\x82\x1e\xf3\x10U'
+```
+
+#### Fixes
+* CRC uses precomputed table
+
+### 0.23.8 (2018-04-10)
+#### New features
+* `audio-spi` sensor is added
+
+#### Fixes
+* Error fixes in `pr103j2` and `mf52c1103f3380`
+
 ### 0.23.7 (2018-04-06)
 #### New features
 * `encode_frame_from_flat_string`
