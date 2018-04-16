@@ -14,6 +14,8 @@ b'\xaa\x02\x05\x80S\x82\x1e\xf3\x10U'
 #### Fixes
 * CRC uses precomputed table
 
+* Convertion to epoch time for `wagman-uptime`, `nc-uptime`, and `ep-uptime` is removed
+
 ### 0.23.8 (2018-04-10)
 #### New features
 * `audio-spi` sensor is added
