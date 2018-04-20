@@ -2733,9 +2733,12 @@ y = [p[1] for p in points]
 
 def convert(value):
     raw_r = value['metsense_pr103j2_temperature']
-    resistance = 47000. * (1023. / raw_r - 1)
 
-    index = bisect.bisect(y, resistance)
-    value['metsense_pr103j2_temperature'] = (x[index], 'C')
+    try:
+        resistance = 47000. * (1023. / raw_r - 1)
+        index = bisect.bisect(y, resistance)
+        value['metsense_pr103j2_temperature'] = (x[index], 'C')
+    except ZeroDivisionError:
+        value['metsense_pr103j2_temperature'] = (float('nan'), 'C')
 
     return value
