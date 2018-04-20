@@ -10,14 +10,6 @@ import math
 
 
 def convert(value):
-    conversions = [
-        ('wagman_temperature_ncheatsink', calculation_nc),
-        ('wagman_temperature_epheatsink', calculation_others),
-        ('wagman_temperature_battery', calculation_others),
-        ('wagman_temperature_brainplate', calculation_others),
-        ('wagman_temperature_powersupply', calculation_others),
-    ]
-
     for p, f in conversions:
         value[p] = f(value[p])
 
@@ -69,3 +61,12 @@ def calculation_nc(value):
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
     return tempC, 'C'
+
+
+conversions = [
+    ('wagman_temperature_ncheatsink', calculation_nc),
+    ('wagman_temperature_epheatsink', calculation_others),
+    ('wagman_temperature_battery', calculation_others),
+    ('wagman_temperature_brainplate', calculation_others),
+    ('wagman_temperature_powersupply', calculation_others),
+]

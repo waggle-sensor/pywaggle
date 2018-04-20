@@ -4,9 +4,9 @@
 # Conversion for HTU21D humidity
 # humidity = -6 + 125 * raw_value / 2^16
 
-def convert(value):
-    raw_t = value['metsense_htu21d_temperature']
-    raw_h = value['metsense_htu21d_humidity']
+def convert_using(value, key_t, key_h):
+    raw_t = value[key_t]
+    raw_h = value[key_h]
 
     raw_t &= 0xFFFC
     raw_h &= 0xFFFC
@@ -22,7 +22,21 @@ def convert(value):
     h = raw_h / float(pow(2, 16))
     humidity = -6.0 + (125.0 * h)
 
-    value['metsense_htu21d_temperature'] = (round(temperature, 2), 'C')
-    value['metsense_htu21d_humidity'] = (round(humidity, 2), '%RH')
+    value[key_t] = (round(temperature, 2), 'C')
+    value[key_h] = (round(humidity, 2), '%RH')
+
+
+def convert(value):
+    for key_t, key_h in conversions:
+        try:
+            convert_using(value, key_t, key_h)
+        except KeyError:
+            pass
 
     return value
+
+
+conversions = [
+    ('metsense_htu21d_temperature', 'metsense_htu21d_humidity'),
+    ('wagman_htu21d_temperature', 'wagman_htu21d_humidity'),
+]
