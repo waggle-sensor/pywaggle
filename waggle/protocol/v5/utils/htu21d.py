@@ -33,10 +33,19 @@ def convert(value):
         except KeyError:
             pass
 
+    try:
+        t = value['wagman_htu21d_temperature']
+        h = value['wagman_htu21d_humidity']
+
+        value['wagman_htu21d_temperature'] = (t, 'C')
+        value['wagman_htu21d_humidity'] = (h, '%RH')
+    except KeyError:
+        pass
+
     return value
 
 
 conversions = [
     ('metsense_htu21d_temperature', 'metsense_htu21d_humidity'),
-    ('wagman_htu21d_temperature', 'wagman_htu21d_humidity'),
+    # ('wagman_htu21d_temperature', 'wagman_htu21d_humidity'),
 ]
