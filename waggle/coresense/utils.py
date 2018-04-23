@@ -2,6 +2,7 @@ import logging
 from . import format
 from . import spec
 from binascii import hexlify
+import waggle.checksum
 
 logger = logging.getLogger('coresense.utils')
 
@@ -42,7 +43,7 @@ def decode_frame(frame):
     if length != len(frame) - 5:
         raise RuntimeError('invalid length')
 
-    if crc != crc8(data):
+    if crc != waggle.checksum.crc8(data):
         raise RuntimeError('invalid crc')
 
     # merge resulting entries
@@ -91,14 +92,3 @@ def get_data_subpackets(data):
         logger.warning('Subpacket lengths do not total to payload length! offset = {}, length = {}'.format(offset, len(data)))
 
     return subpackets
-
-
-def crc8(data, crc=0):
-    for i in range(len(data)):
-        crc ^= data[i]
-        for j in range(8):
-            if crc & 1 != 0:
-                crc = (crc >> 1) ^ 0x8C
-            else:
-                crc >>= 1
-    return crc

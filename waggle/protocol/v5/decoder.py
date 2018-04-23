@@ -2,7 +2,7 @@ import logging
 from .spec import spec
 from . import format
 from . import utils
-from .crc import create_crc
+import waggle.checksum
 
 logger = logging.getLogger('protocol.decoder')
 
@@ -132,4 +132,4 @@ def convert(values, sensor_id):
 
 
 def check_crc(crc, data):
-    return crc == create_crc(data)
+    return crc == waggle.checksum.crc8(data)

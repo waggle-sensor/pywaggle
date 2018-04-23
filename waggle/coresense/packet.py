@@ -1,3 +1,5 @@
+import waggle.checksum
+
 def decode_packet(data):
     header = data[0]
     version = (data[1] & 0xF0) >> 4
@@ -15,7 +17,7 @@ def decode_packet(data):
     if length != len(body):
         raise RuntimeError('Invalid length.')
 
-    if crc != crc8(body):
+    if crc != waggle.checksum.crc8(body):
         raise RuntimeError('Invalid CRC.')
 
     return {
@@ -49,14 +51,3 @@ def decode_packet_body(body):
         raise RuntimeError('Total subpacket length different than data size.')
 
     return subpackets
-
-
-def crc8(data, crc=0):
-    for x in data:
-        crc ^= x
-        for _ in range(8):
-            if crc & 1 != 0:
-                crc = (crc >> 1) ^ 0x8C
-            else:
-                crc >>= 1
-    return crc
