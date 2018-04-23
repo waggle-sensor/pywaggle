@@ -42,7 +42,7 @@ def decode_frame(frame, required_version=2):
         if length != len(subdata):
             raise RuntimeError('invalid length')
 
-        if not check_crc(crc, subdata):
+        if crc != waggle.checksum.crc8(subdata):
             raise RuntimeError('invalid crc')
 
         subdata = frame[HEADER_SIZE + 1:HEADER_SIZE + length]
@@ -129,7 +129,3 @@ def convert(values, sensor_id):
     except AttributeError:
         logging.warning('No valid conversion loaded for %s' % (sensor_id,))
     return values
-
-
-def check_crc(crc, data):
-    return crc == waggle.checksum.crc8(data)
