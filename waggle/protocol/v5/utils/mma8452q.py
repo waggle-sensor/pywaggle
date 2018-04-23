@@ -10,7 +10,7 @@ def convert(value):
         gcount = raw[i] >> 4
         if (raw[i] >> 8) > 0x7F:
             gcount -= 0x1000
-        raw[i] = round(gcount / ((1 << 12) / 4) , 4)
+        raw[i] = gcount / ((1 << 12) / 4)
 
     value['metsense_mma8452q_acc_x'] = (raw[0], 'gx')
     value['metsense_mma8452q_acc_y'] = (raw[1], 'gy')

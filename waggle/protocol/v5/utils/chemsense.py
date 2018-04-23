@@ -53,7 +53,7 @@ def chemical_sensor(ky, IpA):
         Minv = float(imported_data[mid_dict['BAD']][ky]['Mvalue'])
 
         InA = float(IpA)/1000.0 - baseline*math.exp((Tavg - Tzero) / Minv)
-        converted = round(InA / sensitivity, 6)
+        converted = InA / sensitivity
         return converted, 'ppm'
     else:
         return IpA, 'raw'

@@ -13,17 +13,17 @@ def convert_using(value, key_t, key_h):
 
     # temperature
     # get rid of status bits
-    t = raw_t / float(pow(2, 16))
+    t = raw_t / 2**16
     temperature = -46.85 + (175.72 * t)
 
     # humidity
     # get rid of status bits
 
-    h = raw_h / float(pow(2, 16))
+    h = raw_h / 2**16
     humidity = -6.0 + (125.0 * h)
 
-    value[key_t] = (round(temperature, 2), 'C')
-    value[key_h] = (round(humidity, 2), '%RH')
+    value[key_t] = (temperature, 'C')
+    value[key_h] = (humidity, '%RH')
 
 
 def convert(value):

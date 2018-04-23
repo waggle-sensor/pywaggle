@@ -62,7 +62,7 @@ def encode_frame(frame_data):
 
     bodies = []
     body = bytearray()
-    max_body_length = pow(2, 8) - 1
+    max_body_length = 2**8 - 1
     for sub_id in frame_data:
         assert isinstance(sub_id, int)
 

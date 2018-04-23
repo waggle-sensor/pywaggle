@@ -33,6 +33,6 @@ def convert(value):
     # if value_dB is lower than 55 dB, the value_dB is a guessed value not measured value
     # becasue of the lower limit of sensor reading through analogRead function
     value_dB = convert_to_db(reading)
-    value['metsense_spv1840lr5h-b'] = (round(value_dB, 2), 'dB')
+    value['metsense_spv1840lr5h-b'] = (value_dB, 'dB')
 
     return value

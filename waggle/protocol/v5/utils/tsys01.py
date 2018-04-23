@@ -13,11 +13,11 @@ def convert(value):
     raw_t = value['metsense_tsys01_temperature']
     raw_t >>= 8
 
-    temperature = round((-2.0 * c4 * pow(10, -21) * pow(raw_t, 4) + \
-        4.0 * c3 * pow(10, -16) * pow(raw_t, 3) + \
-        -2.0 * c2 * pow(10, -11) * pow(raw_t, 2) + \
-        1.0 * c1 * pow(10, -6) * raw_t + \
-        -1.5 * c0 * pow(10, -2)), 2)
+    temperature = (-2.0e-21 * c4 * raw_t**4 +
+                   4.0e-16 * c3 * raw_t**3 +
+                   -2.0e-11 * c2 * raw_t**2 +
+                   1.0e-6 * c1 * raw_t +
+                   -1.5e-2 * c0)
 
     value['metsense_tsys01_temperature'] = (temperature, 'C')
 
