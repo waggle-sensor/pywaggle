@@ -35,7 +35,11 @@ def calculation_others(value):
     except ZeroDivisionError:
         return float('nan'), 'C'
 
-    logrt = math.log(rt)
+    try:
+        logrt = math.log(rt)
+    except ValueError:
+        return float('nan'), 'C'
+
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
     return tempC, 'C'
@@ -57,8 +61,12 @@ def calculation_nc(value):
     except ZeroDivisionError:
         return float('nan'), 'C'
 
-    logrt = math.log(rt)
-    temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
+    try:
+        logrt = math.log(rt)
+    except ValueError:
+        return float('nan'), 'C'
+
+    temp = 1 / (A + B * logrt + C * logrt**3)
     tempC = temp - 273.15
     return tempC, 'C'
 
