@@ -75,3 +75,4 @@ Formats are more human readable. For example, format `a` is changed to `uint`, `
 
 * Cleanup + refactoring chemsense converter.
 * Prefixed alphasense parameters with `alphasense_`
+* Added support for flagging sensor subpackets marked invalid.
