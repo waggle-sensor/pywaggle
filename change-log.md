@@ -1,5 +1,22 @@
 ## Change logs
 
+### 0.23.9 (2018-04-25)
+#### New features
+
+* Added Wagman HTU21D parameters.
+
+#### Refactoring
+
+* Extracted optimized, shared checksum module.
+* PR103J2 uses standard library bisect from binary search.
+
+### 0.23.8 (2018-04-10)
+#### New features
+
+* Added many status service parameters.
+* Added `audio_spl` parameters.
+* Added image processing parameters (avg color, histogram).
+
 ### 0.23.7 (2018-04-06)
 #### New features
 * `encode_frame_from_flat_string`
