@@ -33,7 +33,7 @@ b'\xaa\x02\x05\x80S\x82\x1e\xf3\x10U'
 
 * Fixed parameter names of PMS7003, NC/EP services, NC/EP ipaddress, NC/EP git repos, Wagman mediaselect/powerfault. For example, prefixed PMS7003 parameters with `pms7003_`.
 
-* Chemsense.py converter temporally outputs raw data instead of converted data
+* Chemsense converter reverted to output raw data instead of converted data. (Intended to be Hold over fix.)
 
 ### 0.23.6 (2018-04-04)
 #### New features
