@@ -70,4 +70,4 @@ Formats are more human readable. For example, format `a` is changed to `uint`, `
 ### 0.23.1 (2018-01-16)
 
 * Cleanup + refactoring chemsense converter.
-* Prefixed alphasense parameters with alphasense_
+* Prefixed alphasense parameters with `alphasense_`
