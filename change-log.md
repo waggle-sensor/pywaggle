@@ -20,6 +20,7 @@
 ### 0.23.7 (2018-04-06)
 #### New features
 * `encode_frame_from_flat_string`
+* Prefixed PMS7003 parameters with `pms7003_`.
 
 Encoding packets from string type input
 ```
