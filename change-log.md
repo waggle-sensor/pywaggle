@@ -53,3 +53,21 @@ b'\xaa\x02\x05\x80S\x82\x1e\xf3\x10U'
 * Waggle spec format
 
 Formats are more human readable. For example, format `a` is changed to `uint`, `b` to `int`, and such
+
+### 0.23.3
+
+* Added chemsense calibration data.
+* Added support for "disabled" sensor.
+* Updated `spv1840lr5h-b` conversion.
+
+### 0.23.2
+
+* Added support for variable length formats.
+* Updated `spv1840lr5h-b` conversion.
+* Renamed formats to more user friendly names. For example, `e` vs `float`.
+* Added initial status sensor entries in spec.
+
+### 0.23.1
+
+* Cleanup + refactoring chemsense converter.
+* Prefixed alphasense parameters with alphasense_
