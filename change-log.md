@@ -20,7 +20,6 @@
 ### 0.23.7 (2018-04-06)
 #### New features
 * `encode_frame_from_flat_string`
-* Prefixed PMS7003 parameters with `pms7003_`.
 
 Encoding packets from string type input
 ```
@@ -32,7 +31,7 @@ b'\xaa\x02\x05\x80S\x82\x1e\xf3\x10U'
 #### Fixes
 * format of PMS7003's header is changed from `hex` to `byte` to fix decode error
 
-* Fixed parameter names of PMS7003, NC/EP services, NC/EP ipaddress, NC/EP git repos, Wagman mediaselect/powerfault
+* Fixed parameter names of PMS7003, NC/EP services, NC/EP ipaddress, NC/EP git repos, Wagman mediaselect/powerfault. For example, prefixed PMS7003 parameters with `pms7003_`.
 
 * Chemsense.py converter temporally outputs raw data instead of converted data
 
