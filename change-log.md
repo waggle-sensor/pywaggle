@@ -7,8 +7,8 @@
 
 #### Refactoring
 
-* Extracted optimized, shared checksum module.
-* PR103J2 uses standard library bisect from binary search.
+* Extracted optimized, shared checksum function.
+* PR103J2 uses standard library bisect for binary search.
 
 ### 0.23.8 (2018-04-10)
 #### New features
