@@ -7,7 +7,7 @@
 
 #### Refactoring
 
-* Extracted optimized, shared checksum function.
+* Extracted optimized, shared checksum function into `waggle/checksum.py`.
 * PR103J2 uses standard library bisect for binary search.
 
 ### 0.23.8 (2018-04-10)
