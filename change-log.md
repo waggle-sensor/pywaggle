@@ -54,20 +54,20 @@ b'\xaa\x02\x05\x80S\x82\x1e\xf3\x10U'
 
 Formats are more human readable. For example, format `a` is changed to `uint`, `b` to `int`, and such
 
-### 0.23.3
+### 0.23.3 (2018-02-14)
 
 * Added chemsense calibration data.
 * Added support for "disabled" sensor.
 * Updated `spv1840lr5h-b` conversion.
 
-### 0.23.2
+### 0.23.2 (2018-01-26)
 
 * Added support for variable length formats.
 * Updated `spv1840lr5h-b` conversion.
 * Renamed formats to more user friendly names. For example, `e` vs `float`.
 * Added initial status sensor entries in spec.
 
-### 0.23.1
+### 0.23.1 (2018-01-16)
 
 * Cleanup + refactoring chemsense converter.
 * Prefixed alphasense parameters with alphasense_
