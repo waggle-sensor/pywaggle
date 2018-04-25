@@ -17,6 +17,10 @@
 * Added `audio_spl` parameters.
 * Added image processing parameters (avg color, histogram).
 
+#### Fixes
+
+* Fixed MF52C1103f3380 converter variable names - was mixing `v_in` and `Vin`.
+
 ### 0.23.7 (2018-04-06)
 #### New features
 * `encode_frame_from_flat_string`
@@ -34,8 +38,6 @@ b'\xaa\x02\x05\x80S\x82\x1e\xf3\x10U'
 * Fixed parameter names of PMS7003, NC/EP services, NC/EP ipaddress, NC/EP git repos, Wagman mediaselect/powerfault. For example, prefixed PMS7003 parameters with `pms7003_`.
 
 * Chemsense converter reverted to output raw data instead of converted data. (Intended to be hold over fix.)
-
-* Fixed MF52C1103f3380 converter variable names - was mixing `v_in` and `Vin`.
 
 ### 0.23.6 (2018-04-04)
 #### New features
