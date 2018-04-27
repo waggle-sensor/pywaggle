@@ -176,7 +176,7 @@ class Plugin(object):
             hdr = {}
             hdr.update(self.headers)
             hdr['fname'] = splt[0]
-            hdr['ext'] =  splt[1]
+            hdr['ext'] = splt[1]
             hdr['size'] = len(binary)
 
             for handler in self.fileHandlers:
