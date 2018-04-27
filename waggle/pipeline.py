@@ -33,23 +33,26 @@ class RabbitMQHandler(PluginHandler):
         self.parameters.connection_attempts = 5
         self.parameters.retry_delay = 5.0
         self.parameters.socket_timeout = 2.0
+        self._connect()
+
+    def _connect(self):
 
         self.connection = pika.BlockingConnection(self.parameters)
 
         self.channel = self.connection.channel()
 
         # ensure that destination queues and exchanges are configured
-        self.channel.exchange_declare(self.dest_exchange,
-                                      exchange_type='fanout',
-                                      durable=True)
+        self.channel.exchange_declare(
+            self.dest_exchange,
+            exchange_type='fanout',
+            durable=True
+        )
 
-        self.channel.queue_declare(dest_queue,
-                                   durable=True)
+        self.channel.queue_declare(dest_queue, durable=True)
 
-        self.channel.queue_bind(queue=dest_queue,
-                                exchange=self.dest_exchange)
+        self.channel.queue_bind(queue=dest_queue, exchange=self.dest_exchange)
 
-    def send(self, sensor, data, headers={}):
+    def send(self, sensor, data, headers={}, reconnect_attempt=2):
         if isinstance(data, int):
             content_type = 'i'
             body = str(data).encode()
@@ -80,11 +83,26 @@ class RabbitMQHandler(PluginHandler):
             app_id=self.plugin.id,
         )
 
-        self.channel.basic_publish(properties=properties,
-                                   exchange=self.dest_exchange,
-                                   routing_key=properties.app_id,
-                                   body=body)
-
+        for i in range(reconnect_attempt):
+            try:
+                self.channel.basic_publish(
+                    properties=properties,
+                    exchange=self.dest_exchange,
+                    routing_key=properties.app_id,
+                    body=body
+                )
+                return True
+            except pika.exceptions.ConnectionClosed:
+                time.sleep(1)
+                self._connect()
+            except Exception as ex:
+                if self.channel.is_open:
+                    self.channel.close()
+                if self.connection.is_open:
+                    self.channel.close()
+                time.sleep(1)
+                self._connect()
+        return False
 
 class Plugin(object):
 
