@@ -8,6 +8,7 @@ def convert(value):
     v = float(raw_h) / 1024.0 * 5.0
     humidity = v * 30.68 + 0.958
 
-    value['metsense_hih4030_humidity'] = (humidity, '%RH')
+    humidity_rounded = round(humidity, 2)
+    value['metsense_hih4030_humidity'] = (humidity_rounded, '%RH')
 
     return value

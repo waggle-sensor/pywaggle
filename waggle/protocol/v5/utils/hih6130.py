@@ -16,7 +16,10 @@ def convert(value):
     masked_h = raw_h & 0x3FFF
     humidity = float(masked_h) * 6.103888e-3
 
-    value['lightsense_hih6130_temperature'] = (temperature, 'C')
-    value['lightsense_hih6130_humidity'] = (humidity, '%RH')
+    temperature_rounded = round(temperature, 2)
+    humidity_rounded = round(humidity, 2)
+
+    value['lightsense_hih6130_temperature'] = (temperature_rounded, 'C')
+    value['lightsense_hih6130_humidity'] = (humidity_rounded, '%RH')
 
     return value

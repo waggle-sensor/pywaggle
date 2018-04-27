@@ -54,7 +54,9 @@ def chemical_sensor(ky, IpA):
 
         InA = float(IpA)/1000.0 - baseline*math.exp((Tavg - Tzero) / Minv)
         converted = InA / sensitivity
-        return converted, 'ppm'
+
+        converted_rounded = round(converted, 6)
+        return converted_rounded, 'ppm'
     else:
         return IpA, 'raw'
 

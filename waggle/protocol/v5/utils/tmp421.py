@@ -25,6 +25,8 @@ def convert(value):
     if converted_value > 128.0:
         converted_value -= 256.0
 
-    value['lightsense_tmp421'] = (converted_value, 'C')
+    converted_value_rounded = round(converted_value, 4)
+
+    value['lightsense_tmp421'] = (converted_value_rounded, 'C')
 
     return value

@@ -22,8 +22,11 @@ def convert_using(value, key_t, key_h):
     h = raw_h / 2**16
     humidity = -6.0 + (125.0 * h)
 
-    value[key_t] = (temperature, 'C')
-    value[key_h] = (humidity, '%RH')
+    temperature_rounded = round(temperature, 2)
+    humidity_rounded = round(humidity, 2)
+
+    value[key_t] = (temperature_rounded, 'C')
+    value[key_h] = (humidity_rounded, '%RH')
 
 
 def convert(value):
@@ -37,8 +40,11 @@ def convert(value):
         t = value['wagman_htu21d_temperature']
         h = value['wagman_htu21d_humidity']
 
-        value['wagman_htu21d_temperature'] = (t, 'C')
-        value['wagman_htu21d_humidity'] = (h, '%RH')
+        t_rounded = round(t, 2)
+        h_rounded = round(h, 2)
+
+        value['wagman_htu21d_temperature'] = (t_rounded, 'C')
+        value['wagman_htu21d_humidity'] = (h_rounded, '%RH')
     except KeyError:
         pass
 

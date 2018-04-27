@@ -19,6 +19,7 @@ def convert(value):
                    1.0e-6 * c1 * raw_t +
                    -1.5e-2 * c0)
 
-    value['metsense_tsys01_temperature'] = (temperature, 'C')
+    temperature_rounded = round(temperature, 4)
+    value['metsense_tsys01_temperature'] = (temperature_rounded, 'C')
 
     return value
