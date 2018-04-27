@@ -42,7 +42,7 @@ def calculation_others(value):
 
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
-    return tempC, 'C'
+    return round(tempC, 2), 'C'
 
 
 def calculation_nc(value):
@@ -68,7 +68,7 @@ def calculation_nc(value):
 
     temp = 1 / (A + B * logrt + C * logrt**3)
     tempC = temp - 273.15
-    return tempC, 'C'
+    return round(tempC, 2), 'C'
 
 
 conversions = [
