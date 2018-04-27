@@ -25,6 +25,7 @@ class CallbackHandler(PluginHandler):
 class RabbitMQHandler(PluginHandler):
 
     def __init__(self, url, dest_queue='data'):
+        self.dest_queue = dest_queue
         self.dest_exchange = dest_queue + '.fanout'
 
         self.parameters = pika.URLParameters(url)
@@ -48,9 +49,9 @@ class RabbitMQHandler(PluginHandler):
             durable=True
         )
 
-        self.channel.queue_declare(dest_queue, durable=True)
+        self.channel.queue_declare(self.dest_queue, durable=True)
 
-        self.channel.queue_bind(queue=dest_queue, exchange=self.dest_exchange)
+        self.channel.queue_bind(queue=self.dest_queue, exchange=self.dest_exchange)
 
     def send(self, sensor, data, headers={}, reconnect_attempt=2):
         if isinstance(data, int):
@@ -104,6 +105,7 @@ class RabbitMQHandler(PluginHandler):
                 self._connect()
         return False
 
+
 class Plugin(object):
 
     def __init__(self):
@@ -130,7 +132,7 @@ class Plugin(object):
         try:
             self.headers['node_id'] = waggle.platform.macaddr()
             self.headers['platform'] = waggle.platform.hardware()
-        except:
+        except Exception:
             pass
 
         self.logger = logging.getLogger(self.id)
