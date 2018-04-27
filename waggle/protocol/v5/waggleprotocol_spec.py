@@ -278,7 +278,7 @@ waggleprotocol_spec = '''
   conversion: disabled_sensor_list
   params:
     - name: disabled_sensor
-      length: 
+      length:
       format: str
 
 - id: 0x36
