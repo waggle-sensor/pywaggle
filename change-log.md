@@ -1,5 +1,15 @@
 ## Change logs
 
+### 0.23.10 (2018-04-27)
+#### New features
+* `disabled_sensor_list` with sensor ID `0x32` is added
+
+This is to serve disabled sensor list coming from Metsense firmware. With this change, `disabled_sensor` that uses sensor ID `0x12` is deprecated
+
+#### Refactoring
+* Alphasense (OPC-N2) conversion is cleaned up and its decoding is checked by checksum
+* Pipeline/RMQHandler will attempt to reconnect if publishing a message failed on `send` function
+
 ### 0.23.9 (2018-04-25)
 #### New features
 
