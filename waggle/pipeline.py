@@ -84,7 +84,7 @@ class RabbitMQHandler(PluginHandler):
             app_id=self.plugin.id,
         )
 
-        for i in range(reconnect_attempt):
+        for i in range(reconnect_attempt + 1):
             try:
                 self.channel.basic_publish(
                     properties=properties,
@@ -94,15 +94,14 @@ class RabbitMQHandler(PluginHandler):
                 )
                 return True
             except pika.exceptions.ConnectionClosed:
-                time.sleep(1)
                 self._connect()
             except Exception as ex:
                 if self.channel.is_open:
                     self.channel.close()
                 if self.connection.is_open:
                     self.channel.close()
-                time.sleep(1)
                 self._connect()
+            time.sleep(1)
         return False
 
 
