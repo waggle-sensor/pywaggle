@@ -47,9 +47,9 @@ def decode(data):
         'alphasense_mtof': (mtof, 'us'),
         'alphasense_sample_flow_rate': (sample_flow_rate, 'ml/s'),
         'alphasense_sampling_period': (sampling_period, 's'),
-        'alphasense_pm1': (round(pmvalues[0], 5), 'ug/m3'),
-        'alphasense_pm2.5': (round(pmvalues[1], 5), 'ug/m3'),
-        'alphasense_pm10': (round(pmvalues[2], 5), 'ug/m3'),
+        'alphasense_pm1': (round(pmvalues[0], 3), 'ug/m3'),
+        'alphasense_pm2.5': (round(pmvalues[1], 3), 'ug/m3'),
+        'alphasense_pm10': (round(pmvalues[2], 3), 'ug/m3'),
     }
 
     return values
