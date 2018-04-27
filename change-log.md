@@ -10,6 +10,11 @@ This is to serve disabled sensor list coming from Metsense firmware. With this c
 * Alphasense (OPC-N2) conversion is cleaned up and its decoding is checked by checksum
 * Pipeline/RMQHandler will attempt to reconnect if publishing a message failed on `send` function
 
+* Precisions for sensors are reconfigured:
+    - 1 decimal point precision sensors: BMP180 temperature (sensor id: 0x04)
+    - 2 decimal point precision sensors: TMP112, HTU21D temperature and pressure, HIH4030, BMP180 pressure, PR103j2, SPV1840, TSYS01, HIH6130 temperature and humidity, TMP421, and all Chemsense data (sensor id: 0x01, 0x02, 0x03, 0x04, 0x05, 0x08, 0x09, 0x0B, 0x13, and 0x15 - 0x27)
+    - 3 decimal point precision sensors: TSL250_MS MMA8452, HMC5883, APDS, TSL260, TSL250_LS, MLX75305, ML8511, and pm values from Alpha sensor  (sensor id: 0x06, 0x07, 0x0A, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, and some parts of 0x28)
+
 ### 0.23.9 (2018-04-25)
 #### New features
 
