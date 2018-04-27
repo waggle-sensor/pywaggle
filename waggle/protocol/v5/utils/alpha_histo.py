@@ -27,12 +27,12 @@ def decode(data):
     if (sum(bincounts) & 0xFFFF) != checksum:
         values = {
             'alphasense_bins': (None, 'counts'),
-            'alphasense_mtof': (float('nan'), 'us'),
-            'alphasense_sample_flow_rate': (float('nan'), 'ml/s'),
-            'alphasense_sampling_period': (float('nan'), 's'),
-            'alphasense_pm1': (float('nan'), 'ug/m3'),
-            'alphasense_pm2.5': (float('nan'), 'ug/m3'),
-            'alphasense_pm10': (float('nan'), 'ug/m3'),
+            'alphasense_mtof': (None, 'us'),
+            'alphasense_sample_flow_rate': (None, 'ml/s'),
+            'alphasense_sampling_period': (None, 's'),
+            'alphasense_pm1': (None, 'ug/m3'),
+            'alphasense_pm2.5': (None, 'ug/m3'),
+            'alphasense_pm10': (None, 'ug/m3'),
         }
 
         return values

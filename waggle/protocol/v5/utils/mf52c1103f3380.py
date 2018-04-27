@@ -33,12 +33,12 @@ def calculation_others(value):
     try:
         rt = R * (Vin / V - 1)
     except ZeroDivisionError:
-        return float('nan'), 'C'
+        return None, 'C'
 
     try:
         logrt = math.log(rt)
     except ValueError:
-        return float('nan'), 'C'
+        return None, 'C'
 
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
@@ -59,12 +59,12 @@ def calculation_nc(value):
     try:
         rt = R * (Vin / V - 1)
     except ZeroDivisionError:
-        return float('nan'), 'C'
+        return None, 'C'
 
     try:
         logrt = math.log(rt)
     except ValueError:
-        return float('nan'), 'C'
+        return None, 'C'
 
     temp = 1 / (A + B * logrt + C * logrt**3)
     tempC = temp - 273.15

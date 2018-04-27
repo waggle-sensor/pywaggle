@@ -2739,6 +2739,6 @@ def convert(value):
         index = bisect.bisect(y, resistance)
         value['metsense_pr103j2_temperature'] = (x[index], 'C')
     except (IndexError, ZeroDivisionError):
-        value['metsense_pr103j2_temperature'] = (float('nan'), 'C')
+        value['metsense_pr103j2_temperature'] = (None, 'C')
 
     return value
