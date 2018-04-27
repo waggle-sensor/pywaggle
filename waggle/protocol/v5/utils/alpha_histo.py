@@ -22,6 +22,21 @@ def convert(value):
 
 def decode(data):
     bincounts = struct.unpack_from('<16H', data, offset=0)
+    checksum = struct.unpack_from('<H', data, offset=48)[0]
+
+    if (sum(bincounts) & 0xFFFF) != checksum:
+        values = {
+            'alphasense_bins': (None, 'counts'),
+            'alphasense_mtof': (float('nan'), 'us'),
+            'alphasense_sample_flow_rate': (float('nan'), 'ml/s'),
+            'alphasense_sampling_period': (float('nan'), 's'),
+            'alphasense_pm1': (float('nan'), 'ug/m3'),
+            'alphasense_pm2.5': (float('nan'), 'ug/m3'),
+            'alphasense_pm10': (float('nan'), 'ug/m3'),
+        }
+
+        return values
+
     mtof = tuple([x / 3 for x in struct.unpack_from('<4B', data, offset=32)])
     sample_flow_rate = struct.unpack_from('<f', data, offset=36)[0]
     sampling_period = struct.unpack_from('<f', data, offset=44)[0]
