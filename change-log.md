@@ -4,6 +4,8 @@
 #### New features
 
 * Added Wagman HTU21D parameters.
+* Added new sensor: disabled sensor list, sensor id is 0x32. (2018-04-27)
+* Modified parameter name of disabled sensor, which is for sensor id 0x12: automatically sent by FW when a user request any sensor data. (2018-04-27)
 
 #### Refactoring
 
