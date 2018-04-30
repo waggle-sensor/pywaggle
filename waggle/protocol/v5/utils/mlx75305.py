@@ -8,9 +8,11 @@ def convert(value):
     # voltage divider factor 5/2 to calc input voltage: voltage divider circuit
     value_voltage_divider = (value_voltage * 5.00) / 2.00
 
-    converted_value = round((value_voltage_divider - 0.09234) / 0.007, 2)   #with gain 1, the factor is 7mA/(uW/cm^2)
+    converted_value = (value_voltage_divider - 0.09234) / 0.007   #with gain 1, the factor is 7mA/(uW/cm^2)
 
-    value['lightsense_mlx75305'] = (converted_value, 'uW/cm^2')
+    converted_value_rounded = round(converted_value, 3)
+
+    value['lightsense_mlx75305'] = (converted_value_rounded, 'uW/cm^2')
     # value['lightsense_mlx75305'] = (raw_l, 'raw')
 
     return value

@@ -10,14 +10,6 @@ import math
 
 
 def convert(value):
-    conversions = [
-        ('wagman_temperature_ncheatsink', calculation_nc),
-        ('wagman_temperature_epheatsink', calculation_others),
-        ('wagman_temperature_battery', calculation_others),
-        ('wagman_temperature_brainplate', calculation_others),
-        ('wagman_temperature_powersupply', calculation_others),
-    ]
-
     for p, f in conversions:
         value[p] = f(value[p])
 
@@ -38,11 +30,19 @@ def calculation_others(value):
     value = value << 5
     V = value * LSB
 
-    rt = R * (Vin / V - 1)
-    logrt = math.log(rt)
+    try:
+        rt = R * (Vin / V - 1)
+    except ZeroDivisionError:
+        return None, 'C'
+
+    try:
+        logrt = math.log(rt)
+    except ValueError:
+        return None, 'C'
+
     temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
     tempC = temp - 273.15
-    return tempC, 'C'
+    return round(tempC, 2), 'C'
 
 
 def calculation_nc(value):
@@ -56,8 +56,25 @@ def calculation_nc(value):
     # The Wagman firmware right-shifts the value by 5 bits
     V = value / 1024.0 * 5.0
 
-    rt = R * (Vin / V - 1)
-    logrt = math.log(rt)
-    temp = 1 / (A + (B * logrt) + (C * logrt * logrt * logrt))
+    try:
+        rt = R * (Vin / V - 1)
+    except ZeroDivisionError:
+        return None, 'C'
+
+    try:
+        logrt = math.log(rt)
+    except ValueError:
+        return None, 'C'
+
+    temp = 1 / (A + B * logrt + C * logrt**3)
     tempC = temp - 273.15
-    return tempC, 'C'
+    return round(tempC, 2), 'C'
+
+
+conversions = [
+    ('wagman_temperature_ncheatsink', calculation_nc),
+    ('wagman_temperature_epheatsink', calculation_others),
+    ('wagman_temperature_battery', calculation_others),
+    ('wagman_temperature_brainplate', calculation_others),
+    ('wagman_temperature_powersupply', calculation_others),
+]

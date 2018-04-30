@@ -4,25 +4,54 @@
 # Conversion for HTU21D humidity
 # humidity = -6 + 125 * raw_value / 2^16
 
-def convert(value):
-    raw_t = value['metsense_htu21d_temperature']
-    raw_h = value['metsense_htu21d_humidity']
+def convert_using(value, key_t, key_h):
+    raw_t = value[key_t]
+    raw_h = value[key_h]
 
     raw_t &= 0xFFFC
     raw_h &= 0xFFFC
 
     # temperature
     # get rid of status bits
-    t = raw_t / float(pow(2, 16))
+    t = raw_t / 2**16
     temperature = -46.85 + (175.72 * t)
 
     # humidity
     # get rid of status bits
 
-    h = raw_h / float(pow(2, 16))
+    h = raw_h / 2**16
     humidity = -6.0 + (125.0 * h)
 
-    value['metsense_htu21d_temperature'] = (round(temperature, 2), 'C')
-    value['metsense_htu21d_humidity'] = (round(humidity, 2), '%RH')
+    temperature_rounded = round(temperature, 2)
+    humidity_rounded = round(humidity, 2)
+
+    value[key_t] = (temperature_rounded, 'C')
+    value[key_h] = (humidity_rounded, '%RH')
+
+
+def convert(value):
+    for key_t, key_h in conversions:
+        try:
+            convert_using(value, key_t, key_h)
+        except KeyError:
+            pass
+
+    try:
+        t = value['wagman_htu21d_temperature']
+        h = value['wagman_htu21d_humidity']
+
+        t_rounded = round(t, 2)
+        h_rounded = round(h, 2)
+
+        value['wagman_htu21d_temperature'] = (t_rounded, 'C')
+        value['wagman_htu21d_humidity'] = (h_rounded, '%RH')
+    except KeyError:
+        pass
 
     return value
+
+
+conversions = [
+    ('metsense_htu21d_temperature', 'metsense_htu21d_humidity'),
+    # ('wagman_htu21d_temperature', 'wagman_htu21d_humidity'),
+]

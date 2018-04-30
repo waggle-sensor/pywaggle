@@ -2,18 +2,16 @@
     # converted_value = float(value) / 1100 (or 980)
 
 def convert(value):
-    raw_magx = value['lightsense_hmc5883l_hx']
-    raw_magy = value['lightsense_hmc5883l_hy']
-    raw_magz = value['lightsense_hmc5883l_hz']
+    magx = value['lightsense_hmc5883l_hx'] / 1100
+    magy = value['lightsense_hmc5883l_hy'] / 1100
+    magz = value['lightsense_hmc5883l_hz'] / 980
 
-    # print(raw_magx, raw_magy, raw_magz)
+    magx_rounded = round(magx*1000, 3)
+    magy_rounded = round(magy*1000, 3)
+    magz_rounded = round(magz*1000, 3)
 
-    raw_magx = round(raw_magx / 1100, 2)
-    raw_magy = round(raw_magy / 1100, 2)
-    raw_magz = round(raw_magz / 980, 2)
-
-    value['lightsense_hmc5883l_hx'] = (raw_magx, 'Gx')
-    value['lightsense_hmc5883l_hy'] = (raw_magy, 'Gy')
-    value['lightsense_hmc5883l_hz'] = (raw_magz, 'Gz')
+    value['lightsense_hmc5883l_hx'] = (magx_rounded, 'mGx')
+    value['lightsense_hmc5883l_hy'] = (magy_rounded, 'mGy')
+    value['lightsense_hmc5883l_hz'] = (magz_rounded, 'mGz')
 
     return value

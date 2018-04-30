@@ -1,8 +1,8 @@
 import logging
 from .spec import spec
 from . import format
-from .crc import create_crc
 from .helper import get_key_value, find_sensor_id_from_param_name, find_param_names_and_types_of_sensor, try_converting
+import waggle.checksum
 
 logger = logging.getLogger('protocol.encoder')
 
@@ -62,7 +62,7 @@ def encode_frame(frame_data):
 
     bodies = []
     body = bytearray()
-    max_body_length = pow(2, 8) - 1
+    max_body_length = 2**8 - 1
     for sub_id in frame_data:
         assert isinstance(sub_id, int)
 
@@ -96,7 +96,7 @@ def encode_frame(frame_data):
         packet_body.extend(body)
 
         footer = bytearray(2)
-        footer[0] = create_crc(packet_body)
+        footer[0] = waggle.checksum.crc8(packet_body)
         footer[1] = 0x55
 
         waggle_packet.extend(header)

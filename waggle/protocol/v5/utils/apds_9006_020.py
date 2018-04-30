@@ -9,9 +9,10 @@ def convert(value):
     # voltage divider factor 5/2 to calc input voltage: voltage divider circuit
     value_voltage_divider = (value_voltage * 5.00) / 2.00
 
-    irrad = round(value_voltage_divider / 0.001944, 4)   # 405.1 unit: mA/lux
+    irrad = value_voltage_divider / 0.001944   # 405.1 unit: mA/lux
 
-    value['lightsense_apds_9006_020_light'] = (irrad, 'lux')
+    irrad_rounded = round(irrad, 3)
+    value['lightsense_apds_9006_020_light'] = (irrad_rounded, 'lux')
     # value['lightsense_apds_9006_020_light'] = (raw_l, 'raw')
 
     return value

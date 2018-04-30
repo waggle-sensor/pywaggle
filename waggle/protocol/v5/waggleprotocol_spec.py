@@ -34,7 +34,7 @@ waggleprotocol_spec = '''
   params:
     - name: disabled_sensor
       length: 2
-      format: hex
+      format: byte
 
 - id: 0xFF
   conversion:
@@ -274,6 +274,13 @@ waggleprotocol_spec = '''
       length: 128
       format: byte
 
+- id: 0x32
+  conversion: disabled_sensor_list
+  params:
+    - name: disabled_sensor
+      length:
+      format: str
+
 - id: 0x36
   conversion: pms7003
   params:
@@ -388,7 +395,7 @@ waggleprotocol_spec = '''
       format: uint
 
 - id: 0x57
-  conversion: epoch_datetime
+  conversion:
   params:
     - name: wagman_uptime
       length: 4

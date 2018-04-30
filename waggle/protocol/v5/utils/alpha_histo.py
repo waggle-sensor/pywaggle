@@ -22,6 +22,21 @@ def convert(value):
 
 def decode(data):
     bincounts = struct.unpack_from('<16H', data, offset=0)
+    checksum = struct.unpack_from('<H', data, offset=48)[0]
+
+    if (sum(bincounts) & 0xFFFF) != checksum:
+        values = {
+            'alphasense_bins': (None, 'counts'),
+            'alphasense_mtof': (None, 'us'),
+            'alphasense_sample_flow_rate': (None, 'ml/s'),
+            'alphasense_sampling_period': (None, 's'),
+            'alphasense_pm1': (None, 'ug/m3'),
+            'alphasense_pm2.5': (None, 'ug/m3'),
+            'alphasense_pm10': (None, 'ug/m3'),
+        }
+
+        return values
+
     mtof = tuple([x / 3 for x in struct.unpack_from('<4B', data, offset=32)])
     sample_flow_rate = struct.unpack_from('<f', data, offset=36)[0]
     sampling_period = struct.unpack_from('<f', data, offset=44)[0]
@@ -32,9 +47,9 @@ def decode(data):
         'alphasense_mtof': (mtof, 'us'),
         'alphasense_sample_flow_rate': (sample_flow_rate, 'ml/s'),
         'alphasense_sampling_period': (sampling_period, 's'),
-        'alphasense_pm1': (pmvalues[0], 'ug/m3'),
-        'alphasense_pm2.5': (pmvalues[1], 'ug/m3'),
-        'alphasense_pm10': (pmvalues[2], 'ug/m3'),
+        'alphasense_pm1': (round(pmvalues[0], 3), 'ug/m3'),
+        'alphasense_pm2.5': (round(pmvalues[1], 3), 'ug/m3'),
+        'alphasense_pm10': (round(pmvalues[2], 3), 'ug/m3'),
     }
 
     return values

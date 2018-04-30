@@ -2,7 +2,7 @@ import logging
 from .spec import spec
 from . import format
 from . import utils
-from .crc import create_crc
+import waggle.checksum
 
 logger = logging.getLogger('protocol.decoder')
 
@@ -42,7 +42,7 @@ def decode_frame(frame, required_version=2):
         if length != len(subdata):
             raise RuntimeError('invalid length')
 
-        if not check_crc(crc, subdata):
+        if crc != waggle.checksum.crc8(subdata):
             raise RuntimeError('invalid crc')
 
         subdata = frame[HEADER_SIZE + 1:HEADER_SIZE + length]
@@ -113,7 +113,7 @@ def get_data_subpackets(data):
 
 
 def convert(values, sensor_id):
-    if not sensor_id in spec:
+    if sensor_id not in spec:
         return values
 
     conversion_name = spec[sensor_id]['conversion']
@@ -129,7 +129,3 @@ def convert(values, sensor_id):
     except AttributeError:
         logging.warning('No valid conversion loaded for %s' % (sensor_id,))
     return values
-
-
-def check_crc(crc, data):
-    return crc == create_crc(data)

@@ -2,16 +2,17 @@
 
 def convert(value):
     raw_l = value['metsense_tsl250rd_light']
-    
+
     value_voltage = (raw_l * 3.3) / 1024.0
-    
+
     # a = (math.log10(0.04)-math.log10(0.6))/(math.log10(0.6)-1)
     # b = math.log10(3)/(a*math.log10(50))
     # irrad = 10**((math.log10(input) - b)/a)
 
-    irrad = round(value_voltage / 0.064, 4)
+    irrad = value_voltage / 0.064
 
-    value['metsense_tsl250rd_light'] = (irrad, 'uW/cm^2')
+    irrad_rounded = round(irrad, 3)
+    value['metsense_tsl250rd_light'] = (irrad_rounded, 'uW/cm^2')
     # value['metsense_tsl250rd_light'] = (raw_l, 'raw')
 
     return value
