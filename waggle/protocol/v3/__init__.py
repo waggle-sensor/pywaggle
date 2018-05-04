@@ -20,12 +20,40 @@ def unpack_sensors(packet):
 
 # TODO complete from table
 topic_table = {
-    'HTU21D': {
-        'temperature': ('metsense', 'htu21d', 'temperature', 'hrf'),
-        'humidity': ('metsense', 'htu21d', 'humidity', 'hrf'),
+    'APDS-9006-020': {
+        'intensity': ('metsense', 'apds_9006_020', 'intensity', 'raw'),
+    },
+    'BMI160': {
+        'acceleration.x': ('metsense', 'bmi160', 'acceleration_x', 'raw'),
+        'acceleration.y': ('metsense', 'bmi160', 'acceleration_y', 'raw'),
+        'acceleration.z': ('metsense', 'bmi160', 'acceleration_z', 'raw'),
+        'orientation.x': ('metsense', 'bmi160', 'orientation_x', 'raw'),
+        'orientation.y': ('metsense', 'bmi160', 'orientation_y', 'raw'),
+        'orientation.z': ('metsense', 'bmi160', 'orientation_z', 'raw'),
+    },
+    'BMP180': {
+        'pressure': ('metsense', 'bmp180', 'pressure', 'hrf'),
+        'temperature': ('metsense', 'bmp180', 'temperature', 'hrf'),
+    },
+    'Chemsense': {
+        'co': ('chemsense', 'co', 'concentration', 'raw'),
+        'h2s': ('chemsense', 'h2s', 'concentration', 'raw'),
+        'no2': ('chemsense', 'no2', 'concentration', 'raw'),
+        'o3': ('chemsense', 'o3', 'concentration', 'raw'),
+        'so2': ('chemsense', 'so2', 'concentration', 'raw'),
+        'oxidizing_gases': ('chemsense', 'oxidizing_gases', 'concentration', 'raw'),
+        'reducing_gases': ('chemsense', 'reducing_gases', 'concentration', 'raw'),
     },
     'HIH4030': {
         'humidity': ('lightsense', 'hih4030', 'humidity', 'raw'),
+    },
+    'HIH6130': {
+        'humidity': ('lightsense', 'hih4030', 'humidity', 'hrf'),
+        'temperature': ('lightsense', 'hih4030', 'temperature', 'hrf'),
+    },
+    'HTU21D': {
+        'temperature': ('metsense', 'htu21d', 'temperature', 'hrf'),
+        'humidity': ('metsense', 'htu21d', 'humidity', 'hrf'),
     },
     'BMP180': {
         'temperature': ('metsense', 'bmp180', 'temperature', 'hrf'),
@@ -35,7 +63,19 @@ topic_table = {
         'acceleration.x': ('metsense', 'mma8452q', 'acceleration_x', 'hrf'),
         'acceleration.y': ('metsense', 'mma8452q', 'acceleration_y', 'hrf'),
         'acceleration.z': ('metsense', 'mma8452q', 'acceleration_z', 'hrf'),
-    }
+    },
+    'TSL250RD-AS': {
+        'intensity': ('metsense', 'tsl250rd', 'intensity', 'raw'),
+    },
+    'TSL250RD-LS': {
+        'intensity': ('lightsense', 'tsl250rd', 'intensity', 'raw'),
+    },
+    'TSL260RD': {
+        'intensity': ('metsense', 'tsl260rd', 'intensity', 'raw'),
+    },
+    'TSYS01': {
+        'temperature': ('lightsense', 'tsys01', 'temperature', 'hrf'),
+    },
 }
 
 
