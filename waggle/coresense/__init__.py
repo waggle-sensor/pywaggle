@@ -156,9 +156,9 @@ pressure : 4
 
 1F
 Si1145
-intensity : 1
-intensity : 1
-intensity : 1
+ir_intensity : 1
+uv_intensity : 1
+visible_light_intensity : 1
 
 20
 Chemsense ID
