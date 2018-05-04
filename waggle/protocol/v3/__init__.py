@@ -102,6 +102,18 @@ topic_table = {
         'oxidizing_gases': ('chemsense', 'oxidizing_gases', 'concentration', 'raw'),
         'reducing_gases': ('chemsense', 'reducing_gases', 'concentration', 'raw'),
     },
+    'CO ADC Temp': {
+        'adc_temperature': ('chemsense', 'at0', 'temperature', 'raw'),
+    },
+    'IAQ/IRR Temp': {
+        'adc_temperature': ('chemsense', 'at1', 'temperature', 'raw'),
+    },
+    'O3/NO2 Temp': {
+        'adc_temperature': ('chemsense', 'at2', 'temperature', 'raw'),
+    },
+    'SO2/H2S Temp': {
+        'adc_temperature': ('chemsense', 'at3', 'temperature', 'raw'),
+    },
     'SHT25': {
         'temperature': ('chemsense', 'sht25', 'temperature', 'raw'),
         'humidity': ('chemsense', 'sht25', 'humidity', 'raw'),
