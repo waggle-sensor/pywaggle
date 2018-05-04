@@ -52,22 +52,22 @@ topic_table = {
         'intensity': ('metsense', 'spv1840lr5h_b', 'intensity', 'raw'),
     },
     'TSYS01': {
-        'temperature': ('lightsense', 'tsys01', 'temperature', 'hrf'),
+        'temperature': ('metsense', 'tsys01', 'temperature', 'hrf'),
     },
     'HMC5883L': {
-        'magnetic_field_x': ('metsense', 'HMC5883L', 'hx', 'hrf'),
-        'magnetic_field_y': ('metsense', 'HMC5883L', 'hy', 'hrf'),
-        'magnetic_field_z': ('metsense', 'HMC5883L', 'hz', 'hrf'),
+        'magnetic_field_x': ('lightsense', 'HMC5883L', 'magnetic_field_x', 'hrf'),
+        'magnetic_field_y': ('lightsense', 'HMC5883L', 'magnetic_field_y', 'hrf'),
+        'magnetic_field_z': ('lightsense', 'HMC5883L', 'magnetic_field_z', 'hrf'),
     },
     'HIH6130': {
         'humidity': ('lightsense', 'hih4030', 'humidity', 'hrf'),
         'temperature': ('lightsense', 'hih4030', 'temperature', 'hrf'),
     },
     'APDS-9006-020': {
-        'intensity': ('metsense', 'apds_9006_020', 'intensity', 'raw'),
+        'intensity': ('lightsense', 'apds_9006_020', 'intensity', 'raw'),
     },
     'TSL260RD': {
-        'intensity': ('metsense', 'tsl260rd', 'intensity', 'raw'),
+        'intensity': ('lightsense', 'tsl260rd', 'intensity', 'raw'),
     },
     'TSL250RD-LS': {
         'intensity': ('lightsense', 'tsl250rd', 'intensity', 'raw'),
@@ -78,17 +78,19 @@ topic_table = {
     'ML8511': {
         'intensity': ('lightsense', 'ml8511', 'intensity', 'raw'),
     },
-    'BMI160': {
-        'acceleration_x': ('metsense', 'bmi160', 'acceleration_x', 'raw'),
-        'acceleration_y': ('metsense', 'bmi160', 'acceleration_y', 'raw'),
-        'acceleration_z': ('metsense', 'bmi160', 'acceleration_z', 'raw'),
-        'orientation_x': ('metsense', 'bmi160', 'orientation_x', 'raw'),
-        'orientation_y': ('metsense', 'bmi160', 'orientation_y', 'raw'),
-        'orientation_z': ('metsense', 'bmi160', 'orientation_z', 'raw'),
+    'TMP421': {
+        'temperature': ('lightsense', 'tmp421', 'temperature', 'hrf'),
     },
-    'BMP180': {
-        'pressure': ('metsense', 'bmp180', 'pressure', 'hrf'),
-        'temperature': ('metsense', 'bmp180', 'temperature', 'hrf'),
+    'MLX90614': {
+        'temperature': ('lightsense', 'mlx90614', 'temperature', 'hrf'),
+    },
+    'BMI160': {
+        'acceleration_x': ('chemsense', 'bmi160', 'acceleration_x', 'raw'),
+        'acceleration_y': ('chemsense', 'bmi160', 'acceleration_y', 'raw'),
+        'acceleration_z': ('chemsense', 'bmi160', 'acceleration_z', 'raw'),
+        'orientation_x': ('chemsense', 'bmi160', 'orientation_x', 'raw'),
+        'orientation_y': ('chemsense', 'bmi160', 'orientation_y', 'raw'),
+        'orientation_z': ('chemsense', 'bmi160', 'orientation_z', 'raw'),
     },
     'Chemsense': {
         'mac_address': ('chemsense', 'chemsense', 'id', 'both'),
