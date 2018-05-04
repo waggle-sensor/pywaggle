@@ -33,10 +33,10 @@ topic_table = {
     'HIH4030': {
         'humidity': ('metsense', 'hih4030', 'humidity', 'raw'),
     },
-    'BMP180': {
-        'temperature': ('metsense', 'bmp180', 'temperature', 'hrf'),
-        'pressure': ('metsense', 'bmp180', 'pressure', 'hrf'),
-    },
+    # 'BMP180': {
+    #     'temperature': ('metsense', 'bmp180', 'temperature', 'raw'),
+    #     'pressure': ('metsense', 'bmp180', 'pressure', 'raw'),
+    # },
     'PR103J2': {
         'temperature': ('metsense', 'pr103j2', 'temperature', 'raw'),
     },
@@ -48,9 +48,9 @@ topic_table = {
         'acceleration_y': ('metsense', 'mma8452q', 'acceleration_y', 'hrf'),
         'acceleration_z': ('metsense', 'mma8452q', 'acceleration_z', 'hrf'),
     },
-    'SPV1840LR5H-B': {
-        'intensity': ('metsense', 'spv1840lr5h_b', 'intensity', 'raw'),
-    },
+    # 'SPV1840LR5H-B': {
+    #     'intensity': ('metsense', 'spv1840lr5h_b', 'intensity', 'raw'),
+    # },
     'TSYS01': {
         'temperature': ('metsense', 'tsys01', 'temperature', 'hrf'),
     },
@@ -63,18 +63,18 @@ topic_table = {
         'humidity': ('lightsense', 'hih4030', 'humidity', 'hrf'),
         'temperature': ('lightsense', 'hih4030', 'temperature', 'hrf'),
     },
-    'APDS-9006-020': {
-        'intensity': ('lightsense', 'apds_9006_020', 'intensity', 'raw'),
-    },
-    'TSL260RD': {
-        'intensity': ('lightsense', 'tsl260rd', 'intensity', 'raw'),
-    },
-    'TSL250RD-LS': {
-        'intensity': ('lightsense', 'tsl250rd', 'intensity', 'raw'),
-    },
-    'MLX75305': {
-        'intensity': ('lightsense', 'mlx75305', 'intensity', 'raw'),
-    },
+    # 'APDS-9006-020': {
+    #     'intensity': ('lightsense', 'apds_9006_020', 'intensity', 'raw'),
+    # },
+    # 'TSL260RD': {
+    #     'intensity': ('lightsense', 'tsl260rd', 'intensity', 'raw'),
+    # },
+    # 'TSL250RD-LS': {
+    #     'intensity': ('lightsense', 'tsl250rd', 'intensity', 'raw'),
+    # },
+    # 'MLX75305': {
+    #     'intensity': ('lightsense', 'mlx75305', 'intensity', 'raw'),
+    # },
     'ML8511': {
         'intensity': ('lightsense', 'ml8511', 'intensity', 'raw'),
     },
@@ -114,7 +114,15 @@ topic_table = {
         'ir_intensity': ('chemsense', 'si1145', 'ir_intensity', 'raw'),
         'uv_intensity': ('chemsense', 'si1145', 'uv_intensity', 'raw'),
         'visible_light_intensity': ('chemsense', 'si1145', 'visible_light_intensity', 'raw'),
-    }
+    },
+    'Rain Gauge': {
+        'tip_count': ('metsense', 'rain_gauge', 'tip_count', 'hrf'),
+    },
+    'Soil Moisture': {
+        'dielectric': ('metsense', 'soil_moisture', 'dielectric', 'hrf'),
+        'conductivity': ('metsense', 'soil_moisture', 'conductivity', 'hrf'),
+        'temperature': ('metsense', 'soil_moisture', 'temperature', 'hrf'),
+    },
 }
 
 
