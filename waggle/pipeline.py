@@ -105,6 +105,92 @@ class RabbitMQHandler(PluginHandler):
         return False
 
 
+class ImagePipelineHandler(object):
+    def __init__(self, routing_in, url='amqp://localhost', exchange='image_pipeline'):
+        self.connection = None
+        self.channel = None
+        self.exchange = exchange
+        self.routing_in = routing_in
+
+        self.parameters = pika.URLParameters(url)
+
+        # override reconnect parameters
+        self.parameters.connection_attempts = 5
+        self.parameters.retry_delay = 5.0
+        self.parameters.socket_timeout = 2.0
+        self._connect()
+
+    def _connect(self):
+        self.connection = pika.BlockingConnection(self.parameters)
+        self.channel = self.connection.channel()
+        self.channel.exchange_declare(
+            exchange=self.exchange,
+            exchange_type='direct',
+            durable=True
+        )
+        result = self.channel.queue_declare(exclusive=True, arguments={'x-max-length': 1})
+        self.in_queue = result.method.queue
+        self.channel.queue_bind(
+            queue=self.in_queue,
+            exchange=self.exchange,
+            routing_key=self.routing_in
+        )
+
+    def close(self):
+        try:
+            if self.channel is not None:
+                if self.channel.is_open:
+                    self.channel.close()
+            if self.connection is not None:
+                if self.connection.is_open:
+                    self.connection.close()
+        except Exception:
+            pass
+
+    def read(self, timeout=5):
+        for i in range(timeout):
+            try:
+                method, properties, body = self.channel.basic_get(queue=self.in_queue, no_ack=True)
+                if method is not None:
+                    return True, (properties, body)
+            except pika.exceptions.ConnectionClosed:
+                self._connect()
+            except Exception as ex:
+                return False, str(ex)
+            time.sleep(1)
+        return False, ''
+
+    def write(self, to, frame, headers, reconnect_attempt=2):
+        if not isinstance(frame, bytes):
+            raise ValueError('unsupported data type')
+
+        properties = pika.BasicProperties(
+            headers=headers,
+            delivery_mode=2,
+            timestamp=int(time.time() * 1000),
+            content_type='b',
+        )
+        for i in range(reconnect_attempt + 1):
+            try:
+                self.channel.basic_publish(
+                    properties=properties,
+                    exchange=self.exchange,
+                    routing_key=to,
+                    body=frame
+                )
+                return True
+            except pika.exceptions.ConnectionClosed:
+                self._connect()
+            except Exception as ex:
+                if self.channel.is_open:
+                    self.channel.close()
+                if self.connection.is_open:
+                    self.channel.close()
+                self._connect()
+            time.sleep(1)
+        return False
+
+
 class Plugin(object):
 
     def __init__(self):
