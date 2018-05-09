@@ -1,9 +1,11 @@
 import binascii
 
 
-'''
-    Helper functions
-'''
+#=======================
+#    Helper functions
+#=======================
+
+
 def get_key_value(str_data):
     sp = str_data.strip().split(' ')
     if len(sp) == 2:
@@ -45,7 +47,7 @@ def try_converting(value, value_type):
         elif 'epoch' in value_type:
             return int(value)
         elif 'byte' in value_type:
-            if isinstance(value, byte):
+            if isinstance(value, bytes):
                 value = value.decode()
             return binascii.unhexlify(value)
         else:

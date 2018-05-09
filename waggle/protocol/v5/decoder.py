@@ -6,15 +6,16 @@ import waggle.checksum
 
 logger = logging.getLogger('protocol.decoder')
 
-'''
-    Decode a frame
+
+def decode_frame(frame, required_version=2):
+    """Decode a frame
     @params:
         - A byte array of the frame
         - (optional) True for applying conversions
     @return:
         dict {sensorid: values, ...}
-'''
-def decode_frame(frame, required_version=2):
+    """
+
     HEADER_SIZE = 3
     FOOTER_SIZE = 2
     data = bytearray()
