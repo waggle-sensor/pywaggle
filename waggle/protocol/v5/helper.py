@@ -35,15 +35,18 @@ def find_param_names_and_types_of_sensor(spec, sensor_id):
     return ret_name, ret_type
 
 
-def try_converting(value, type):
+def try_converting(value, value_type):
     try:
-        if 'int' in type:
+        print(value_type)
+        if 'int' in value_type:
             return int(value)
-        elif 'float' in type:
+        elif 'float' in value_type:
             return float(value)
-        elif 'epoch' in type:
+        elif 'epoch' in value_type:
             return int(value)
-        elif 'byte' in type:
+        elif 'byte' in value_type:
+            if isinstance(value, byte):
+                value = value.decode()
             return binascii.unhexlify(value)
         else:
             return value

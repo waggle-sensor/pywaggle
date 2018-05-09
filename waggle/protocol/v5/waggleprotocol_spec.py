@@ -1195,4 +1195,39 @@ waggleprotocol_spec = '''
     - name: audio_spl_octave_total
       length: 4
       format: float
+
+- id: 0xA0
+  conversion:
+  params:
+    - name: image_device
+      length: 1
+      format: str
+    - name: image_average_color_r
+      length: 1
+      format: uint
+    - name: image_average_color_g
+      length: 1
+      format: uint
+    - name: image_average_color_b
+      length: 1
+      format: uint
+    - name: image_histogram_r
+      length: 17
+      format: hex
+    - name: image_histogram_g
+      length: 17
+      format: hex
+    - name: image_histogram_b
+      length: 17
+      format: hex
+
+- id: 0xA1
+  conversion:
+  params:
+    - name: image_detection_car
+      length: 1
+      format: uint
+    - name: image_detection_person
+      length: 1
+      format: uint
 '''

@@ -107,7 +107,7 @@ def get_data_subpackets(data):
             subpackets.append((sensor_id, None))
 
     if offset != len(data):
-        logger.warning('Subpacket lengths do not total to payload length! offset = {}, length = {}'.format(offset, len(data)))
+        logger.warning('Data length mismatched: offset = {}, length = {}'.format(offset, len(data)))
 
     return subpackets
 
