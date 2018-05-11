@@ -147,6 +147,9 @@ class ImagePipelineHandler(object):
         except Exception:
             pass
 
+    def raw_read(self):
+        return self.channel.basic_get(queue=self.in_queue, no_ack=True)
+
     def read(self, timeout=5):
         for i in range(timeout):
             try:
