@@ -16,9 +16,8 @@ Format Reference
 '''
 
 from math import ceil
-import struct
-
 from bitstring import BitArray
+from binascii import hexlify
 
 
 def pack_unsigned_int(value, length):
@@ -29,8 +28,19 @@ def pack_unsigned_int(value, length):
 
 
 def unpack_unsigned_int(buffer, offset, length):
-    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    return value.uint
+    if length == 1:
+        value = buffer[offset]
+    elif length == 2:
+        value = (buffer[offset]<<8) | buffer[offset+1]
+    elif length == 3:
+        value = (buffer[offset]<<16) | (buffer[offset+1]<<8) | buffer[offset+2]
+    elif length == 4:
+        value = (buffer[offset]<<24) | (buffer[offset+1]<<16) | (buffer[offset+2]<<8) | buffer[offset+3]
+    else:
+        raise ValueError('Invalid length.')
+        # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).uint
+
+    return value
 
 
 def pack_signed_int(value, length):
@@ -41,8 +51,22 @@ def pack_signed_int(value, length):
 
 
 def unpack_signed_int(buffer, offset, length):
-    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    return value.int
+    if length == 1:
+        value = buffer[offset]&0x7F
+    elif length == 2:
+        value = ((buffer[offset]&0x7F)<<8) | buffer[offset+1]
+    elif length == 3:
+        value = ((buffer[offset]&0x7F)<<16) | (buffer[offset+1]<<8) | buffer[offset+2]
+    elif length == 4:
+        value = ((buffer[offset]&0x7F)<<24) | (buffer[offset+1]<<16) | (buffer[offset+2]<<8) | buffer[offset+3]
+    else:
+        raise ValueError('Invalid length.')
+        # return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).int
+
+    if buffer[offset]&0x80 == 0:
+        return value
+    else:
+        return -value
 
 
 def pack_float(value, length):
@@ -64,16 +88,15 @@ def pack_hex_string(value, length):
 
 
 def unpack_hex_string(buffer, offset, length):
-    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    return value.hex
+    return hexlify(buffer[offset:offset+length])
+    # return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).hex
 
 
 def pack_time_epoch(value, length):
     return pack_unsigned_int(value, length)
 
 
-def unpack_time_epoch(buffer, offset, length):
-    return unpack_unsigned_int(buffer, offset, length)
+unpack_time_epoch = unpack_unsigned_int
 
 
 def pack_float_format6(value, length=2.0):
@@ -122,6 +145,7 @@ def unpack_float_format8(buffer, offset, length=2.0):
         value = value * -1
     return value
 
+
 def pack_string(value, length):
     if isinstance(value, str):
         value = value.encode()
@@ -129,22 +153,28 @@ def pack_string(value, length):
     assert value.length == to_bit(length)
     return value.bin
 
+
 def unpack_string(buffer, offset, length):
-    if length == None:
+    if length is None:
         length = len(buffer)
-    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    return value.tobytes().decode()
+    return buffer[offset:offset+length].decode()
+    # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    # return value.tobytes().decode()
+
 
 def pack_byte(value, length):
     value = BitArray(value)
     assert value.length == to_bit(length)
     return value.bin
 
+
 def unpack_byte(buffer, offset, length):
-    if length == None:
+    if length is None:
         length = len(buffer)
-    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    return value.tobytes()
+    return bytes(buffer[offset:offset+length])
+    # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    # return value.tobytes()
+
 
 formatpack = {
     'int': pack_signed_int,
