@@ -40,16 +40,16 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: metsense_ver_hw_mj
-      length: 0.375
+      length: 1
       format: uint
     - name: metsense_ver_hw_mi
-      length: 0.375
+      length: 1
       format: uint
     - name: metsense_ver_sw_mj
-      length: 0.5
+      length: 1
       format: uint
     - name: metsense_ver_sw_mi
-      length: 0.75
+      length: 1
       format: uint
     - name: metsense_build_time
       length: 4
