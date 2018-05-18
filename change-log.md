@@ -1,5 +1,12 @@
 ## Change logs
 
+### 0.23.13 (2018-05-18)
+#### Refactoring
+* Packet definition of Sensor ID `0xFF` is modified
+
+### 0.23.12 (2018-05-15)
+* None have been updated..... :(
+
 ### 0.23.11 (2018-05-11)
 #### New features
 * `ImagePipeline` handler is added for plugins to use it in order to get frames from the Pipeline on the Edge Processor
