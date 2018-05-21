@@ -1230,4 +1230,38 @@ waggleprotocol_spec = '''
     - name: image_detection_person
       length: 1
       format: uint
+
+- id: 0xA2
+  conversion:
+  params:
+    - name: image_uas_track_name
+      length: 21
+      format: str
+    - name: image_uas_last_updated_y
+      length: 4
+      format: uint
+    - name: image_uas_last_updated_x
+      length: 4
+      format: uint
+    - name: image_uas_last_updated_speed_x
+      length: 4
+      format: float
+    - name: image_uas_last_updated_speed_y
+      length: 4
+      format: float
+    - name: image_uas_last_updated_speed_total
+      length: 4
+      format: float
+    - name: image_uas_ensemble_cat_number
+      length: 1
+      format: uint
+    - name: image_uas_ensemble_cat_probability
+      length: 4
+      format: float
+    - name: image_uas_box_number
+      length: 8
+      format: str
+    - name: image_uas_last_updated_time
+      length: 20
+      format: str
 '''
