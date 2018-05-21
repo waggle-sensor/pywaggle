@@ -39,7 +39,6 @@ def find_param_names_and_types_of_sensor(spec, sensor_id):
 
 def try_converting(value, value_type):
     try:
-        print(value_type)
         if 'int' in value_type:
             return int(value)
         elif 'float' in value_type:
