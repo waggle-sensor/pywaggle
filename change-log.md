@@ -1,5 +1,20 @@
 ## Change logs
 
+### 0.23.13 (2018-05-18)
+#### Refactoring
+* Packet definition of Sensor ID `0xFF` is modified
+
+### 0.23.12 (2018-05-15)
+* None have been updated..... :(
+
+### 0.23.11 (2018-05-11)
+#### New features
+* `ImagePipeline` handler is added for plugins to use it in order to get frames from the Pipeline on the Edge Processor
+
+* Sensor IDs `0xA0` (Image average color and histogram) and `0xA1` (image car/pedestrian detection) are added 
+
+* Decoding v3 packet is available
+
 ### 0.23.10 (2018-04-27)
 #### New features
 * `disabled_sensor_list` with sensor ID `0x32` is added

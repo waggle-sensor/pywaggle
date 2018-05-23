@@ -40,16 +40,16 @@ waggleprotocol_spec = '''
   conversion:
   params:
     - name: metsense_ver_hw_mj
-      length: 0.375
+      length: 1
       format: uint
     - name: metsense_ver_hw_mi
-      length: 0.375
+      length: 1
       format: uint
     - name: metsense_ver_sw_mj
-      length: 0.5
+      length: 1
       format: uint
     - name: metsense_ver_sw_mi
-      length: 0.75
+      length: 1
       format: uint
     - name: metsense_build_time
       length: 4
@@ -1195,4 +1195,73 @@ waggleprotocol_spec = '''
     - name: audio_spl_octave_total
       length: 4
       format: float
+
+- id: 0xA0
+  conversion:
+  params:
+    - name: image_device
+      length: 1
+      format: str
+    - name: image_average_color_r
+      length: 1
+      format: uint
+    - name: image_average_color_g
+      length: 1
+      format: uint
+    - name: image_average_color_b
+      length: 1
+      format: uint
+    - name: image_histogram_r
+      length: 17
+      format: hex
+    - name: image_histogram_g
+      length: 17
+      format: hex
+    - name: image_histogram_b
+      length: 17
+      format: hex
+
+- id: 0xA1
+  conversion:
+  params:
+    - name: image_detection_car
+      length: 1
+      format: uint
+    - name: image_detection_person
+      length: 1
+      format: uint
+
+- id: 0xA2
+  conversion:
+  params:
+    - name: image_uas_track_name
+      length: 21
+      format: str
+    - name: image_uas_last_updated_y
+      length: 4
+      format: uint
+    - name: image_uas_last_updated_x
+      length: 4
+      format: uint
+    - name: image_uas_last_updated_speed_x
+      length: 4
+      format: float
+    - name: image_uas_last_updated_speed_y
+      length: 4
+      format: float
+    - name: image_uas_last_updated_speed_total
+      length: 4
+      format: float
+    - name: image_uas_ensemble_cat_number
+      length: 1
+      format: uint
+    - name: image_uas_ensemble_cat_probability
+      length: 4
+      format: float
+    - name: image_uas_box_number
+      length: 8
+      format: str
+    - name: image_uas_last_updated_time
+      length: 20
+      format: str
 '''

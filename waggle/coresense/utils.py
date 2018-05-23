@@ -64,7 +64,7 @@ def decode_coresense_data(data):
             data = dict(zip(fields, format.unpack(fmt, sensor_data)))
             yield name, data
         except KeyError:
-            logger.warning('could not decode subpacket: id={:02X} data={}'.format(sensor_id, hexlify(sensor_data).decode()))
+            logger.warning('could not decode subpacket: id={:02X} data={}'.format(sensor_id, sensor_data))
             continue
         except Exception:
             logger.exception('Got an exception while decoding subpackets. sensor = {:02X}, format = {}, data = {}'.format(sensor_id, fmt, repr(sensor_data)))
