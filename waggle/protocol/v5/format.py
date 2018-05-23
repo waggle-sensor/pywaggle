@@ -32,48 +32,65 @@ def pack_unsigned_int(value, length):
     return BitArray(uint=value, length=length_in_bit).bin
 
 
-def unpack_unsigned_int(buffer, offset, length):
-    return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).uint
+def unpack_unsigned_int_native(buffer, offset, length):
+    s = buffer[offset:offset + length]
 
     if length == 1:
-        value = buffer[offset]
+        value = s[0]
     elif length == 2:
-        value = (buffer[offset]<<8) | buffer[offset+1]
+        value = (s[0] << 8) | s[1]
     elif length == 3:
-        value = (buffer[offset]<<16) | (buffer[offset+1]<<8) | buffer[offset+2]
+        value = (s[0] << 16) | (s[1] << 8) | s[2]
     elif length == 4:
-        value = (buffer[offset]<<24) | (buffer[offset+1]<<16) | (buffer[offset+2]<<8) | buffer[offset+3]
+        value = (s[0] << 24) | (s[1] << 16) | (s[2] << 8) | s[3]
     else:
-        raise ValueError('Invalid length.')
+        raise ValueError('Unsupported length.')
 
     return value
+
+
+def unpack_unsigned_int_bitarray(buffer, offset, length):
+    return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).uint
+
+
+def unpack_unsigned_int(buffer, offset, length):
+    try:
+        return unpack_unsigned_int_native(buffer, offset, length)
+    except ValueError:
+        return unpack_unsigned_int_bitarray(buffer, offset, length)
 
 
 def pack_signed_int(value, length):
     length_in_bit = to_bit(length)
     assert -1 * pow(2, length_in_bit - 1) <= value < pow(2, length_in_bit - 1)
-
     return BitArray(int=value, length=length_in_bit).bin
 
 
-def unpack_signed_int(buffer, offset, length):
+def unpack_signed_int_native(buffer, offset, length):
+    value = unpack_unsigned_int_native(buffer, offset, length)
+
+    # takes twos complement and adds sign when needed
+    if length == 1 and value > 0x7f:
+        value = -((0xff - value) + 1)
+    if length == 2 and value > 0x7fff:
+        value = -((0xffff - value) + 1)
+    if length == 3 and value > 0x7fffff:
+        value = -((0xffffff - value) + 1)
+    if length == 4 and value > 0x7fffffff:
+        value = -((0xffffffff - value) + 1)
+
+    return value
+
+
+def unpack_signed_int_bitarray(buffer, offset, length):
     return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).int
 
-    if length == 1:
-        value = buffer[offset]&0x7F
-    elif length == 2:
-        value = ((buffer[offset]&0x7F)<<8) | buffer[offset+1]
-    elif length == 3:
-        value = ((buffer[offset]&0x7F)<<16) | (buffer[offset+1]<<8) | buffer[offset+2]
-    elif length == 4:
-        value = ((buffer[offset]&0x7F)<<24) | (buffer[offset+1]<<16) | (buffer[offset+2]<<8) | buffer[offset+3]
-    else:
-        raise ValueError('Invalid length.')
 
-    if buffer[offset]&0x80 == 0:
-        return value
-    else:
-        return -value
+def unpack_signed_int(buffer, offset, length):
+    try:
+        return unpack_signed_int_native(buffer, offset, length)
+    except ValueError:
+        return unpack_signed_int_bitarray(buffer, offset, length)
 
 
 def pack_float(value, length):
