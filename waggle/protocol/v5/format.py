@@ -179,9 +179,9 @@ def pack_string(value, length):
 def unpack_string(buffer, offset, length):
     if length is None:
         length = len(buffer)
-    # return buffer[offset:offset+length].decode()
-    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    return value.tobytes().decode()
+    return buffer[offset:offset+length].decode()
+    # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    # return value.tobytes().decode()
 
 
 def pack_byte(value, length):
@@ -193,9 +193,9 @@ def pack_byte(value, length):
 def unpack_byte(buffer, offset, length):
     if length is None:
         length = len(buffer)
-    # return bytes(buffer[offset:offset+length])
-    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    return value.tobytes()
+    return bytes(buffer[offset:offset+length])
+    # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    # return value.tobytes()
 
 
 formatpack = {
@@ -266,3 +266,18 @@ def waggle_pack(format, length, values):
 
 def waggle_unpack(format, length, buffer):
     return waggle_unpack_from(format, length, buffer)
+
+
+if __name__ == '__main__':
+    tests = [
+        bytes([1, 2, 0]),
+        bytes([200, 2, 0]),
+        bytes([0, 1, 2]),
+        bytes([0, 200, 2]),
+    ]
+
+    for t in tests:
+        assert unpack_unsigned_int_native(t, 0, 2) == unpack_unsigned_int_bitarray(t, 0, 2)
+        assert unpack_signed_int_native(t, 0, 2) == unpack_signed_int_bitarray(t, 0, 2)
+        assert unpack_unsigned_int_native(t, 1, 2) == unpack_unsigned_int_bitarray(t, 1, 2)
+        assert unpack_signed_int_native(t, 1, 2) == unpack_signed_int_bitarray(t, 1, 2)
