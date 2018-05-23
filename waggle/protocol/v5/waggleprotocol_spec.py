@@ -230,7 +230,7 @@ waggleprotocol_spec = '''
   conversion: onset_rain
   params:
     - name: onset_rain
-      length: 1
+      length: 2
       format: uint
 
 - id: 0x2D
