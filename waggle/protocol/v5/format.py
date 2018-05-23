@@ -20,6 +20,11 @@ from bitstring import BitArray
 from binascii import hexlify
 
 
+# NOTE It seems that bitstring's is much slower than more direct methods. I've
+# implemented optimized versions for some of the unpack functions, since they're
+# used to do bulk decoding. - Sean
+
+
 def pack_unsigned_int(value, length):
     length_in_bit = to_bit(length)
     assert 0 <= value < pow(2, length_in_bit)
@@ -28,6 +33,8 @@ def pack_unsigned_int(value, length):
 
 
 def unpack_unsigned_int(buffer, offset, length):
+    return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).uint
+
     if length == 1:
         value = buffer[offset]
     elif length == 2:
@@ -38,7 +45,6 @@ def unpack_unsigned_int(buffer, offset, length):
         value = (buffer[offset]<<24) | (buffer[offset+1]<<16) | (buffer[offset+2]<<8) | buffer[offset+3]
     else:
         raise ValueError('Invalid length.')
-        # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).uint
 
     return value
 
@@ -51,6 +57,8 @@ def pack_signed_int(value, length):
 
 
 def unpack_signed_int(buffer, offset, length):
+    return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).int
+
     if length == 1:
         value = buffer[offset]&0x7F
     elif length == 2:
@@ -61,7 +69,6 @@ def unpack_signed_int(buffer, offset, length):
         value = ((buffer[offset]&0x7F)<<24) | (buffer[offset+1]<<16) | (buffer[offset+2]<<8) | buffer[offset+3]
     else:
         raise ValueError('Invalid length.')
-        # return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).int
 
     if buffer[offset]&0x80 == 0:
         return value
@@ -72,7 +79,6 @@ def unpack_signed_int(buffer, offset, length):
 def pack_float(value, length):
     assert int(length) == 4 or int(length) == 8
     assert isinstance(value, float)
-
     return BitArray(float=value, length=to_bit(length)).bin
 
 
@@ -88,8 +94,7 @@ def pack_hex_string(value, length):
 
 
 def unpack_hex_string(buffer, offset, length):
-    return hexlify(buffer[offset:offset+length])
-    # return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).hex
+    return hexlify(buffer[offset:offset+length]).decode()
 
 
 def pack_time_epoch(value, length):
@@ -157,9 +162,9 @@ def pack_string(value, length):
 def unpack_string(buffer, offset, length):
     if length is None:
         length = len(buffer)
-    return buffer[offset:offset+length].decode()
-    # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    # return value.tobytes().decode()
+    # return buffer[offset:offset+length].decode()
+    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    return value.tobytes().decode()
 
 
 def pack_byte(value, length):
@@ -171,9 +176,9 @@ def pack_byte(value, length):
 def unpack_byte(buffer, offset, length):
     if length is None:
         length = len(buffer)
-    return bytes(buffer[offset:offset+length])
-    # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    # return value.tobytes()
+    # return bytes(buffer[offset:offset+length])
+    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    return value.tobytes()
 
 
 formatpack = {
