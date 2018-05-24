@@ -18,6 +18,23 @@ def unpack_sensors(packet):
     return expand_topics(decode_frame(packet))
 
 
+def convert_to_milli_unit(x):
+    return 1000.0*x
+
+
+conversion_table = {
+    'MMA8452Q': {
+        'acceleration_x': convert_to_milli_unit,
+        'acceleration_y': convert_to_milli_unit,
+        'acceleration_z': convert_to_milli_unit,
+    },
+    'HMC5883L': {
+        'magnetic_field_x': convert_to_milli_unit,
+        'magnetic_field_y': convert_to_milli_unit,
+        'magnetic_field_z': convert_to_milli_unit,
+    },
+}
+
 # TODO complete from table
 topic_table = {
     'Coresense ID': {
@@ -33,10 +50,10 @@ topic_table = {
     'HIH4030': {
         'humidity': ('metsense', 'hih4030', 'humidity', 'raw'),
     },
-    # 'BMP180': {
-    #     'temperature': ('metsense', 'bmp180', 'temperature', 'raw'),
-    #     'pressure': ('metsense', 'bmp180', 'pressure', 'raw'),
-    # },
+    'BMP180': {
+        'temperature': ('metsense', 'bmp180', 'temperature', 'raw'),
+        'pressure': ('metsense', 'bmp180', 'pressure', 'raw'),
+    },
     'PR103J2': {
         'temperature': ('metsense', 'pr103j2', 'temperature', 'raw'),
     },
@@ -154,10 +171,16 @@ def expand_topics(readings):
 
     for sensor, parameters in readings.items():
         for parameter, value in parameters.items():
+            # convert value to match v4 units
+            try:
+                value = conversion_table[sensor][parameter](value)
+            except KeyError:
+                pass
+
             try:
                 pattern = topic_table[sensor][parameter]
+                output.append(make_sample(pattern, value))
             except KeyError:
-                continue
-            output.append(make_sample(pattern, value))
+                pass
 
     return output
