@@ -53,11 +53,12 @@ def unpack_unsigned_int_bitarray(buffer, offset, length):
     return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).uint
 
 
-def unpack_unsigned_int(buffer, offset, length):
-    try:
-        return unpack_unsigned_int_native(buffer, offset, length)
-    except ValueError:
-        return unpack_unsigned_int_bitarray(buffer, offset, length)
+# def unpack_unsigned_int(buffer, offset, length):
+#     try:
+#         return unpack_unsigned_int_native(buffer, offset, length)
+#     except ValueError:
+#         return unpack_unsigned_int_bitarray(buffer, offset, length)
+unpack_unsigned_int = unpack_unsigned_int_native
 
 
 def pack_signed_int(value, length):
@@ -86,11 +87,12 @@ def unpack_signed_int_bitarray(buffer, offset, length):
     return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).int
 
 
-def unpack_signed_int(buffer, offset, length):
-    try:
-        return unpack_signed_int_native(buffer, offset, length)
-    except ValueError:
-        return unpack_signed_int_bitarray(buffer, offset, length)
+# def unpack_signed_int(buffer, offset, length):
+#     try:
+#         return unpack_signed_int_native(buffer, offset, length)
+#     except ValueError:
+#         return unpack_signed_int_bitarray(buffer, offset, length)
+unpack_signed_int = unpack_signed_int_native
 
 
 def pack_float(value, length):

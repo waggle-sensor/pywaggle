@@ -7,6 +7,12 @@ import waggle.checksum
 logger = logging.getLogger('protocol.decoder')
 
 
+HEADER_SIZE = 3
+FOOTER_SIZE = 2
+HEADER_BYTE = 0xaa
+FOOTER_BYTE = 0x55
+
+
 def decode_frame(frame, required_version=2):
     """Decode a frame
     @params:
@@ -15,9 +21,6 @@ def decode_frame(frame, required_version=2):
     @return:
         dict {sensorid: values, ...}
     """
-
-    HEADER_SIZE = 3
-    FOOTER_SIZE = 2
     data = bytearray()
 
     if not isinstance(frame, bytearray) and not isinstance(frame, bytes):
@@ -31,10 +34,10 @@ def decode_frame(frame, required_version=2):
         footer = frame[HEADER_SIZE + length + 1]
         subdata = frame[HEADER_SIZE:HEADER_SIZE + length]
 
-        if header != 0xAA:
+        if header != HEADER_BYTE:
             raise RuntimeError('invalid start byte')
 
-        if footer != 0x55:
+        if footer != FOOTER_BYTE:
             raise RuntimeError('invalid end byte')
 
         if version != required_version:
