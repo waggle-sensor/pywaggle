@@ -53,29 +53,43 @@ def decode_frame(frame, required_version=2):
         data.extend(subdata)
         frame = frame[HEADER_SIZE + length + FOOTER_SIZE:]
 
-    # merge resulting entries
+    return unpack_results(data)
+
+
+def unpack_results(data):
     results = {}
 
     for sensor_id, names, values in decode_data(data):
         if sensor_id not in results:
             results[sensor_id] = {}
 
+        sensor_results = results[sensor_id]
+
         for name, value in zip(names, values):
-            if name not in results[sensor_id]:
-                results[sensor_id][name] = value
+            if name not in sensor_results:
+                sensor_results[name] = value
             else:
-                results[sensor_id][name] += value
+                sensor_results[name] += value
 
     return results
+
+
+spec_cache = {}
+
+for sensor_id in spec.keys():
+    params = spec[sensor_id]['params']
+
+    names = tuple(param['name'] for param in params)
+    formats = tuple(param['format'] for param in params)
+    lengths = tuple(param['length'] for param in params)
+
+    spec_cache[sensor_id] = (names, formats, lengths)
 
 
 def decode_data(data):
     for sensor_id, sensor_data in get_data_subpackets(data):
         try:
-            params = spec[sensor_id]['params']
-            names = [param['name'] for param in params]
-            formats = [param['format'] for param in params]
-            lengths = [param['length'] for param in params]
+            names, formats, lengths = spec_cache[sensor_id]
 
             if sensor_data is None:
                 yield sensor_id, names, ['invalid'] * len(names)
