@@ -19,10 +19,13 @@ def unpack_sensors(packet):
 
 
 def convert_to_milli_unit(x):
-    return 1000.0*x
+    return 1000*x
 
 
 conversion_table = {
+    'BMP180': {
+        'pressure': convert_to_milli_unit,
+    },
     'MMA8452Q': {
         'acceleration_x': convert_to_milli_unit,
         'acceleration_y': convert_to_milli_unit,

@@ -18,7 +18,6 @@ Format Reference
 - 6: fixed point (-31.999, 31.999)
 - 7: array of 4 bytes
 - 8: fixed point (-127.99, 127.99)
-
 '''
 from functools import partial
 from binascii import hexlify
