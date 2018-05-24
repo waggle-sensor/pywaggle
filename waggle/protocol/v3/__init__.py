@@ -18,13 +18,17 @@ def unpack_sensors(packet):
     return expand_topics(decode_frame(packet))
 
 
+def convert_to_hecto_unit(x):
+    return 100*x
+
+
 def convert_to_milli_unit(x):
     return 1000*x
 
 
 conversion_table = {
     'BMP180': {
-        'pressure': convert_to_milli_unit,
+        'pressure': convert_to_hecto_unit,
     },
     'MMA8452Q': {
         'acceleration_x': convert_to_milli_unit,
@@ -55,7 +59,7 @@ topic_table = {
     },
     'BMP180': {
         'temperature': ('metsense', 'bmp180', 'temperature', 'hrf'),
-        'pressure': ('metsense', 'bmp180', 'pressure', 'hrf'),
+        'pressure': ('metsense', 'bmp180', 'pressure', 'raw'),
     },
     'PR103J2': {
         'temperature': ('metsense', 'pr103j2', 'temperature', 'raw'),
