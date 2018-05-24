@@ -20,6 +20,11 @@ from bitstring import BitArray
 from binascii import hexlify
 
 
+# NOTE It seems that bitstring's is much slower than more direct methods. I've
+# implemented optimized versions for some of the unpack functions, since they're
+# used to do bulk decoding. - Sean
+
+
 def pack_unsigned_int(value, length):
     length_in_bit = to_bit(length)
     assert 0 <= value < pow(2, length_in_bit)
@@ -27,52 +32,72 @@ def pack_unsigned_int(value, length):
     return BitArray(uint=value, length=length_in_bit).bin
 
 
-def unpack_unsigned_int(buffer, offset, length):
+def unpack_unsigned_int_native(buffer, offset, length):
+    s = buffer[offset:offset + length]
+
     if length == 1:
-        value = buffer[offset]
+        value = s[0]
     elif length == 2:
-        value = (buffer[offset]<<8) | buffer[offset+1]
+        value = (s[0] << 8) | s[1]
     elif length == 3:
-        value = (buffer[offset]<<16) | (buffer[offset+1]<<8) | buffer[offset+2]
+        value = (s[0] << 16) | (s[1] << 8) | s[2]
     elif length == 4:
-        value = (buffer[offset]<<24) | (buffer[offset+1]<<16) | (buffer[offset+2]<<8) | buffer[offset+3]
+        value = (s[0] << 24) | (s[1] << 16) | (s[2] << 8) | s[3]
     else:
-        raise ValueError('Invalid length.')
-        # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).uint
+        raise ValueError('Unsupported length.')
 
     return value
+
+
+def unpack_unsigned_int_bitarray(buffer, offset, length):
+    return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).uint
+
+
+# def unpack_unsigned_int(buffer, offset, length):
+#     try:
+#         return unpack_unsigned_int_native(buffer, offset, length)
+#     except ValueError:
+#         return unpack_unsigned_int_bitarray(buffer, offset, length)
+unpack_unsigned_int = unpack_unsigned_int_native
 
 
 def pack_signed_int(value, length):
     length_in_bit = to_bit(length)
     assert -1 * pow(2, length_in_bit - 1) <= value < pow(2, length_in_bit - 1)
-
     return BitArray(int=value, length=length_in_bit).bin
 
 
-def unpack_signed_int(buffer, offset, length):
-    if length == 1:
-        value = buffer[offset]&0x7F
-    elif length == 2:
-        value = ((buffer[offset]&0x7F)<<8) | buffer[offset+1]
-    elif length == 3:
-        value = ((buffer[offset]&0x7F)<<16) | (buffer[offset+1]<<8) | buffer[offset+2]
-    elif length == 4:
-        value = ((buffer[offset]&0x7F)<<24) | (buffer[offset+1]<<16) | (buffer[offset+2]<<8) | buffer[offset+3]
-    else:
-        raise ValueError('Invalid length.')
-        # return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).int
+def unpack_signed_int_native(buffer, offset, length):
+    value = unpack_unsigned_int_native(buffer, offset, length)
 
-    if buffer[offset]&0x80 == 0:
-        return value
-    else:
-        return -value
+    # takes twos complement and adds sign when needed
+    if length == 1 and value > 0x7f:
+        value = -((0xff - value) + 1)
+    if length == 2 and value > 0x7fff:
+        value = -((0xffff - value) + 1)
+    if length == 3 and value > 0x7fffff:
+        value = -((0xffffff - value) + 1)
+    if length == 4 and value > 0x7fffffff:
+        value = -((0xffffffff - value) + 1)
+
+    return value
+
+
+def unpack_signed_int_bitarray(buffer, offset, length):
+    return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).int
+
+
+# def unpack_signed_int(buffer, offset, length):
+#     try:
+#         return unpack_signed_int_native(buffer, offset, length)
+#     except ValueError:
+#         return unpack_signed_int_bitarray(buffer, offset, length)
+unpack_signed_int = unpack_signed_int_native
 
 
 def pack_float(value, length):
     assert int(length) == 4 or int(length) == 8
     assert isinstance(value, float)
-
     return BitArray(float=value, length=to_bit(length)).bin
 
 
@@ -88,8 +113,7 @@ def pack_hex_string(value, length):
 
 
 def unpack_hex_string(buffer, offset, length):
-    return hexlify(buffer[offset:offset+length])
-    # return BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset)).hex
+    return hexlify(buffer[offset:offset+length]).decode()
 
 
 def pack_time_epoch(value, length):
@@ -244,3 +268,18 @@ def waggle_pack(format, length, values):
 
 def waggle_unpack(format, length, buffer):
     return waggle_unpack_from(format, length, buffer)
+
+
+if __name__ == '__main__':
+    tests = [
+        bytes([1, 2, 0]),
+        bytes([200, 2, 0]),
+        bytes([0, 1, 2]),
+        bytes([0, 200, 2]),
+    ]
+
+    for t in tests:
+        assert unpack_unsigned_int_native(t, 0, 2) == unpack_unsigned_int_bitarray(t, 0, 2)
+        assert unpack_signed_int_native(t, 0, 2) == unpack_signed_int_bitarray(t, 0, 2)
+        assert unpack_unsigned_int_native(t, 1, 2) == unpack_unsigned_int_bitarray(t, 1, 2)
+        assert unpack_signed_int_native(t, 1, 2) == unpack_signed_int_bitarray(t, 1, 2)

@@ -7,6 +7,12 @@ import waggle.checksum
 logger = logging.getLogger('protocol.decoder')
 
 
+HEADER_SIZE = 3
+FOOTER_SIZE = 2
+HEADER_BYTE = 0xaa
+FOOTER_BYTE = 0x55
+
+
 def decode_frame(frame, required_version=2):
     """Decode a frame
     @params:
@@ -15,9 +21,6 @@ def decode_frame(frame, required_version=2):
     @return:
         dict {sensorid: values, ...}
     """
-
-    HEADER_SIZE = 3
-    FOOTER_SIZE = 2
     data = bytearray()
 
     if not isinstance(frame, bytearray) and not isinstance(frame, bytes):
@@ -31,10 +34,10 @@ def decode_frame(frame, required_version=2):
         footer = frame[HEADER_SIZE + length + 1]
         subdata = frame[HEADER_SIZE:HEADER_SIZE + length]
 
-        if header != 0xAA:
+        if header != HEADER_BYTE:
             raise RuntimeError('invalid start byte')
 
-        if footer != 0x55:
+        if footer != FOOTER_BYTE:
             raise RuntimeError('invalid end byte')
 
         if version != required_version:
@@ -50,29 +53,43 @@ def decode_frame(frame, required_version=2):
         data.extend(subdata)
         frame = frame[HEADER_SIZE + length + FOOTER_SIZE:]
 
-    # merge resulting entries
+    return unpack_results(data)
+
+
+def unpack_results(data):
     results = {}
 
     for sensor_id, names, values in decode_data(data):
         if sensor_id not in results:
             results[sensor_id] = {}
 
+        sensor_results = results[sensor_id]
+
         for name, value in zip(names, values):
-            if name not in results[sensor_id]:
-                results[sensor_id][name] = value
+            if name not in sensor_results:
+                sensor_results[name] = value
             else:
-                results[sensor_id][name] += value
+                sensor_results[name] += value
 
     return results
+
+
+spec_cache = {}
+
+for sensor_id in spec.keys():
+    params = spec[sensor_id]['params']
+
+    names = tuple(param['name'] for param in params)
+    formats = tuple(param['format'] for param in params)
+    lengths = tuple(param['length'] for param in params)
+
+    spec_cache[sensor_id] = (names, formats, lengths)
 
 
 def decode_data(data):
     for sensor_id, sensor_data in get_data_subpackets(data):
         try:
-            params = spec[sensor_id]['params']
-            names = [param['name'] for param in params]
-            formats = [param['format'] for param in params]
-            lengths = [param['length'] for param in params]
+            names, formats, lengths = spec_cache[sensor_id]
 
             if sensor_data is None:
                 yield sensor_id, names, ['invalid'] * len(names)

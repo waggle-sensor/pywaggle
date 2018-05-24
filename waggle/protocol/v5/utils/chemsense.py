@@ -14,7 +14,7 @@ def import_data():
     rows = chemsense_empty_data.chemsense_empty_data_raw.strip().split('\n')
     for row in rows:
         rowValues = row.strip().split(';')
-        chem_id = rowValues[1]
+        chem_id = rowValues[1].lower()
 
         xl_data[chem_id] = {
             'IRR': {'sensitivity': rowValues[-42], 'baseline40': rowValues[-21], 'Mvalue': rowValues[-7]},   # IRR = RESP, baseline = Izero@25C
@@ -63,8 +63,8 @@ def chemical_sensor(ky, IpA):
 
 def convert_pair(key, val):
     if 'BAD' in key:
-        chem_id = val
-        return 'id', val, ''
+        chem_id = val.lower()
+        return 'id', chem_id, ''
     if 'SH' in key or 'HD' in key or 'LP' in key or 'AT' in key or 'LT' in key:
         return key, float(val)/100.0, key_unit(key)
     if 'SVL' in key or 'SIR' in key or 'SUV' in key:

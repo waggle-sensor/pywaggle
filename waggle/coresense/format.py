@@ -18,9 +18,9 @@ Format Reference
 - 6: fixed point (-31.999, 31.999)
 - 7: array of 4 bytes
 - 8: fixed point (-127.99, 127.99)
-
 '''
 from functools import partial
+from binascii import hexlify
 
 
 def pack_unsigned_int_into(value, buffer, offset, length):
@@ -139,11 +139,7 @@ def pack_macaddr_into(macaddr, buffer, offset):
 
 
 def unpack_macaddr_from(buffer, offset):
-    return ''.join(map(format_hex, (buffer[offset + i] for i in range(6))))
-
-
-def format_hex(x):
-    return '{:02X}'.format(x)
+    return hexlify(buffer[offset:offset+6]).decode()
 
 
 def pack_uint8array_into(array, buffer, offset):
