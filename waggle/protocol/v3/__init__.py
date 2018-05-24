@@ -51,8 +51,8 @@ topic_table = {
         'humidity': ('metsense', 'hih4030', 'humidity', 'raw'),
     },
     'BMP180': {
-        'temperature': ('metsense', 'bmp180', 'temperature', 'raw'),
-        'pressure': ('metsense', 'bmp180', 'pressure', 'raw'),
+        'temperature': ('metsense', 'bmp180', 'temperature', 'hrf'),
+        'pressure': ('metsense', 'bmp180', 'pressure', 'hrf'),
     },
     'PR103J2': {
         'temperature': ('metsense', 'pr103j2', 'temperature', 'raw'),
