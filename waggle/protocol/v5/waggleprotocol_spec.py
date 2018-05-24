@@ -236,15 +236,9 @@ waggleprotocol_spec = '''
 - id: 0x2D
   conversion: decagon_soil
   params:
-    - name: dielectric
-      length: 2
-      format: int
-    - name: volumatric_water_content
-      length: 2
-      format: int
-    - name: temperature
-      length: 2
-      format: int
+    - name: decagon_test
+      length: 
+      format: str
 
 - id: 0x28
   conversion: alpha_histo
