@@ -43,7 +43,31 @@ def bmp180_pressure(x):
 
 
 def hih4030_humidity(x):
-   return x, (x/1024.0*5.0)*30.68+0.958
+   return x, x/1024.0*5.0*30.68 + 0.958
+
+
+def metsense_tsl250rd_intensity(x):
+    return x, (x*3.3)/1024.0/0.064
+
+
+def lightsense_tsl250rd_intensity(x):
+    return x, ((x*0.0000625*2.5)-0.005781)/0.064
+
+
+def tsl260rd_intensity(x):
+    return x, (x*0.0000625*2.5-0.006250)/0.058
+
+
+def apds_9006_020_intensity(x):
+    return x, x*0.0000625*2.5/0.001944
+
+
+def ml8511_intensity(x):
+    return x, (x*0.0000625*5.00/2.00)*14.9916/0.12-18.71
+
+
+def mlx75305_intensity(x):
+    return x, ((x*0.0000625*2.5)-0.09234)/0.007
 
 
 topic_table = {
@@ -68,7 +92,7 @@ topic_table = {
         'temperature': ('metsense', 'pr103j2', 'temperature', raw_only),
     },
     'TSL250RD-AS': {
-        'intensity': ('metsense', 'tsl250rd', 'intensity', raw_only),
+        'intensity': ('metsense', 'tsl250rd', 'intensity', metsense_tsl250rd_intensity),
     },
     'MMA8452Q': {
         'acceleration_x': ('metsense', 'mma8452q', 'acceleration_x', coresense_mul_1000),
@@ -91,19 +115,19 @@ topic_table = {
         'temperature': ('lightsense', 'hih6130', 'temperature', hrf_only),
     },
     'APDS-9006-020': {
-        'intensity': ('lightsense', 'apds_9006_020', 'intensity', raw_only),
+        'intensity': ('lightsense', 'apds_9006_020', 'intensity', apds_9006_020_intensity),
     },
     'TSL260RD': {
-        'intensity': ('lightsense', 'tsl260rd', 'intensity', raw_only),
+        'intensity': ('lightsense', 'tsl260rd', 'intensity', tsl260rd_intensity),
     },
     'TSL250RD-LS': {
-        'intensity': ('lightsense', 'tsl250rd', 'intensity', raw_only),
+        'intensity': ('lightsense', 'tsl250rd', 'intensity', lightsense_tsl250rd_intensity),
     },
     'MLX75305': {
-        'intensity': ('lightsense', 'mlx75305', 'intensity', raw_only),
+        'intensity': ('lightsense', 'mlx75305', 'intensity', mlx75305_intensity),
     },
     'ML8511': {
-        'intensity': ('lightsense', 'ml8511', 'intensity', raw_only),
+        'intensity': ('lightsense', 'ml8511', 'intensity', ml8511_intensity),
     },
     'TMP421': {
         'temperature': ('lightsense', 'tmp421', 'temperature', hrf_only),
@@ -120,7 +144,7 @@ topic_table = {
         'orientation_z': ('chemsense', 'bmi160', 'orientation_z', raw_only),
     },
     'Chemsense ID': {
-        'mac_address': ('chemsense', 'chemsense', 'id', raw_and_hrf),
+        'mac_address': ('chemsense', 'chemsense', 'id', hrf_only),
     },
     'Chemsense': {
         'co': ('chemsense', 'co', 'concentration', raw_only),
