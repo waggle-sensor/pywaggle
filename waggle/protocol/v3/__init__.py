@@ -42,6 +42,10 @@ def bmp180_pressure(x):
     return 100 * x, x / 100.0
 
 
+def hih4030_humidity(x):
+   return x, (x/1024.0*5.0)*30.68+0.958
+
+
 topic_table = {
     'Coresense ID': {
         'mac_address': ('metsense', 'metsense', 'id', raw_and_hrf),
@@ -54,7 +58,7 @@ topic_table = {
         'humidity': ('metsense', 'htu21d', 'humidity', hrf_only),
     },
     'HIH4030': {
-        'humidity': ('metsense', 'hih4030', 'humidity', raw_only),
+        'humidity': ('metsense', 'hih4030', 'humidity', hih4030_humidity),
     },
     'BMP180': {
         'temperature': ('metsense', 'bmp180', 'temperature', hrf_only),
