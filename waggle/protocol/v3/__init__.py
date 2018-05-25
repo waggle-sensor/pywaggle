@@ -84,8 +84,8 @@ topic_table = {
         'magnetic_field_z': ('lightsense', 'HMC5883L', 'magnetic_field_z', 'hrf'),
     },
     'HIH6130': {
-        'humidity': ('lightsense', 'hih4030', 'humidity', 'hrf'),
-        'temperature': ('lightsense', 'hih4030', 'temperature', 'hrf'),
+        'humidity': ('lightsense', 'hih6130', 'humidity', 'hrf'),
+        'temperature': ('lightsense', 'hih6130', 'temperature', 'hrf'),
     },
     # 'APDS-9006-020': {
     #     'intensity': ('lightsense', 'apds_9006_020', 'intensity', 'raw'),
