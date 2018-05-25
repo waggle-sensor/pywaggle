@@ -19,7 +19,7 @@ def unpack_sensors(packet):
 
 
 def convert_to_hecto_unit(x):
-    return 100*x
+    return x/100.0
 
 
 def convert_to_milli_unit(x):
@@ -59,7 +59,7 @@ topic_table = {
     },
     'BMP180': {
         'temperature': ('metsense', 'bmp180', 'temperature', 'hrf'),
-        'pressure': ('metsense', 'bmp180', 'pressure', 'raw'),
+        'pressure': ('metsense', 'bmp180', 'pressure', 'hrf'),
     },
     'PR103J2': {
         'temperature': ('metsense', 'pr103j2', 'temperature', 'raw'),
