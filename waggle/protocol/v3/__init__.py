@@ -72,9 +72,9 @@ topic_table = {
         'acceleration_y': ('metsense', 'mma8452q', 'acceleration_y', 'hrf'),
         'acceleration_z': ('metsense', 'mma8452q', 'acceleration_z', 'hrf'),
     },
-    # 'SPV1840LR5H-B': {
-    #     'intensity': ('metsense', 'spv1840lr5h_b', 'intensity', 'raw'),
-    # },
+    'SPV1840LR5H-B': {
+        'intensity': ('metsense', 'spv1840lr5h_b', 'intensity', 'raw'),
+    },
     'TSYS01': {
         'temperature': ('metsense', 'tsys01', 'temperature', 'hrf'),
     },
@@ -87,18 +87,18 @@ topic_table = {
         'humidity': ('lightsense', 'hih6130', 'humidity', 'hrf'),
         'temperature': ('lightsense', 'hih6130', 'temperature', 'hrf'),
     },
-    # 'APDS-9006-020': {
-    #     'intensity': ('lightsense', 'apds_9006_020', 'intensity', 'raw'),
-    # },
-    # 'TSL260RD': {
-    #     'intensity': ('lightsense', 'tsl260rd', 'intensity', 'raw'),
-    # },
-    # 'TSL250RD-LS': {
-    #     'intensity': ('lightsense', 'tsl250rd', 'intensity', 'raw'),
-    # },
-    # 'MLX75305': {
-    #     'intensity': ('lightsense', 'mlx75305', 'intensity', 'raw'),
-    # },
+    'APDS-9006-020': {
+        'intensity': ('lightsense', 'apds_9006_020', 'intensity', 'raw'),
+    },
+    'TSL260RD': {
+        'intensity': ('lightsense', 'tsl260rd', 'intensity', 'raw'),
+    },
+    'TSL250RD-LS': {
+        'intensity': ('lightsense', 'tsl250rd', 'intensity', 'raw'),
+    },
+    'MLX75305': {
+        'intensity': ('lightsense', 'mlx75305', 'intensity', 'raw'),
+    },
     'ML8511': {
         'intensity': ('lightsense', 'ml8511', 'intensity', 'raw'),
     },
