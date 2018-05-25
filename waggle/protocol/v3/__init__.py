@@ -115,8 +115,10 @@ topic_table = {
         'orientation_y': ('chemsense', 'bmi160', 'orientation_y', raw_only),
         'orientation_z': ('chemsense', 'bmi160', 'orientation_z', raw_only),
     },
-    'Chemsense': {
+    'Chemsense ID': {
         'mac_address': ('chemsense', 'chemsense', 'id', raw_and_hrf),
+    },
+    'Chemsense': {
         'co': ('chemsense', 'co', 'concentration', raw_only),
         'h2s': ('chemsense', 'h2s', 'concentration', raw_only),
         'no2': ('chemsense', 'no2', 'concentration', raw_only),
@@ -171,12 +173,17 @@ def expand_topics(readings):
     output = []
 
     for sensor, parameters in readings.items():
-        sensor_topic_table = topic_table[sensor]
+        try:
+            sensor_topic_table = topic_table[sensor]
+        except KeyError:
+            continue
+
         for parameter, value in parameters.items():
             try:
                 pattern = sensor_topic_table[parameter]
             except KeyError:
                 continue
+
             output.append(make_sample(pattern, value))
 
     return output
