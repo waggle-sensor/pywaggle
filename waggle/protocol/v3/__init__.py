@@ -30,7 +30,11 @@ def raw_and_hrf(x):
     return x, x
 
 
-def coresense_mul_1000(x):
+def mma8452q_accel(x):
+    return x, 1000 * x
+
+
+def hmc5883l_field(x):
     return x, 1000 * x
 
 
@@ -95,9 +99,9 @@ topic_table = {
         'intensity': ('metsense', 'tsl250rd', 'intensity', metsense_tsl250rd_intensity),
     },
     'MMA8452Q': {
-        'acceleration_x': ('metsense', 'mma8452q', 'acceleration_x', coresense_mul_1000),
-        'acceleration_y': ('metsense', 'mma8452q', 'acceleration_y', coresense_mul_1000),
-        'acceleration_z': ('metsense', 'mma8452q', 'acceleration_z', coresense_mul_1000),
+        'acceleration_x': ('metsense', 'mma8452q', 'acceleration_x', mma8452q_accel),
+        'acceleration_y': ('metsense', 'mma8452q', 'acceleration_y', mma8452q_accel),
+        'acceleration_z': ('metsense', 'mma8452q', 'acceleration_z', mma8452q_accel),
     },
     'SPV1840LR5H-B': {
         'intensity': ('metsense', 'spv1840lr5h_b', 'intensity', raw_only),
@@ -106,9 +110,9 @@ topic_table = {
         'temperature': ('metsense', 'tsys01', 'temperature', hrf_only),
     },
     'HMC5883L': {
-        'magnetic_field_x': ('lightsense', 'HMC5883L', 'magnetic_field_x', coresense_mul_1000),
-        'magnetic_field_y': ('lightsense', 'HMC5883L', 'magnetic_field_y', coresense_mul_1000),
-        'magnetic_field_z': ('lightsense', 'HMC5883L', 'magnetic_field_z', coresense_mul_1000),
+        'magnetic_field_x': ('lightsense', 'hmc5883l', 'magnetic_field_x', hmc5883l_field),
+        'magnetic_field_y': ('lightsense', 'hmc5883l', 'magnetic_field_y', hmc5883l_field),
+        'magnetic_field_z': ('lightsense', 'hmc5883l', 'magnetic_field_z', hmc5883l_field),
     },
     'HIH6130': {
         'humidity': ('lightsense', 'hih6130', 'humidity', hrf_only),
