@@ -172,11 +172,12 @@ def expand_topics(readings):
     output = []
 
     for sensor, parameters in readings.items():
+        sensor_topic_table = topic_table[sensor]
         for parameter, value in parameters.items():
             try:
-                pattern = topic_table[sensor][parameter]
-                output.append(make_sample(pattern, value))
+                pattern = sensor_topic_table[parameter]
             except KeyError:
-                pass
+                continue
+            output.append(make_sample(pattern, value))
 
     return output
