@@ -2731,13 +2731,17 @@ x = [p[0] for p in points]
 y = [p[1] for p in points]
 
 
+def convert_temperature(raw_r):
+    resistance = 47000. * (1023. / raw_r - 1)
+    index = bisect.bisect(y, resistance)
+    return x[index]
+
+
 def convert(value):
     raw_r = value['metsense_pr103j2_temperature']
 
     try:
-        resistance = 47000. * (1023. / raw_r - 1)
-        index = bisect.bisect(y, resistance)
-        value['metsense_pr103j2_temperature'] = (x[index], 'C')
+        value['metsense_pr103j2_temperature'] = (convert_temperature(raw_r), 'C')
     except (IndexError, ZeroDivisionError):
         value['metsense_pr103j2_temperature'] = (None, 'C')
 

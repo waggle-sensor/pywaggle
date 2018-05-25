@@ -1,5 +1,6 @@
 from waggle.coresense.utils import decode_frame
 from collections import namedtuple
+import waggle.protocol.v5.utils.pr103j2
 
 Sample = namedtuple('Sample', [
     'timestamp',
@@ -67,11 +68,15 @@ def apds_9006_020_intensity(x):
 
 
 def ml8511_intensity(x):
-    return x, (x*0.0000625*5.00/2.00)*14.9916/0.12-18.71
+    return x, (((x*0.0000625)*5.00)/2.00)*14.9916/0.12-18.71
 
 
 def mlx75305_intensity(x):
     return x, ((x*0.0000625*2.5)-0.09234)/0.007
+
+
+def pr103j2_temperature(x):
+    return x, waggle.protocol.v5.utils.pr103j2.convert_temperature(x)
 
 
 topic_table = {
@@ -93,7 +98,7 @@ topic_table = {
         'pressure': ('metsense', 'bmp180', 'pressure', bmp180_pressure),
     },
     'PR103J2': {
-        'temperature': ('metsense', 'pr103j2', 'temperature', raw_only),
+        'temperature': ('metsense', 'pr103j2', 'temperature', pr103j2_temperature),
     },
     'TSL250RD-AS': {
         'intensity': ('metsense', 'tsl250rd', 'intensity', metsense_tsl250rd_intensity),
