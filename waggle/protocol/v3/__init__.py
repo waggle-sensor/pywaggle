@@ -148,7 +148,11 @@ topic_table = {
 def make_sample(pattern, value):
     subsystem, sensor, parameter, type, conversion = pattern
 
-    if type == 'raw':
+    if conversion is not None:
+        # clear raw value, as it may differ from v4 raw format
+        raw_value = None
+        hrf_value = conversion(value)
+    elif type == 'raw':
         raw_value = value
         hrf_value = None
     elif type == 'hrf':
@@ -159,11 +163,6 @@ def make_sample(pattern, value):
         hrf_value = value
     else:
         raise ValueError('No value type {}'.format(type))
-
-    # assuming value is correct type for conversion, otherwise we'd have all
-    # required values and no need for conversion.
-    if conversion is not None:
-        hrf_value = conversion(value)
 
     return Sample(0, subsystem, sensor, 0, parameter, raw_value, hrf_value)
 
