@@ -68,7 +68,7 @@ def apds_9006_020_intensity(x):
 
 
 def ml8511_intensity(x):
-    return x, (((x*0.0000625)*5.00)/2.00)*14.9916/0.12-18.71
+    return x>>8, (x*0.0000625*2.5-1)*14.9916/0.12-18.71
 
 
 def mlx75305_intensity(x):
