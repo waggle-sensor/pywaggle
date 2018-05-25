@@ -31,15 +31,15 @@ def raw_and_hrf(x):
 
 
 def coresense_mul_1000(x):
-    return x, 1000*x
+    return x, 1000 * x
 
 
 def chemsense_div_100(x):
-    return x, x/100.0
+    return x, x / 100.0
 
 
 def bmp180_pressure(x):
-    return 100*x, x/100
+    return 100 * x, x / 100.0
 
 
 topic_table = {
@@ -58,7 +58,7 @@ topic_table = {
     },
     'BMP180': {
         'temperature': ('metsense', 'bmp180', 'temperature', hrf_only),
-        'pressure': ('metsense', 'bmp180', 'pressure', 'hrf', bmp180_pressure),
+        'pressure': ('metsense', 'bmp180', 'pressure', bmp180_pressure),
     },
     'PR103J2': {
         'temperature': ('metsense', 'pr103j2', 'temperature', raw_only),
