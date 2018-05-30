@@ -1,5 +1,13 @@
+#############################################################################################################################################################
+#
 # Conversion for chemsense
-# chemsense version2, no data of IMU is comming from chemsense --> chemsense FW issue
+# Conversion of chemical sensors are not going through in this code, because the same procedure is processed in other place, maybe beehive server (May 2018)
+#
+# If you want to revive chemical sensor conversion in here, then change:
+# from waggle.protocol.v5.res import chemsense_empty_data >> import empty dataset to
+# from waggle.protocol.v5.res import chemsense_calib_data.py >> import the correct dataset for each chemical sensors calibration
+#
+#############################################################################################################################################################
 
 import math
 
