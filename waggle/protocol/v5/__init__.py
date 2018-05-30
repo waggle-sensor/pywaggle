@@ -252,6 +252,8 @@ topics_table = {
         },
         'service_rabbitmq': {
             'uptime': 'nc_service_rabbitmq_uptime',
+            'state': 'nc_service_rabbitmq_state',
+            'substate': 'nc_service_rabbitmq_substate',
         },
     },
     'ep': {
@@ -291,6 +293,8 @@ topics_table = {
         },
         'service_rabbitmq': {
             'uptime': 'ep_service_rabbitmq_uptime',
+            'state': 'ep_service_rabbitmq_state',
+            'substate': 'ep_service_rabbitmq_substate',
         },
     },
     'wagman': {
