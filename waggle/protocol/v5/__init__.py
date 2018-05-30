@@ -216,6 +216,22 @@ topics_table = {
             'total': 'nc_ram_total',
             'free': 'nc_ram_free',
         },
+        'media': {
+            'current': 'nc_current_disk_type',
+            'other': 'nc_alternate_disk_type',
+        },
+        'disk_boot': {
+            'used': 'nc_partition1_used',
+            'total': 'nc_partition1_total',
+        },
+        'disk_root': {
+            'used': 'nc_partition2_used',
+            'total': 'nc_partition2_total',
+        },
+        'disk_wagglerw': {
+            'used': 'nc_partition3_used',
+            'total': 'nc_partition3_total',
+        },
         'net_broadband': {
             'rx': 'net_broadband_rx',
             'tx': 'net_broadband_tx',
@@ -227,6 +243,15 @@ topics_table = {
         'net_usb': {
             'rx': 'net_usb_rx',
             'tx': 'net_usb_tx',
+        },
+        'devices': {
+            'alphasense': 'nc_devices_alphasense',
+            'coresense': 'nc_devices_metsense',
+            'modem': 'nc_devices_modem',
+            'wagman': 'nc_devices_wagman',
+        },
+        'service_rabbitmq': {
+            'uptime': 'nc_service_rabbitmq_uptime',
         },
     },
     'ep': {
@@ -243,8 +268,51 @@ topics_table = {
             'total': 'ep_ram_total',
             'free': 'ep_ram_free',
         },
+        'media': {
+            'current': 'ep_current_disk_type',
+            'other': 'ep_alternate_disk_type',
+        },
+        'disk_boot': {
+            'used': 'ep_partition1_used',
+            'total': 'ep_partition1_total',
+        },
+        'disk_root': {
+            'used': 'ep_partition2_used',
+            'total': 'ep_partition2_total',
+        },
+        'disk_wagglerw': {
+            'used': 'ep_partition3_used',
+            'total': 'ep_partition3_total',
+        },
+        'devices': {
+            'bottom_camera': 'ep_devices_camera_bottom',
+            'top_camera': 'ep_devices_camera_top',
+            'microphone': 'ep_devices_microphone',
+        },
+        'service_rabbitmq': {
+            'uptime': 'ep_service_rabbitmq_uptime',
+        },
     },
     'wagman': {
+        'wagman': {
+            'id': 'wagman_id',
+        },
+        'hw_ver': {
+            'major': 'wagman_ver_hw_mj',
+            'minor': 'wagman_ver_hw_mi',
+        },
+        'sw_ver': {
+            'major': 'wagman_ver_sw_mj',
+            'minor': 'wagman_ver_sw_mi',
+            'patch': 'wagman_ver_sw_p',
+        },
+        'git_ver': {
+            'commit': 'wagman_ver_git',
+        },
+        'boot': {
+            'flags': 'wagman_bootloader_nc_flag',
+            'count': 'wagman_boot_count',
+        },
         'uptime': {
             'uptime': 'wagman_uptime',
         },
@@ -276,6 +344,10 @@ topics_table = {
             'ep': 'wagman_heartbeat_ep',
             'cs': 'wagman_heartbeat_cs',
         },
+        'media': {
+            'nc': 'wagman_mediaselect_nc',
+            'ep': 'wagman_mediaselect_ep',
+        },
         'htu21d': {
             'temperature': 'wagman_htu21d_temperature',
             'humidity': 'wagman_htu21d_humidity',
@@ -287,11 +359,6 @@ topics_table = {
             'intensity': 'wagman_light',
         },
     },
-
-    #     # 'boot_flags': 'wagman_boot_flag',
-    #     # 'nc_bootloader_flags': 'wagman_bootloader_nc_flag',
-
-    # },
     'image': {
         'device': {
             'device': 'image_device',
