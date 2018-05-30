@@ -237,7 +237,7 @@ waggleprotocol_spec = '''
   conversion: decagon_soil
   params:
     - name: decagon_test
-      length: 
+      length:
       format: str
 
 - id: 0x28
@@ -494,7 +494,7 @@ waggleprotocol_spec = '''
       format: uint
 
 - id: 0x60
-  conversion: bool
+  conversion:
   params:
     - name: wagman_enabled_nc
       length: 1
@@ -513,7 +513,7 @@ waggleprotocol_spec = '''
       format: uint
 
 - id: 0x61
-  conversion: bool
+  conversion:
   params:
     - name: wagman_mediaselect_nc
       length: 1
@@ -741,7 +741,7 @@ waggleprotocol_spec = '''
       format: str
 
 - id: 0x7C
-  conversion:
+  conversion: bool
   params:
     - name: nc_devices_alphasense
       length: 1
@@ -1014,7 +1014,7 @@ waggleprotocol_spec = '''
       format: str
 
 - id: 0x8B
-  conversion:
+  conversion: bool
   params:
     - name: ep_devices_camera_bottom
       length: 1
