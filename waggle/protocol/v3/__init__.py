@@ -32,47 +32,47 @@ def raw_and_hrf(x):
 
 
 def mma8452q_accel(x):
-    return x, 1000 * x
+    return x, round(1000 * x, 3)
 
 
 def hmc5883l_field(x):
-    return x, 1000 * x
+    return x, round(1000 * x, 3)
 
 
 def chemsense_div_100(x):
-    return x, x / 100.0
+    return x, round(x / 100.0, 3)
 
 
 def bmp180_pressure(x):
-    return 100 * x, x / 100.0
+    return 100 * x, round(x / 100.0, 3)
 
 
 def hih4030_humidity(x):
-   return x, x/1024.0*5.0*30.68 + 0.958
+   return x, round(x/1024.0*5.0*30.68 + 0.958, 2)
 
 
 def metsense_tsl250rd_intensity(x):
-    return x, (x*3.3)/1024.0/0.064
+    return x, round((x*3.3)/1024.0/0.064, 3)
 
 
 def lightsense_tsl250rd_intensity(x):
-    return x, ((x*0.0000625*2.5)-0.005781)/0.064
+    return x, round(((x*0.0000625*2.5)-0.005781)/0.064, 3)
 
 
 def tsl260rd_intensity(x):
-    return x, (x*0.0000625*2.5-0.006250)/0.058
+    return x, round((x*0.0000625*2.5-0.006250)/0.058, 3)
 
 
 def apds_9006_020_intensity(x):
-    return x, x*0.0000625*2.5/0.001944
+    return x, round(x*0.0000625*2.5/0.001944, 3)
 
 
 def ml8511_intensity(x):
-    return x>>8, (x*0.0000625*2.5-1)*14.9916/0.12-18.71
+    return x>>8, round((x*0.0000625*2.5-1)*14.9916/0.12-18.71, 3)
 
 
 def mlx75305_intensity(x):
-    return x, ((x*0.0000625*2.5)-0.09234)/0.007
+    return x, round(((x*0.0000625*2.5)-0.09234)/0.007, 3)
 
 
 def pr103j2_temperature(x):
