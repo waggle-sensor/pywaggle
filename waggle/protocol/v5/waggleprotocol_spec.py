@@ -1264,4 +1264,11 @@ waggleprotocol_spec = '''
     - name: image_uas_last_updated_time
       length: 20
       format: str
+
+- id: 0xA3
+  conversion:
+  params:
+    - name: content
+      length: 56
+      format: byte
 '''
