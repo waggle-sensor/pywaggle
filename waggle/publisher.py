@@ -49,6 +49,7 @@ class BeehivePublisher(Publisher):
         self.parameters.socket_timeout = 2.0
 
     def connect_to_beehive(self):
+        pass
 
     def publish_message(self, message):
         print('---')
@@ -325,49 +326,3 @@ class BeehivePublisher(Publisher):
 #         return plugin
 #
 #
-# class Worker(object):
-#
-#     def __init__(self, host='localhost'):
-#         if not hasattr(self, 'plugin_name'):
-#             raise RuntimeError('Plugin name must be specified.')
-#
-#         if not hasattr(self, 'plugin_version'):
-#             raise RuntimeError('Plugin version must be specified.')
-#
-#         self.queue_name = '.'.join([self.plugin_name, self.plugin_version])
-#         self.routing_key = '.'.join([self.plugin_name, self.plugin_version])
-#
-#         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host))
-#
-#         self.channel = self.connection.channel()
-#
-#         self.channel.queue_declare(queue=self.queue_name)
-#
-#         self.channel.queue_bind(exchange='plugins-in',
-#                                 queue=self.queue_name,
-#                                 routing_key=self.routing_key)
-#
-#     def get_message(self, headers, param, value):
-#         pass
-#
-#     def put_message(self, headers, payload):
-#         payload.update({
-#             # this should still be the internal node id. translation to "nice"
-#             # id will happen in the plenario push plugin.
-#             # 'node_id': '00A',
-#             # 'node_config': '123abc',
-#             'datetime': datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f'),
-#         })
-#
-#         self.channel.basic_publish(exchange='plugins-out',
-#                                    routing_key='',
-#                                    body=json.dumps(payload))
-#
-#     def start(self):
-#         def callback(ch, method, properties, body):
-#             headers = properties.headers
-#             param = tuple(headers['key'])
-#             self.get_message(headers, param, body)
-#
-#         self.channel.basic_consume(callback, queue=self.queue_name, no_ack=True)
-#         self.channel.start_consuming()
