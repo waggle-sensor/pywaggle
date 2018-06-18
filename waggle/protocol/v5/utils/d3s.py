@@ -36,7 +36,7 @@ def convert(value):
 
     results = {}
 
-    for name, value in zip(content_names, content):
-        results[name] = value
+    for name, val in zip(content_names, content):
+        results[name] = (val, '')
 
     return results

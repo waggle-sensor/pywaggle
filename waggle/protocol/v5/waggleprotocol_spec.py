@@ -1266,7 +1266,7 @@ waggleprotocol_spec = '''
       format: str
 
 - id: 0xA3
-  conversion:
+  conversion: d3s
   params:
     - name: d3s_content
       length: 56
