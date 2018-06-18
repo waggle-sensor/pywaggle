@@ -21,7 +21,7 @@ content_fields = [
     ('d3s_gamma_live_time', 'I'),
     ('d3s_gamma_count', 'I'),
     ('d3s_gamma_temperature', 'h'),
-    ('d3s_gamma_servered', 'f'),
+    ('d3s_gamma_reserved', 'f'),
 
     ('d3s_spectrum_bit_size', 'B'),
     ('d3s_spectrum_reserved', 'B'),

@@ -392,7 +392,26 @@ topics_table = {
             'octave_10_intensity': 'audio_spl_octave10',
             'octave_total_intensity': 'audio_spl_octave_total',
         }
-    }
+    },
+    'radiation': {
+        'd3s': {
+            'component_id': 'd3s_component_id',
+            'report_id': 'd3s_report_id',
+            'status': 'd3s_status',
+            'real_time_ms': 'd3s_real_time_ms',
+            'real_time_offset_ms': 'd3s_real_time_offset_ms',
+            'dose': 'd3s_dose',
+            'dose_rate': 'd3s_dose_rate',
+            'dose_user_accum': 'd3s_dose_user_accum',
+            'neutron_live_time': 'd3s_neutron_live_time',
+            'neutron_count': 'd3s_neutron_count',
+            'neutron_temperature': 'd3s_neutron_temperature',
+            'gamma_live_time': 'd3s_gamma_live_time',
+            'gamma_count': 'd3s_gamma_count',
+            'gamma_temperature': 'd3s_gamma_temperature',
+            'spectrum_bit_size': 'd3s_spectrum_bit_size',
+        },
+    },
 }
 
 inverted_topics_table = {key: (subsystem, sensor, parameter)
