@@ -1,8 +1,8 @@
 import time
-import io
+from io import BytesIO
 from waggle.checksum import crc8
-from binascii import crc32
 from binascii import crc_hqx as crc16
+from binascii import crc32
 
 
 def get_timestamp_or_now(obj):
@@ -26,6 +26,16 @@ def write_sensorgram(w, sensorgram):
     write_uint(w, 1, sensorgram['parameter_id'])
     write_uint(w, 4, get_timestamp_or_now(sensorgram))
     w.write(sensorgram['body'])
+
+
+def pack_sensorgram(sensorgram):
+    w = BytesIO()
+    write_sensorgram(w, sensorgram)
+    return w.getvalue()
+
+
+def unpack_sensorgram(b):
+    return read_sensorgram(BytesIO(b))
 
 
 def read_sensorgram(r):
@@ -112,63 +122,9 @@ def write_waggle_packet(w, packet):
     write_uint(w, 4, crc32(packet['body']))
 
 
-# Header(64B)
-# 0-7	[Protocol Maj Ver (1B)][Protocol Min Ver (1B)][Build Version (1B)][Msg Priority (1B)][Length of Message Body (4B)]
-# 8-15	[Time (4B)][Msg Maj Type (1B)][Msg Min Type (1B)][Reserved (2B)]
-# 16-23   [Sender Node ID {7:0}(8B)]
-# 24-31   [Sender Subsystem ID {7:0}(8B)]
-# 32-39	[Receiver Node ID {7:0}(8B)]
-# 40-47	[Receiver Subsystem ID {7:0}(8B)]
-# 46-55 	[Sender Seq No. (3B)] [Sender Session ID (2B)] [Responding to Seq No. (3B)]
-# 56-63 	[Responding to Session ID (2B)][CRC (2B)][Token (4B)]
-#
-# [Payload / Body]
-#
-# [CRC_32  (4B)]
-
-
 if __name__ == '__main__':
-    w = io.BytesIO()
-
-    write_sensorgram(w, {
+    print(unpack_sensorgram(pack_sensorgram({
         'sensor_id': 1,
-        'parameter_id': 0,
-        'body': b'12345',
-    })
-
-    write_sensorgram(w, {
-        'sensor_id': 2,
-        'parameter_id': 1,
-        'body': b'abc',
-    })
-
-    write_sensorgram(w, {
-        'sensor_id': 3,
-        'parameter_id': 4,
-        'sensor_instance': 3,
-        'timestamp': 777,
-        'body': b'xyz',
-    })
-
-    r = io.BytesIO(w.getvalue())
-
-    print(read_sensorgram(r))
-    print(read_sensorgram(r))
-    print(read_sensorgram(r))
-
-    datagram = {
-        'plugin_id': 1,
-        'plugin_major_version': 4,
-        'plugin_minor_version': 0,
-        'plugin_patch_version': 1,
-        'plugin_instance': 0,
-        'plugin_run_id': 0,
-        'body': w.getvalue(),
-    }
-
-    w = io.BytesIO()
-
-    write_datagram(w, datagram)
-
-    r = io.BytesIO(w.getvalue())
-    print(read_datagram(r))
+        'parameter_id': 2,
+        'body': b'123',
+    })))
