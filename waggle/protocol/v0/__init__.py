@@ -5,42 +5,18 @@ from binascii import crc32
 from binascii import crc_hqx as crc16
 
 
-def pack_uint(n, x):
-    if n == 1:
-        return bytes([x & 0xff])
-    if n == 2:
-        return bytes([(x >> 8) & 0xff, x & 0xff])
-    if n == 3:
-        return bytes([(x >> 16) & 0xff, (x >> 8) & 0xff, x & 0xff])
-    if n == 4:
-        return bytes([(x >> 24) & 0xff, (x >> 16) & 0xff, (x >> 8) & 0xff, x & 0xff])
-    raise ValueError('Invalid integer size.')
-
-
-def unpack_uint(n, b):
-    if n == 1:
-        return b[0]
-    if n == 2:
-        return (b[0] << 8) | b[1]
-    if n == 3:
-        return (b[0] << 16) | (b[1] << 8) | b[2]
-    if n == 4:
-        return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]
-    raise ValueError('Invalid integer size.')
-
-
-def write_uint(w, n, x):
-    w.write(pack_uint(n, x))
-
-
-def read_uint(r, n):
-    return unpack_uint(n, r.read(n))
-
-
 def get_timestamp_or_now(obj):
     if 'timestamp' in obj:
         return obj['timestamp']
     return int(time.time())
+
+
+def write_uint(w, n, x):
+    w.write(x.to_bytes(n, byteorder='big', signed=False))
+
+
+def read_uint(r, n):
+    return int.from_bytes(r.read(n), byteorder='big', signed=False)
 
 
 def write_sensorgram(w, sensorgram):
