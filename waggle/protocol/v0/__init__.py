@@ -80,7 +80,7 @@ def write_datagram(w, datagram):
     write_uint(w, 1, 0x55)
 
 
-def read_datagram(reader):
+def read_datagram(r):
     assert read_uint(r, 1) == 0xaa
     length = read_uint(r, 3)
 
