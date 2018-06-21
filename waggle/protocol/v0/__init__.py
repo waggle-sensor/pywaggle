@@ -1,6 +1,8 @@
 import time
 import io
 from waggle.checksum import crc8
+from binascii import crc32
+from binascii import crc_hqx as crc16
 
 
 def pack_uint(n, x):
@@ -107,6 +109,32 @@ def read_datagram(r):
     assert read_uint(r, 1) == 0x55
 
     return datagram
+
+
+def write_waggle_packet(w, packet):
+    assert len(packet['sender_id']) == 16
+    assert len(packet['receiver_id']) == 16
+
+    write_uint(w, 1, packet.get('protocol_major_version', 2))
+    write_uint(w, 1, packet.get('protocol_minor_version', 0))
+    write_uint(w, 1, packet.get('protocol_patch_version', 0))
+    write_uint(w, 1, packet.get('priority', 0))
+    write_uint(w, 4, len(packet['body']))
+    write_uint(w, 4, get_timestamp_or_now(packet))
+    write_uint(w, 1, packet.get('message_major_version', 0))
+    write_uint(w, 1, packet.get('message_minor_version', 0))
+    write_uint(w, 2, 0) # reserved
+    w.write(packet['sender_id'])
+    w.write(packet['receiver_id'])
+    write_uint(w, 3, packet.get('sender_seq', 0))
+    write_uint(w, 2, packet.get('sender_sid', 0))
+    write_uint(w, 3, packet.get('receiver_seq', 0))
+    write_uint(w, 2, packet.get('receiver_sid', 0))
+    write_uint(w, 2, 0) # fix crc
+    write_uint(w, 4, packet.get('token', 0))
+    w.write(packet['body'])
+    write_uint(w, 4, crc32(packet['body']))
+
 
 # Header(64B)
 # 0-7	[Protocol Maj Ver (1B)][Protocol Min Ver (1B)][Build Version (1B)][Msg Priority (1B)][Length of Message Body (4B)]
