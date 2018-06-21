@@ -51,14 +51,14 @@ def write_sensorgram(w, sensorgram):
 
 
 def read_sensorgram(r):
-    length = read_uint(r, 2)
+    body_length = read_uint(r, 2)
 
     return {
         'sensor_id': read_uint(r, 2),
         'sensor_instance': read_uint(r, 1),
         'parameter_id': read_uint(r, 1),
         'timestamp': read_uint(r, 4),
-        'body': r.read(length),
+        'body': r.read(body_length),
     }
 
 
@@ -82,7 +82,7 @@ def write_datagram(w, datagram):
 
 def read_datagram(r):
     assert read_uint(r, 1) == 0xaa
-    length = read_uint(r, 3)
+    body_length = read_uint(r, 3)
 
     datagram = {
         'protocol_version': read_uint(r, 1),
@@ -95,7 +95,7 @@ def read_datagram(r):
         'plugin_patch_version': read_uint(r, 1),
         'plugin_instance': read_uint(r, 1),
         'plugin_run_id': read_uint(r, 2),
-        'body': r.read(length),
+        'body': r.read(body_length),
     }
 
     assert read_uint(r, 1) == crc8(datagram['body'])
