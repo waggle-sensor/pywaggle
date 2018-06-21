@@ -20,11 +20,6 @@ from bitstring import BitArray
 from binascii import hexlify
 
 
-# NOTE It seems that bitstring's is much slower than more direct methods. I've
-# implemented optimized versions for some of the unpack functions, since they're
-# used to do bulk decoding. - Sean
-
-
 def pack_unsigned_int(value, length):
     return value.to_bytes(length, byteorder='big', signed=False)
 
