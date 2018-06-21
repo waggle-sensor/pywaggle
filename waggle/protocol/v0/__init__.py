@@ -53,13 +53,17 @@ def write_sensorgram(w, sensorgram):
 def read_sensorgram(r):
     body_length = read_uint(r, 2)
 
-    return {
+    sensorgram = {
         'sensor_id': read_uint(r, 2),
         'sensor_instance': read_uint(r, 1),
         'parameter_id': read_uint(r, 1),
         'timestamp': read_uint(r, 4),
         'body': r.read(body_length),
     }
+
+    assert body_length == len(sensorgram['body'])
+
+    return sensorgram
 
 
 def write_datagram(w, datagram):
