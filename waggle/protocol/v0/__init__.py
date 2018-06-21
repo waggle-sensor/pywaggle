@@ -98,6 +98,7 @@ def read_datagram(r):
         'body': r.read(body_length),
     }
 
+    assert body_length == len(datagram['body'])
     assert read_uint(r, 1) == crc8(datagram['body'])
     assert read_uint(r, 1) == 0x55
 
