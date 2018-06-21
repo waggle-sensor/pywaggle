@@ -1,5 +1,4 @@
 import time
-import struct
 import io
 from waggle.checksum import crc8
 
