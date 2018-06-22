@@ -17,7 +17,12 @@ def write_uint(w, n, x):
 
 
 def read_uint(r, n):
-    return int.from_bytes(r.read(n), 'big', signed=False)
+    b = r.read(n)
+
+    if len(b) != n:
+        raise EOFError()
+
+    return int.from_bytes(b, 'big', signed=False)
 
 
 def write_sensorgram(w, sensorgram):
@@ -123,7 +128,7 @@ def unpack_sensorgram(b):
     return read_sensorgram(BytesIO(b))
 
 
-def pack_sensorgrams(*sensorgrams):
+def pack_sensorgrams(sensorgrams):
     w = BytesIO()
 
     for sensorgram in sensorgrams:
@@ -132,8 +137,14 @@ def pack_sensorgrams(*sensorgrams):
     return w.getvalue()
 
 
-def unpack_sensorgram(b):
-    return read_sensorgram(BytesIO(b))
+def unpack_sensorgrams(b):
+    r = BytesIO(b)
+
+    while True:
+        try:
+            yield read_sensorgram(r)
+        except EOFError:
+            break
 
 
 def pack_datagram(datagram):
@@ -215,23 +226,12 @@ class TestProtocol(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print(pack_sensorgrams(
-        {
-            'sensor_id': 1,
-            'body': b'123',
-        },
-        {
-            'sensor_id': 1,
-            'body': b'123',
-        },
-        {
-            'sensor_id': 1,
-            'body': b'123',
-        },
-        {
-            'sensor_id': 1,
-            'body': b'123',
-        },
-    ))
+    sensorgrams = [
+        {'sensor_id': 1, 'parameter_id': 1, 'body': b'13'},
+        {'sensor_id': 1, 'parameter_id': 1, 'body': b'13'},
+        {'sensor_id': 1, 'parameter_id': 1, 'body': b'13'},
+    ]
+
+    print(list(unpack_sensorgrams(pack_sensorgrams(sensorgrams))))
 
     unittest.main()
