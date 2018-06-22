@@ -133,7 +133,6 @@ def write_waggle_packet(w, packet):
     write_uint(w, 4, crc32(packet['body']))
 
 
-
 class TestProtocol(unittest.TestCase):
 
     def test_sensorgram_pack_unpack(self):
