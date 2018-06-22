@@ -94,8 +94,8 @@ class Encoder:
 
         sender_seq = value.get('sender_seq', 0)
         sender_sid = value.get('sender_sid', 0)
-        receiver_seq = value.get('receiver_seq', 0)
-        receiver_sid = value.get('receiver_sid', 0)
+        response_seq = value.get('response_seq', 0)
+        response_sid = value.get('response_sid', 0)
 
         self.encode_int(1, protocol_major_version)
         self.encode_int(1, protocol_minor_version)
@@ -110,8 +110,8 @@ class Encoder:
         self.encode_bytes(receiver_id)
         self.encode_int(3, sender_seq)
         self.encode_int(2, sender_sid)
-        self.encode_int(3, receiver_seq)
-        self.encode_int(2, receiver_sid)
+        self.encode_int(3, response_seq)
+        self.encode_int(2, response_sid)
 
     def encode_waggle_packet(self, value):
         buf = BytesIO()
@@ -225,8 +225,8 @@ class Decoder:
         receiver_id = dec.decode_bytes(16)
         sender_seq = dec.decode_int(3)
         sender_sid = dec.decode_int(2)
-        receiver_seq = dec.decode_int(3)
-        receiver_sid = dec.decode_int(2)
+        response_seq = dec.decode_int(3)
+        response_sid = dec.decode_int(2)
 
         token = self.decode_int(4)
         body = self.decode_bytes(body_length)
@@ -247,8 +247,8 @@ class Decoder:
             'sender_seq': sender_seq,
             'sender_sid': sender_sid,
             'receiver_id': receiver_id,
-            'receiver_seq': receiver_seq,
-            'receiver_sid': receiver_sid,
+            'response_seq': response_seq,
+            'response_sid': response_sid,
             'token': token,
             'body': body,
         }
@@ -263,52 +263,43 @@ def validate_user_id(user_id):
         raise ValueError('Invalid user ID "{}"'.format(user_id.hex()))
 
 
-def pack_sensorgrams(sensorgrams):
-    buf = BytesIO()
-    enc = Encoder(buf)
+def make_pack_function(func):
+    def packer(items):
+        buf = BytesIO()
+        enc = Encoder(buf)
 
-    for sensorgram in sensorgrams:
-        enc.encode_sensorgram(sensorgram)
+        for item in items:
+            func(enc, item)
 
-    return buf.getvalue()
+        return buf.getvalue()
 
-
-def unpack_sensorgrams(buf):
-    sensorgrams = []
-
-    dec = Decoder(BytesIO(buf))
-
-    while True:
-        try:
-            sensorgrams.append(dec.decode_sensorgram())
-        except EOFError:
-            break
-
-    return sensorgrams
+    return packer
 
 
-def pack_datagrams(datagrams):
-    buf = BytesIO()
-    enc = Encoder(buf)
+def make_unpack_function(func):
+    def unpacker(buf):
+        items = []
 
-    for datagram in datagrams:
-        enc.encode_datagram(datagram)
+        dec = Decoder(BytesIO(buf))
 
-    return buf.getvalue()
+        while True:
+            try:
+                items.append(func(dec))
+            except EOFError:
+                break
+
+        return items
+
+    return unpacker
 
 
-def unpack_datagrams(buf):
-    datagrams = []
+pack_sensorgrams = make_pack_function(Encoder.encode_sensorgram)
+pack_datagrams = make_pack_function(Encoder.encode_datagram)
+pack_waggle_packets = make_pack_function(Encoder.encode_waggle_packet)
 
-    dec = Decoder(BytesIO(buf))
-
-    while True:
-        try:
-            datagrams.append(dec.decode_datagram())
-        except EOFError:
-            break
-
-    return datagrams
+unpack_sensorgrams = make_unpack_function(Decoder.decode_sensorgram)
+unpack_datagrams = make_unpack_function(Decoder.decode_datagram)
+unpack_waggle_packets = make_unpack_function(Decoder.decode_waggle_packet)
 
 
 class TestProtocol(unittest.TestCase):
@@ -400,33 +391,40 @@ class TestProtocol(unittest.TestCase):
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
-    def test_encode_decode_waggle_packet(self):
-        cases = [
-            {
-                'sender_id': b'0123456789abcdef',
-                'receiver_id': b'fedcba9876543210',
-                'body': b'^this is a really, really important message!$',
-            },
-            {
-                'timestamp': 123456789,
-                'sender_seq': 1,
-                'sender_sid': 3,
-                'sender_id': b'0123456789abcdef',
-                'receiver_id': b'fedcba9876543210',
-                'receiver_seq': 4,
-                'receiver_sid': 9,
-                'token': 31243,
-                'body': b'^this is a really, really important message!$',
-            },
-        ]
+    waggle_packet_test_cases = [
+        {
+            'sender_id': b'0123456789abcdef',
+            'receiver_id': b'fedcba9876543210',
+            'body': b'^this is a really, really important message!$',
+        },
+        {
+            'timestamp': 123456789,
+            'sender_seq': 1,
+            'sender_sid': 3,
+            'sender_id': b'0123456789abcdef',
+            'receiver_id': b'fedcba9876543210',
+            'response_seq': 4,
+            'response_sid': 9,
+            'token': 31243,
+            'body': b'^this is a really, really important message!$',
+        },
+    ]
 
-        for c in cases:
+    def test_encode_decode_waggle_packet(self):
+        for c in self.waggle_packet_test_cases:
             buf = BytesIO()
             enc = Encoder(buf)
             enc.encode_waggle_packet(c)
             dec = Decoder(BytesIO(buf.getvalue()))
             r = dec.decode_waggle_packet()
 
+            for k in c.keys():
+                self.assertEqual(c[k], r[k])
+
+    def test_pack_unpack_waggle_packets(self):
+        results = unpack_waggle_packets(pack_waggle_packets(self.waggle_packet_test_cases))
+
+        for c, r in zip(self.waggle_packet_test_cases, results):
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
