@@ -1,5 +1,5 @@
 import unittest
-from __init__ import *
+from protocol import *
 
 
 class TestProtocol(unittest.TestCase):
