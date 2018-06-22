@@ -17,6 +17,15 @@ def crc16(data, value=0):
     return crc_hqx(data, value)
 
 
+def get_timestamp_or_now(obj):
+    return obj.get('timestamp') or int(time.time())
+
+
+def validate_user_id(user_id):
+    if len(user_id) != 16:
+        raise ValueError('Invalid user ID "{}"'.format(user_id.hex()))
+
+
 class Encoder:
 
     def __init__(self, writer):
@@ -252,15 +261,6 @@ class Decoder:
             'token': token,
             'body': body,
         }
-
-
-def get_timestamp_or_now(obj):
-    return obj.get('timestamp') or int(time.time())
-
-
-def validate_user_id(user_id):
-    if len(user_id) != 16:
-        raise ValueError('Invalid user ID "{}"'.format(user_id.hex()))
 
 
 def make_pack_function(func):
