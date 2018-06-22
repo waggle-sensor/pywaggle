@@ -31,11 +31,14 @@ class Encoder:
     def __init__(self, writer):
         self.writer = writer
 
-    def encode_int(self, length, value):
-        self.writer.write(value.to_bytes(length, 'big'))
-
     def encode_bytes(self, value):
-        self.writer.write(value)
+        length = self.writer.write(value)
+
+        if length != len(value):
+            raise IOError('Failed to encode bytes.')
+
+    def encode_int(self, length, value):
+        self.encode_bytes(value.to_bytes(length, 'big'))
 
     def encode_sensorgram(self, value):
         sensor_id = value['sensor_id']
