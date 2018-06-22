@@ -5,139 +5,214 @@ from binascii import crc_hqx as crc16
 from binascii import crc32
 import unittest
 
-
 PROTOCOL_MAJOR_VERSION = 2
 PROTOCOL_MINOR_VERSION = 1
 PROTOCOL_PATCH_VERSION = 0
 
+START_FLAG = 0xaa
+END_FLAG = 0x55
 
-class CRCWriter:
 
-    def __init__(self, crc, value):
-        self.crc = crc
-        self.value = value
+class Encoder:
 
-    def write(self, b):
-        self.value = self.crc(b, self.value)
+    def __init__(self, writer):
+        self.writer = writer
+
+    def encode_int(self, length, value):
+        self.writer.write(value.to_bytes(length, 'big'))
+
+    def encode_bytes(self, value):
+        self.writer.write(value)
+
+    def encode_sensorgram(self, value):
+        sensor_id = value['sensor_id']
+        sensor_instance = value.get('sensor_instance', 0)
+        parameter_id = value['parameter_id']
+        timestamp = get_timestamp_or_now(value)
+        body = value['body']
+        body_length = len(body)
+
+        self.encode_int(2, body_length)
+        self.encode_int(2, sensor_id)
+        self.encode_int(1, sensor_instance)
+        self.encode_int(1, parameter_id)
+        self.encode_int(4, timestamp)
+        self.encode_bytes(body)
+
+    def encode_datagram(self, value):
+        protocol_version = value.get('protocol_version', PROTOCOL_MAJOR_VERSION)
+        timestamp = get_timestamp_or_now(value)
+        packet_seq = 0
+        packet_type = 0
+        plugin_id = value['plugin_id']
+        plugin_major_version = value.get('plugin_major_version', 0)
+        plugin_minor_version = value.get('plugin_minor_version', 0)
+        plugin_patch_version = value.get('plugin_patch_version', 0)
+        plugin_instance = value.get('plugin_instance', 0)
+        plugin_run_id = value.get('plugin_run_id', 0)
+        body = value['body']
+        body_length = len(body)
+        body_crc = crc8(body)
+
+        self.encode_int(1, START_FLAG)
+        self.encode_int(3, body_length)
+        self.encode_int(1, protocol_version)
+        self.encode_int(4, timestamp)
+        self.encode_int(2, packet_seq)
+        self.encode_int(1, packet_type)
+        self.encode_int(2, plugin_id)
+        self.encode_int(1, plugin_major_version)
+        self.encode_int(1, plugin_minor_version)
+        self.encode_int(1, plugin_patch_version)
+        self.encode_int(1, plugin_instance)
+        self.encode_int(2, plugin_run_id)
+        self.encode_bytes(body)
+        self.encode_int(1, body_crc)
+        self.encode_int(1, END_FLAG)
+
+    def encode_waggle_packet_header(self, value):
+        protocol_major_version = value.get('protocol_major_version', PROTOCOL_MAJOR_VERSION)
+        protocol_minor_version = value.get('protocol_major_version', PROTOCOL_MINOR_VERSION)
+        protocol_patch_version = value.get('protocol_major_version', PROTOCOL_PATCH_VERSION)
+        message_priority = value.get('message_priority', 0)
+        body = value['body']
+        body_length = len(body)
+        timestamp = get_timestamp_or_now(value)
+        message_major_version = value.get('message_major_version', 0)
+        message_minor_version = value.get('message_minor_version', 0)
+        reserved = 0
+
+        sender_id = value['sender_id']
+        validate_user_id(sender_id)
+
+        receiver_id = value['receiver_id']
+        validate_user_id(receiver_id)
+
+        sender_seq = value.get('sender_seq', 0)
+        sender_sid = value.get('sender_sid', 0)
+        receiver_seq = value.get('receiver_seq', 0)
+        receiver_sid = value.get('receiver_sid', 0)
+
+        self.encode_int(1, protocol_major_version)
+        self.encode_int(1, protocol_minor_version)
+        self.encode_int(1, protocol_patch_version)
+        self.encode_int(1, message_priority)
+        self.encode_int(4, body_length)
+        self.encode_int(4, timestamp)
+        self.encode_int(1, message_major_version)
+        self.encode_int(1, message_minor_version)
+        self.encode_int(2, reserved)
+        self.encode_bytes(sender_id)
+        self.encode_bytes(receiver_id)
+        self.encode_int(3, sender_seq)
+        self.encode_int(2, sender_sid)
+        self.encode_int(3, receiver_seq)
+        self.encode_int(2, receiver_sid)
+
+    def encode_waggle_packet(self, value):
+        b = BytesIO()
+        enc = Encoder(b)
+        enc.encode_waggle_packet_header(value)
+
+        header = b.getvalue()
+        header_crc = crc16(header, 0)
+        token = value.get('token')
+        body = value['body']
+        body_crc = crc32(value['body'])
+
+        self.encode_bytes(header)
+        self.encode_int(2, header_crc)
+        self.encode_int(4, token)
+        self.encode_bytes(body)
+        self.encode_int(4, body_crc)
+
+
+class Decoder:
+
+    def __init__(self, reader):
+        self.reader = reader
+
+    def decode_bytes(self, length):
+        b = self.reader.read(length)
+
+        if len(b) != length:
+            raise EOFError()
+
+        return b
+
+    def decode_int(self, length):
+        return int.from_bytes(self.decode_bytes(length), 'big')
+
+    def decode_sensorgram(self):
+        body_length = self.decode_int(2)
+        sensor_id = self.decode_int(2)
+        sensor_instance = self.decode_int(1)
+        parameter_id = self.decode_int(1)
+        timestamp = self.decode_int(4)
+        body = self.decode_bytes(body_length)
+
+        return {
+            'sensor_id': sensor_id,
+            'sensor_instance': sensor_instance,
+            'parameter_id': parameter_id,
+            'timestamp': timestamp,
+            'body': body,
+        }
+
+    def decode_datagram(self):
+        start_flag = self.decode_int(1)
+
+        if start_flag != START_FLAG:
+            raise ValueError('Invalid start flag.')
+
+        body_length = self.decode_int(3)
+        protocol_version = self.decode_int(1)
+        timestamp = self.decode_int(4)
+        packet_seq = self.decode_int(2)
+        packet_type = self.decode_int(1)
+        plugin_id = self.decode_int(2)
+        plugin_major_version = self.decode_int(1)
+        plugin_minor_version = self.decode_int(1)
+        plugin_patch_version = self.decode_int(1)
+        plugin_instance = self.decode_int(1)
+        plugin_run_id = self.decode_int(2)
+        body = self.decode_bytes(body_length)
+        body_crc = self.decode_int(1)
+
+        if crc8(body) != body_crc:
+            raise ValueError('Invalid body CRC.')
+
+        end_flag = self.decode_int(1)
+
+        if end_flag != END_FLAG:
+            raise ValueError('Invalid end flag.')
+
+        return {
+            'timestamp': timestamp,
+            'packet_seq': packet_seq,
+            'packet_type': packet_type,
+            'plugin_id': plugin_id,
+            'plugin_major_version': plugin_major_version,
+            'plugin_minor_version': plugin_minor_version,
+            'plugin_patch_version': plugin_patch_version,
+            'plugin_instance': plugin_instance,
+            'plugin_run_id': plugin_run_id,
+            'body': body,
+        }
 
 
 def get_timestamp_or_now(obj):
-    if 'timestamp' in obj:
-        return obj['timestamp']
-    return int(time.time())
+    return obj.get('timestamp') or int(time.time())
 
 
-def write_uint(w, n, x):
-    w.write(x.to_bytes(n, 'big', signed=False))
+def validate_user_id(user_id):
+    if len(user_id) != 16:
+        raise ValueError('Invalid user ID "{}"'.format(user_id.hex()))
 
-
-def read_uint(r, n):
-    b = r.read(n)
-
-    if len(b) != n:
-        raise EOFError()
-
-    return int.from_bytes(b, 'big', signed=False)
-
-
-def write_sensorgram(w, sensorgram):
-    write_uint(w, 2, len(sensorgram['body']))
-    write_uint(w, 2, sensorgram['sensor_id'])
-    write_uint(w, 1, sensorgram.get('sensor_instance', 0))
-    write_uint(w, 1, sensorgram['parameter_id'])
-    write_uint(w, 4, get_timestamp_or_now(sensorgram))
-    w.write(sensorgram['body'])
-
-
-def read_sensorgram(r):
-    body_length = read_uint(r, 2)
-
-    sensorgram = {
-        'sensor_id': read_uint(r, 2),
-        'sensor_instance': read_uint(r, 1),
-        'parameter_id': read_uint(r, 1),
-        'timestamp': read_uint(r, 4),
-        'body': r.read(body_length),
-    }
-
-    assert body_length == len(sensorgram['body'])
-
-    return sensorgram
-
-
-def write_datagram(w, datagram):
-    write_uint(w, 1, 0xaa)
-    write_uint(w, 3, len(datagram['body']))
-    write_uint(w, 1, datagram.get('protocol_version', PROTOCOL_MAJOR_VERSION))
-    write_uint(w, 4, get_timestamp_or_now(datagram))
-    write_uint(w, 2, datagram.get('packet_seq', 0))
-    write_uint(w, 1, datagram.get('packet_type', 0))
-    write_uint(w, 2, datagram['plugin_id'])
-    write_uint(w, 1, datagram.get('plugin_major_version', 0))
-    write_uint(w, 1, datagram.get('plugin_minor_version', 0))
-    write_uint(w, 1, datagram.get('plugin_patch_version', 0))
-    write_uint(w, 1, datagram.get('plugin_instance', 0))
-    write_uint(w, 2, datagram.get('plugin_run_id', 0))
-    w.write(datagram['body'])
-    write_uint(w, 1, crc8(datagram['body']))
-    write_uint(w, 1, 0x55)
-
-
-def read_datagram(r):
-    assert read_uint(r, 1) == 0xaa
-    body_length = read_uint(r, 3)
-
-    datagram = {
-        'protocol_version': read_uint(r, 1),
-        'timestamp': read_uint(r, 4),
-        'packet_seq': read_uint(r, 2),
-        'packet_type': read_uint(r, 1),
-        'plugin_id': read_uint(r, 2),
-        'plugin_major_version': read_uint(r, 1),
-        'plugin_minor_version': read_uint(r, 1),
-        'plugin_patch_version': read_uint(r, 1),
-        'plugin_instance': read_uint(r, 1),
-        'plugin_run_id': read_uint(r, 2),
-        'body': r.read(body_length),
-    }
-
-    assert body_length == len(datagram['body'])
-    assert read_uint(r, 1) == crc8(datagram['body'])
-    assert read_uint(r, 1) == 0x55
-
-    return datagram
-
-
-def write_waggle_packet_header(w, packet):
-    write_uint(w, 1, packet.get('protocol_major_version', PROTOCOL_MAJOR_VERSION))
-    write_uint(w, 1, packet.get('protocol_minor_version', PROTOCOL_MINOR_VERSION))
-    write_uint(w, 1, packet.get('protocol_patch_version', PROTOCOL_PATCH_VERSION))
-    write_uint(w, 1, packet.get('priority', 0))
-    write_uint(w, 4, len(packet['body']))
-    write_uint(w, 4, get_timestamp_or_now(packet))
-    write_uint(w, 1, packet.get('message_major_version', 0))
-    write_uint(w, 1, packet.get('message_minor_version', 0))
-    write_uint(w, 2, 0) # reserved
-    w.write(packet['sender_id'])
-    w.write(packet['receiver_id'])
-    write_uint(w, 3, packet.get('sender_seq', 0))
-    write_uint(w, 2, packet.get('sender_sid', 0))
-    write_uint(w, 3, packet.get('receiver_seq', 0))
-    write_uint(w, 2, packet.get('receiver_sid', 0))
 
 def write_waggle_packet(w, packet):
-    assert len(packet['sender_id']) == 16
-    assert len(packet['receiver_id']) == 16
-
-    write_waggle_packet_header(w, packet)
-
-    b = BytesIO()
-    write_waggle_packet_header(b, packet)
-    write_uint(w, 2, crc16(b.getvalue(), 0))
-
-    write_uint(w, 4, packet.get('token', 0))
-    w.write(packet['body'])
-    write_uint(w, 4, crc32(packet['body']))
+    encoder = Encoder(w)
+    encoder.encode_waggle_packet(packet)
 
 
 def read_waggle_packet(r):
@@ -165,22 +240,24 @@ def read_waggle_packet(r):
 
 
 def pack_sensorgrams(sensorgrams):
-    w = BytesIO()
+    b = BytesIO()
+    encoder = Encoder(b)
+
 
     for sensorgram in sensorgrams:
-        write_sensorgram(w, sensorgram)
+        encoder.encode_sensorgram(sensorgram)
 
-    return w.getvalue()
+    return b.getvalue()
 
 
 def unpack_sensorgrams(b):
     sensorgrams = []
 
-    r = BytesIO(b)
+    decoder = Decoder(BytesIO(b))
 
     while True:
         try:
-            sensorgrams.append(read_sensorgram(r))
+            sensorgrams.append(decoder.decode_sensorgram())
         except EOFError:
             break
 
@@ -188,13 +265,15 @@ def unpack_sensorgrams(b):
 
 
 def pack_datagram(datagram):
-    w = BytesIO()
-    write_datagram(w, datagram)
-    return w.getvalue()
+    b = BytesIO()
+    encoder = Encoder(b)
+    encoder.encode_datagram(datagram)
+    return b.getvalue()
 
 
 def unpack_datagram(b):
-    return read_datagram(BytesIO(b))
+    decoder = Decoder(BytesIO(b))
+    return decoder.decode_datagram()
 
 
 class TestProtocol(unittest.TestCase):
