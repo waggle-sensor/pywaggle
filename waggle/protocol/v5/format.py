@@ -129,8 +129,6 @@ def unpack_byte(buffer, offset, length):
     if length is None:
         length = len(buffer)
     return bytes(buffer[offset:offset+length])
-    # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    # return value.tobytes()
 
 
 formatpack = {
