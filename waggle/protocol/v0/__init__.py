@@ -6,6 +6,21 @@ from binascii import crc32
 import unittest
 
 
+PROTOCOL_MAJOR_VERSION = 2
+PROTOCOL_MINOR_VERSION = 1
+PROTOCOL_PATCH_VERSION = 0
+
+
+class CRCWriter:
+
+    def __init__(self, crc, value):
+        self.crc = crc
+        self.value = value
+
+    def write(self, b):
+        self.value = self.crc(b, self.value)
+
+
 def get_timestamp_or_now(obj):
     if 'timestamp' in obj:
         return obj['timestamp']
@@ -53,7 +68,7 @@ def read_sensorgram(r):
 def write_datagram(w, datagram):
     write_uint(w, 1, 0xaa)
     write_uint(w, 3, len(datagram['body']))
-    write_uint(w, 1, datagram.get('protocol_version', 2))
+    write_uint(w, 1, datagram.get('protocol_version', PROTOCOL_MAJOR_VERSION))
     write_uint(w, 4, get_timestamp_or_now(datagram))
     write_uint(w, 2, datagram.get('packet_seq', 0))
     write_uint(w, 1, datagram.get('packet_type', 0))
@@ -93,13 +108,44 @@ def read_datagram(r):
     return datagram
 
 
+def write_waggle_packet_header(w, packet):
+    write_uint(w, 1, packet.get('protocol_major_version', PROTOCOL_MAJOR_VERSION))
+    write_uint(w, 1, packet.get('protocol_minor_version', PROTOCOL_MINOR_VERSION))
+    write_uint(w, 1, packet.get('protocol_patch_version', PROTOCOL_PATCH_VERSION))
+    write_uint(w, 1, packet.get('priority', 0))
+    write_uint(w, 4, len(packet['body']))
+    write_uint(w, 4, get_timestamp_or_now(packet))
+    write_uint(w, 1, packet.get('message_major_version', 0))
+    write_uint(w, 1, packet.get('message_minor_version', 0))
+    write_uint(w, 2, 0) # reserved
+    w.write(packet['sender_id'])
+    w.write(packet['receiver_id'])
+    write_uint(w, 3, packet.get('sender_seq', 0))
+    write_uint(w, 2, packet.get('sender_sid', 0))
+    write_uint(w, 3, packet.get('receiver_seq', 0))
+    write_uint(w, 2, packet.get('receiver_sid', 0))
+
 def write_waggle_packet(w, packet):
     assert len(packet['sender_id']) == 16
     assert len(packet['receiver_id']) == 16
 
-    write_uint(w, 1, packet.get('protocol_major_version', 2))
-    write_uint(w, 1, packet.get('protocol_minor_version', 0))
-    write_uint(w, 1, packet.get('protocol_patch_version', 0))
+    write_waggle_packet_header(w, packet)
+
+    b = BytesIO()
+    write_waggle_packet_header(b, packet)
+    write_uint(w, 2, crc16(b.getvalue(), 0))
+
+    write_uint(w, 4, packet.get('token', 0))
+    w.write(packet['body'])
+    write_uint(w, 4, crc32(packet['body']))
+
+
+def read_waggle_packet(r):
+    # check protocol version
+    assert read_uint(r, 1) == PROTOCOL_MAJOR_VERSION
+    read_uint(r, 1) # ignore minor version
+    read_uint(r, 1) # ignore major version
+
     write_uint(w, 1, packet.get('priority', 0))
     write_uint(w, 4, len(packet['body']))
     write_uint(w, 4, get_timestamp_or_now(packet))
@@ -218,14 +264,25 @@ class TestProtocol(unittest.TestCase):
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
+    def test_waggle_packet_pack_unpack(self):
+        cases = [
+            {
+                'sender_id': b'0123456789abcdef',
+                'receiver_id': b'fedcba9876543210',
+                'body': b'^this is a really, really important message!$',
+            },
+        ]
+
+
+        for c in cases:
+            w = BytesIO()
+            write_waggle_packet(w, c)
+            print(w.getvalue())
+            # r = unpack_datagram(pack_datagram(c))
+            #
+            # for k in c.keys():
+            #     self.assertEqual(c[k], r[k])
+
 
 if __name__ == '__main__':
-    sensorgrams = [
-        {'sensor_id': 1, 'parameter_id': 1, 'body': b'13'},
-        {'sensor_id': 1, 'parameter_id': 1, 'body': b'13'},
-        {'sensor_id': 1, 'parameter_id': 1, 'body': b'13'},
-    ]
-
-    print(list(unpack_sensorgrams(pack_sensorgrams(sensorgrams))))
-
     unittest.main()
