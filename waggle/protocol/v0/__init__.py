@@ -45,16 +45,6 @@ def read_sensorgram(r):
     return sensorgram
 
 
-def pack_sensorgram(sensorgram):
-    w = BytesIO()
-    write_sensorgram(w, sensorgram)
-    return w.getvalue()
-
-
-def unpack_sensorgram(b):
-    return read_sensorgram(BytesIO(b))
-
-
 def write_datagram(w, datagram):
     write_uint(w, 1, 0xaa)
     write_uint(w, 3, len(datagram['body']))
@@ -98,16 +88,6 @@ def read_datagram(r):
     return datagram
 
 
-def pack_datagram(datagram):
-    w = BytesIO()
-    write_datagram(w, datagram)
-    return w.getvalue()
-
-
-def unpack_datagram(b):
-    return read_datagram(BytesIO(b))
-
-
 def write_waggle_packet(w, packet):
     assert len(packet['sender_id']) == 16
     assert len(packet['receiver_id']) == 16
@@ -131,6 +111,39 @@ def write_waggle_packet(w, packet):
     write_uint(w, 4, packet.get('token', 0))
     w.write(packet['body'])
     write_uint(w, 4, crc32(packet['body']))
+
+
+def pack_sensorgram(sensorgram):
+    w = BytesIO()
+    write_sensorgram(w, sensorgram)
+    return w.getvalue()
+
+
+def unpack_sensorgram(b):
+    return read_sensorgram(BytesIO(b))
+
+
+def pack_sensorgrams(*sensorgrams):
+    w = BytesIO()
+
+    for sensorgram in sensorgrams:
+        write_sensorgram(w, sensorgram)
+
+    return w.getvalue()
+
+
+def unpack_sensorgram(b):
+    return read_sensorgram(BytesIO(b))
+
+
+def pack_datagram(datagram):
+    w = BytesIO()
+    write_datagram(w, datagram)
+    return w.getvalue()
+
+
+def unpack_datagram(b):
+    return read_datagram(BytesIO(b))
 
 
 class TestProtocol(unittest.TestCase):
@@ -202,4 +215,23 @@ class TestProtocol(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    print(pack_sensorgrams(
+        {
+            'sensor_id': 1,
+            'body': b'123',
+        },
+        {
+            'sensor_id': 1,
+            'body': b'123',
+        },
+        {
+            'sensor_id': 1,
+            'body': b'123',
+        },
+        {
+            'sensor_id': 1,
+            'body': b'123',
+        },
+    ))
+
     unittest.main()
