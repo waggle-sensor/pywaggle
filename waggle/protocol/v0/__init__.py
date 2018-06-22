@@ -264,84 +264,87 @@ def validate_user_id(user_id):
 
 
 def pack_sensorgrams(sensorgrams):
-    b = BytesIO()
-    encoder = Encoder(b)
-
+    buf = BytesIO()
+    enc = Encoder(buf)
 
     for sensorgram in sensorgrams:
-        encoder.encode_sensorgram(sensorgram)
+        enc.encode_sensorgram(sensorgram)
 
-    return b.getvalue()
+    return buf.getvalue()
 
 
-def unpack_sensorgrams(b):
+def unpack_sensorgrams(buf):
     sensorgrams = []
 
-    decoder = Decoder(BytesIO(b))
+    dec = Decoder(BytesIO(buf))
 
     while True:
         try:
-            sensorgrams.append(decoder.decode_sensorgram())
+            sensorgrams.append(dec.decode_sensorgram())
         except EOFError:
             break
 
     return sensorgrams
 
 
-def pack_datagram(datagram):
-    b = BytesIO()
-    encoder = Encoder(b)
-    encoder.encode_datagram(datagram)
-    return b.getvalue()
+def pack_datagrams(datagrams):
+    buf = BytesIO()
+    enc = Encoder(buf)
+
+    for datagram in datagrams:
+        enc.encode_datagram(datagram)
+
+    return buf.getvalue()
 
 
-def unpack_datagram(b):
-    decoder = Decoder(BytesIO(b))
-    return decoder.decode_datagram()
+def unpack_datagrams(buf):
+    datagrams = []
+
+    dec = Decoder(BytesIO(buf))
+
+    while True:
+        try:
+            datagrams.append(dec.decode_datagram())
+        except EOFError:
+            break
+
+    return datagrams
 
 
 class TestProtocol(unittest.TestCase):
 
-    waggle_packet_cases = [
+    sensorgram_test_cases = [
         {
-            'sender_id': b'0123456789abcdef',
-            'receiver_id': b'fedcba9876543210',
-            'body': b'^this is a really, really important message!$',
+            'sensor_id': 1,
+            'parameter_id': 1,
+            'body': b'',
+        },
+        {
+            'sensor_id': 1,
+            'parameter_id': 2,
+            'body': b'123',
+        },
+        {
+            'sensor_id': 2,
+            'parameter_id': 4,
+            'body': b'aaaaaaaaax',
+        },
+        {
+            'sensor_id': 2,
+            'sensor_instance': 7,
+            'parameter_id': 4,
+            'body': b'abc',
+        },
+        {
+            'timestamp': 1234567,
+            'sensor_id': 2,
+            'parameter_id': 4,
+            'body': b'ABC',
         },
     ]
 
-    def test_sensorgram(self):
-        cases = [
-            {
-                'sensor_id': 1,
-                'parameter_id': 1,
-                'body': b'',
-            },
-            {
-                'sensor_id': 1,
-                'parameter_id': 2,
-                'body': b'123',
-            },
-            {
-                'sensor_id': 2,
-                'parameter_id': 4,
-                'body': b'aaaaaaaaax',
-            },
-            {
-                'sensor_id': 2,
-                'sensor_instance': 7,
-                'parameter_id': 4,
-                'body': b'abc',
-            },
-            {
-                'timestamp': 1234567,
-                'sensor_id': 2,
-                'parameter_id': 4,
-                'body': b'ABC',
-            },
-        ]
-
-        for c in cases:
+    def test_encode_decode_sensorgram(self):
+        for c in self.sensorgram_test_cases:
             buf = BytesIO()
             enc = Encoder(buf)
             enc.encode_sensorgram(c)
@@ -351,29 +354,36 @@ class TestProtocol(unittest.TestCase):
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
-    def test_datagram(self):
-        cases = [
-            {
-                'plugin_id': 1,
-                'body': b'',
-            },
-            {
-                'plugin_id': 1,
-                'body': b'123',
-            },
-            {
-                'timestamp': 1234567,
-                'plugin_id': 9090,
-                'plugin_major_version': 1,
-                'plugin_minor_version': 3,
-                'plugin_patch_version': 7,
-                'plugin_instance': 9,
-                'plugin_run_id': 12345,
-                'body': b'123',
-            },
-        ]
+    def test_pack_unpack_sensorgrams(self):
+        results = unpack_sensorgrams(pack_sensorgrams(self.sensorgram_test_cases))
 
-        for c in cases:
+        for c, r in zip(self.sensorgram_test_cases, results):
+            for k in c.keys():
+                self.assertEqual(c[k], r[k])
+
+    datagram_test_cases = [
+        {
+            'plugin_id': 1,
+            'body': b'',
+        },
+        {
+            'plugin_id': 1,
+            'body': b'123',
+        },
+        {
+            'timestamp': 1234567,
+            'plugin_id': 9090,
+            'plugin_major_version': 1,
+            'plugin_minor_version': 3,
+            'plugin_patch_version': 7,
+            'plugin_instance': 9,
+            'plugin_run_id': 12345,
+            'body': b'123',
+        },
+    ]
+
+    def test_encode_decode_datagram(self):
+        for c in self.datagram_test_cases:
             buf = BytesIO()
             enc = Encoder(buf)
             enc.encode_datagram(c)
@@ -383,7 +393,14 @@ class TestProtocol(unittest.TestCase):
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
-    def test_waggle_packet(self):
+    def test_pack_unpack_datagrams(self):
+        results = unpack_datagrams(pack_datagrams(self.datagram_test_cases))
+
+        for c, r in zip(self.datagram_test_cases, results):
+            for k in c.keys():
+                self.assertEqual(c[k], r[k])
+
+    def test_encode_decode_waggle_packet(self):
         cases = [
             {
                 'sender_id': b'0123456789abcdef',
