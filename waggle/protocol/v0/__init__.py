@@ -139,6 +139,11 @@ class TestProtocol(unittest.TestCase):
         cases = [
             {
                 'sensor_id': 1,
+                'parameter_id': 1,
+                'body': b'',
+            },
+            {
+                'sensor_id': 1,
                 'parameter_id': 2,
                 'body': b'123',
             },
@@ -171,6 +176,20 @@ class TestProtocol(unittest.TestCase):
         cases = [
             {
                 'plugin_id': 1,
+                'body': b'',
+            },
+            {
+                'plugin_id': 1,
+                'body': b'123',
+            },
+            {
+                'timestamp': 1234567,
+                'plugin_id': 9090,
+                'plugin_major_version': 1,
+                'plugin_minor_version': 3,
+                'plugin_patch_version': 7,
+                'plugin_instance': 9,
+                'plugin_run_id': 12345,
                 'body': b'123',
             },
         ]
