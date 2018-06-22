@@ -310,7 +310,7 @@ class TestProtocol(unittest.TestCase):
     sensorgram_test_cases = [
         {
             'sensor_id': 1,
-            'parameter_id': 1,
+            'parameter_id': 2,
             'body': b'',
         },
         {
@@ -319,21 +319,16 @@ class TestProtocol(unittest.TestCase):
             'body': b'123',
         },
         {
-            'sensor_id': 2,
-            'parameter_id': 4,
-            'body': b'aaaaaaaaax',
-        },
-        {
+            'timestamp': 1234567,
             'sensor_id': 2,
             'sensor_instance': 7,
             'parameter_id': 4,
             'body': b'abc',
         },
         {
-            'timestamp': 1234567,
-            'sensor_id': 2,
-            'parameter_id': 4,
-            'body': b'ABC',
+            'sensor_id': 1,
+            'parameter_id': 2,
+            'body': b'x' * 4096,
         },
     ]
 
@@ -374,6 +369,10 @@ class TestProtocol(unittest.TestCase):
             'plugin_run_id': 12345,
             'body': b'123',
         },
+        {
+            'plugin_id': 1,
+            'body': b'x' * 4096,
+        },
     ]
 
     def test_encode_decode_datagram(self):
@@ -410,6 +409,12 @@ class TestProtocol(unittest.TestCase):
             'response_sid': 9,
             'token': 31243,
             'body': b'^this is a really, really important message!$',
+        },
+        {
+            'timestamp': 100100100,
+            'sender_id': b'0123456789abcdef',
+            'receiver_id': b'fedcba9876543210',
+            'body': b'x' * 4096,
         },
     ]
 
