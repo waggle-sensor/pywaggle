@@ -263,16 +263,6 @@ def validate_user_id(user_id):
         raise ValueError('Invalid user ID "{}"'.format(user_id.hex()))
 
 
-def write_waggle_packet(w, packet):
-    encoder = Encoder(w)
-    encoder.encode_waggle_packet(packet)
-
-
-def read_waggle_packet(r):
-    decoder = Decoder(r)
-    return decoder.decode_waggle_packet()
-
-
 def pack_sensorgrams(sensorgrams):
     b = BytesIO()
     encoder = Encoder(b)
