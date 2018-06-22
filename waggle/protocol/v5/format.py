@@ -53,7 +53,7 @@ def pack_hex_string(value, length):
 
 
 def unpack_hex_string(buffer, offset, length):
-    return buffer[offset:offset+length].hex().decode()
+    return buffer[offset:offset+length].hex()
 
 
 def pack_time_epoch(value, length):
