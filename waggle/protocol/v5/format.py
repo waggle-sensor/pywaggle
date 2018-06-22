@@ -17,23 +17,22 @@ Format Reference
 
 from math import ceil
 from bitstring import BitArray
-from binascii import hexlify
 
 
 def pack_unsigned_int(value, length):
-    return value.to_bytes(length, byteorder='big', signed=False)
+    return value.to_bytes(length, 'big')
 
 
 def unpack_unsigned_int(buffer, offset, length):
-    return int.from_bytes(buffer[offset:offset + length], byteorder='big', signed=False)
+    return int.from_bytes(buffer[offset:offset+length], 'big')
 
 
 def pack_signed_int(value, length):
-    return value.to_bytes(length, byteorder='big', signed=True)
+    return value.to_bytes(length, 'big', signed=True)
 
 
 def unpack_signed_int(buffer, offset, length):
-    return int.from_bytes(buffer[offset:offset + length], byteorder='big', signed=True)
+    return int.from_bytes(buffer[offset:offset+length], 'big', signed=True)
 
 
 def pack_float(value, length):
@@ -54,7 +53,7 @@ def pack_hex_string(value, length):
 
 
 def unpack_hex_string(buffer, offset, length):
-    return hexlify(buffer[offset:offset+length]).decode()
+    return buffer[offset:offset+length].hex().decode()
 
 
 def pack_time_epoch(value, length):
