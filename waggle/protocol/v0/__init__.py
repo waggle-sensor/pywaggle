@@ -1,7 +1,7 @@
 import time
 from io import BytesIO
 from waggle.checksum import crc8
-from binascii import crc_hqx as crc16
+from binascii import crc_hqx
 from binascii import crc32
 import unittest
 
@@ -11,6 +11,10 @@ PROTOCOL_PATCH_VERSION = 0
 
 START_FLAG = 0xaa
 END_FLAG = 0x55
+
+
+def crc16(data, value=0):
+    return crc_hqx(data, value)
 
 
 class Encoder:
@@ -110,13 +114,13 @@ class Encoder:
         self.encode_int(2, receiver_sid)
 
     def encode_waggle_packet(self, value):
-        b = BytesIO()
-        enc = Encoder(b)
+        buf = BytesIO()
+        enc = Encoder(buf)
         enc.encode_waggle_packet_header(value)
+        header = buf.getvalue()
 
-        header = b.getvalue()
-        header_crc = crc16(header, 0)
-        token = value.get('token')
+        header_crc = crc16(header)
+        token = value.get('token', 0)
         body = value['body']
         body_crc = crc32(value['body'])
 
@@ -200,6 +204,55 @@ class Decoder:
             'body': body,
         }
 
+    def decode_waggle_packet(self):
+        header = self.decode_bytes(58)
+        header_crc = self.decode_int(2)
+
+        if crc16(header) != header_crc:
+            raise ValueError('Invalid header CRC.')
+
+        dec = Decoder(BytesIO(header))
+        protocol_major_version = dec.decode_int(1)
+        protocol_minor_version = dec.decode_int(1)
+        protocol_patch_version = dec.decode_int(1)
+        message_priority = dec.decode_int(1)
+        body_length = dec.decode_int(4)
+        timestamp = dec.decode_int(4)
+        message_major_version = dec.decode_int(1)
+        message_minor_version = dec.decode_int(1)
+        reserved = dec.decode_int(2)
+        sender_id = dec.decode_bytes(16)
+        receiver_id = dec.decode_bytes(16)
+        sender_seq = dec.decode_int(3)
+        sender_sid = dec.decode_int(2)
+        receiver_seq = dec.decode_int(3)
+        receiver_sid = dec.decode_int(2)
+
+        token = self.decode_int(4)
+        body = self.decode_bytes(body_length)
+        body_crc = self.decode_int(4)
+
+        if crc32(body) != body_crc:
+            raise ValueError('Invalid body CRC.')
+
+        return {
+            'timestamp': timestamp,
+            'protocol_major_version': protocol_major_version,
+            'protocol_minor_version': protocol_minor_version,
+            'protocol_patch_version': protocol_patch_version,
+            'message_priority': message_priority,
+            'message_major_version': message_major_version,
+            'message_minor_version': message_minor_version,
+            'sender_id': sender_id,
+            'sender_seq': sender_seq,
+            'sender_sid': sender_sid,
+            'receiver_id': receiver_id,
+            'receiver_seq': receiver_seq,
+            'receiver_sid': receiver_sid,
+            'token': token,
+            'body': body,
+        }
+
 
 def get_timestamp_or_now(obj):
     return obj.get('timestamp') or int(time.time())
@@ -216,27 +269,8 @@ def write_waggle_packet(w, packet):
 
 
 def read_waggle_packet(r):
-    # check protocol version
-    assert read_uint(r, 1) == PROTOCOL_MAJOR_VERSION
-    read_uint(r, 1) # ignore minor version
-    read_uint(r, 1) # ignore major version
-
-    write_uint(w, 1, packet.get('priority', 0))
-    write_uint(w, 4, len(packet['body']))
-    write_uint(w, 4, get_timestamp_or_now(packet))
-    write_uint(w, 1, packet.get('message_major_version', 0))
-    write_uint(w, 1, packet.get('message_minor_version', 0))
-    write_uint(w, 2, 0) # reserved
-    w.write(packet['sender_id'])
-    w.write(packet['receiver_id'])
-    write_uint(w, 3, packet.get('sender_seq', 0))
-    write_uint(w, 2, packet.get('sender_sid', 0))
-    write_uint(w, 3, packet.get('receiver_seq', 0))
-    write_uint(w, 2, packet.get('receiver_sid', 0))
-    write_uint(w, 2, 0) # fix crc
-    write_uint(w, 4, packet.get('token', 0))
-    w.write(packet['body'])
-    write_uint(w, 4, crc32(packet['body']))
+    decoder = Decoder(r)
+    return decoder.decode_waggle_packet()
 
 
 def pack_sensorgrams(sensorgrams):
@@ -278,7 +312,15 @@ def unpack_datagram(b):
 
 class TestProtocol(unittest.TestCase):
 
-    def test_sensorgram_pack_unpack(self):
+    waggle_packet_cases = [
+        {
+            'sender_id': b'0123456789abcdef',
+            'receiver_id': b'fedcba9876543210',
+            'body': b'^this is a really, really important message!$',
+        },
+    ]
+
+    def test_sensorgram(self):
         cases = [
             {
                 'sensor_id': 1,
@@ -310,12 +352,16 @@ class TestProtocol(unittest.TestCase):
         ]
 
         for c in cases:
-            r = unpack_sensorgrams(pack_sensorgrams([c]))[0]
+            buf = BytesIO()
+            enc = Encoder(buf)
+            enc.encode_sensorgram(c)
+            dec = Decoder(BytesIO(buf.getvalue()))
+            r = dec.decode_sensorgram()
 
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
-    def test_datagram_pack_unpack(self):
+    def test_datagram(self):
         cases = [
             {
                 'plugin_id': 1,
@@ -338,12 +384,16 @@ class TestProtocol(unittest.TestCase):
         ]
 
         for c in cases:
-            r = unpack_datagram(pack_datagram(c))
+            buf = BytesIO()
+            enc = Encoder(buf)
+            enc.encode_datagram(c)
+            dec = Decoder(BytesIO(buf.getvalue()))
+            r = dec.decode_datagram()
 
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
-    def test_waggle_packet_pack_unpack(self):
+    def test_waggle_packet(self):
         cases = [
             {
                 'sender_id': b'0123456789abcdef',
@@ -352,15 +402,15 @@ class TestProtocol(unittest.TestCase):
             },
         ]
 
-
         for c in cases:
-            w = BytesIO()
-            write_waggle_packet(w, c)
-            print(w.getvalue())
-            # r = unpack_datagram(pack_datagram(c))
-            #
-            # for k in c.keys():
-            #     self.assertEqual(c[k], r[k])
+            buf = BytesIO()
+            enc = Encoder(buf)
+            enc.encode_waggle_packet(c)
+            dec = Decoder(BytesIO(buf.getvalue()))
+            r = dec.decode_waggle_packet()
+
+            for k in c.keys():
+                self.assertEqual(c[k], r[k])
 
 
 if __name__ == '__main__':
