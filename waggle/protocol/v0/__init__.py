@@ -118,16 +118,6 @@ def write_waggle_packet(w, packet):
     write_uint(w, 4, crc32(packet['body']))
 
 
-def pack_sensorgram(sensorgram):
-    w = BytesIO()
-    write_sensorgram(w, sensorgram)
-    return w.getvalue()
-
-
-def unpack_sensorgram(b):
-    return read_sensorgram(BytesIO(b))
-
-
 def pack_sensorgrams(sensorgrams):
     w = BytesIO()
 
@@ -138,13 +128,17 @@ def pack_sensorgrams(sensorgrams):
 
 
 def unpack_sensorgrams(b):
+    sensorgrams = []
+
     r = BytesIO(b)
 
     while True:
         try:
-            yield read_sensorgram(r)
+            sensorgrams.append(read_sensorgram(r))
         except EOFError:
             break
+
+    return sensorgrams
 
 
 def pack_datagram(datagram):
@@ -191,7 +185,7 @@ class TestProtocol(unittest.TestCase):
         ]
 
         for c in cases:
-            r = unpack_sensorgram(pack_sensorgram(c))
+            r = unpack_sensorgrams(pack_sensorgrams([c]))[0]
 
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
