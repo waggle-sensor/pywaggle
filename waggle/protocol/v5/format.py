@@ -47,19 +47,14 @@ def unpack_float(buffer, offset, length):
 
 
 def pack_hex_string(value, length):
-    value = BitArray(hex=value)
-    assert value.length == to_bit(length)
-    return value.bin
+    return bytes.fromhex(value)[:length]
 
 
 def unpack_hex_string(buffer, offset, length):
     return buffer[offset:offset+length].hex()
 
 
-def pack_time_epoch(value, length):
-    return pack_unsigned_int(value, length)
-
-
+pack_time_epoch = pack_unsigned_int
 unpack_time_epoch = unpack_unsigned_int
 
 
@@ -122,8 +117,6 @@ def unpack_string(buffer, offset, length):
     if length is None:
         length = len(buffer)
     return buffer[offset:offset+length].decode()
-    # value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
-    # return value.tobytes().decode()
 
 
 def pack_byte(value, length):
