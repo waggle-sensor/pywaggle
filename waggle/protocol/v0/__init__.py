@@ -390,6 +390,17 @@ class TestProtocol(unittest.TestCase):
                 'receiver_id': b'fedcba9876543210',
                 'body': b'^this is a really, really important message!$',
             },
+            {
+                'timestamp': 123456789,
+                'sender_seq': 1,
+                'sender_sid': 3,
+                'sender_id': b'0123456789abcdef',
+                'receiver_id': b'fedcba9876543210',
+                'receiver_seq': 4,
+                'receiver_sid': 9,
+                'token': 31243,
+                'body': b'^this is a really, really important message!$',
+            },
         ]
 
         for c in cases:
