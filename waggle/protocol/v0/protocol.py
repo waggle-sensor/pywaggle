@@ -93,8 +93,8 @@ class Encoder:
         body = value['body']
         body_length = len(body)
         timestamp = get_timestamp_or_now(value)
-        message_major_version = value.get('message_major_version', 0)
-        message_minor_version = value.get('message_minor_version', 0)
+        message_major_type = value.get('message_major_type', 0)
+        message_minor_type = value.get('message_minor_type', 0)
         reserved = 0
 
         sender_id = value['sender_id']
@@ -114,8 +114,8 @@ class Encoder:
         self.encode_int(1, message_priority)
         self.encode_int(4, body_length)
         self.encode_int(4, timestamp)
-        self.encode_int(1, message_major_version)
-        self.encode_int(1, message_minor_version)
+        self.encode_int(1, message_major_type)
+        self.encode_int(1, message_minor_type)
         self.encode_int(2, reserved)
         self.encode_bytes(sender_id)
         self.encode_bytes(receiver_id)
@@ -229,8 +229,8 @@ class Decoder:
         message_priority = dec.decode_int(1)
         body_length = dec.decode_int(4)
         timestamp = dec.decode_int(4)
-        message_major_version = dec.decode_int(1)
-        message_minor_version = dec.decode_int(1)
+        message_major_type = dec.decode_int(1)
+        message_minor_type = dec.decode_int(1)
         reserved = dec.decode_int(2)
         sender_id = dec.decode_bytes(16)
         receiver_id = dec.decode_bytes(16)
@@ -252,8 +252,8 @@ class Decoder:
             'protocol_minor_version': protocol_minor_version,
             'protocol_patch_version': protocol_patch_version,
             'message_priority': message_priority,
-            'message_major_version': message_major_version,
-            'message_minor_version': message_minor_version,
+            'message_major_type': message_major_type,
+            'message_minor_type': message_minor_type,
             'sender_id': sender_id,
             'sender_seq': sender_seq,
             'sender_sid': sender_sid,
