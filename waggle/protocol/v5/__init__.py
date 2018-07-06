@@ -96,10 +96,10 @@ topics_table = {
         'rain': {
             'onset_rain': 'onset_rain',
         },
-        'soil': {
-            'dielectric': 'soil_dielectric',
-            'conductivity': 'soil_conductivity',
-            'temperature': 'soil_temperature',
+        'decagon': {
+            'soil_dielectric': 'decagon_soil_dielectric',
+            'soil_conductivity': 'decagon_soil_conductivity',
+            'soil_temperature': 'decagon_soil_temperature',
         },
     },
     'lightsense': {
