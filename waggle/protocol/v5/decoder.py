@@ -4,7 +4,7 @@ from . import format
 from . import utils
 import waggle.checksum
 
-logger = logging.getLogger('protocol.decoder')
+logger = logging.getLogger('waggle.protocol.v5')
 
 
 HEADER_SIZE = 3
@@ -21,6 +21,9 @@ def decode_frame(frame, required_version=2):
     @return:
         dict {sensorid: values, ...}
     """
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug('Decoding datagram %s.', bytes(frame))
+
     data = bytearray()
 
     if not isinstance(frame, bytearray) and not isinstance(frame, bytes):
@@ -101,11 +104,15 @@ def decode_data(data):
 
 
 def get_data_subpackets(data):
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug('Reading subpackets in body %s.', bytes(data))
+
     subpackets = []
 
     offset = 0
 
     while offset < len(data):
+        logger.debug('Reading subpacket at offset %d.', offset)
         sensor_id = data[offset + 0]
         length = data[offset + 1] & 0x7F
         valid = data[offset + 1] & 0x80
@@ -119,13 +126,16 @@ def get_data_subpackets(data):
         sensor_data = data[offset:offset + length]
         offset += length
 
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('Read subpacket with sensor ID %s and data %s.', hex(sensor_id), bytes(sensor_data))
+
         if valid == 0x80:
             subpackets.append((sensor_id, sensor_data))
         else:
             subpackets.append((sensor_id, None))
 
     if offset != len(data):
-        logger.warning('Data length mismatched: offset = {}, length = {}'.format(offset, len(data)))
+        logger.warning('Subpacket total length differs from packet length.')
 
     return subpackets
 
