@@ -93,6 +93,14 @@ topics_table = {
         'metsense': {
             'id': 'metsense_id',
         },
+        'rain': {
+            'onset_rain': 'onset_rain',
+        },
+        'soil': {
+            'dielectric': 'soil_dielectric',
+            'conductivity': 'soil_conductivity',
+            'temperature': 'soil_temperature',
+        },
     },
     'lightsense': {
         'apds_9006_020': {

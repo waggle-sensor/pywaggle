@@ -236,13 +236,13 @@ waggleprotocol_spec = '''
 - id: 0x2D
   conversion: decagon_soil
   params:
-    - name: dielectric
+    - name: soil_dielectric
       length: 2
       format: uint
-    - name: conductivity
+    - name: soil_conductivity
       length: 2
       format: uint
-    - name: temperature
+    - name: soil_temperature
       length: 2
       format: uint
 
