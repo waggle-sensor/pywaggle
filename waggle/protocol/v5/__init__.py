@@ -93,13 +93,13 @@ topics_table = {
         'metsense': {
             'id': 'metsense_id',
         },
-        'rain': {
-            'onset_rain': 'onset_rain',
+        'rg3': {
+            'onset_rain': 'rg3_onset_rain',
         },
-        'decagon': {
-            'soil_dielectric': 'decagon_soil_dielectric',
-            'soil_conductivity': 'decagon_soil_conductivity',
-            'soil_temperature': 'decagon_soil_temperature',
+        '5te': {
+            'soil_dielectric': '5te_soil_dielectric',
+            'soil_conductivity': '5te_soil_conductivity',
+            'soil_temperature': '5te_soil_temperature',
         },
     },
     'lightsense': {

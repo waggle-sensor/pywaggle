@@ -229,20 +229,20 @@ waggleprotocol_spec = '''
 - id: 0x2C
   conversion: onset_rain
   params:
-    - name: onset_rain
+    - name: rg3_onset_rain
       length: 2
       format: uint
 
 - id: 0x2D
   conversion: decagon_soil
   params:
-    - name: decagon_soil_dielectric
+    - name: 5te_soil_dielectric
       length: 2
       format: uint
-    - name: decagon_soil_conductivity
+    - name: 5te_soil_conductivity
       length: 2
       format: uint
-    - name: decagon_soil_temperature
+    - name: 5te_soil_temperature
       length: 2
       format: uint
 
