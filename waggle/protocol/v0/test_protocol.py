@@ -92,16 +92,20 @@ class TestProtocol(unittest.TestCase):
 
     waggle_packet_test_cases = [
         {
-            'sender_id': b'0123456789abcdef',
-            'receiver_id': b'fedcba9876543210',
+            'sender_id': b'node0001',
+            'sender_sub_id': b'12345678',
+            'receiver_id': b'node0002',
+            'receiver_sub_id': b'87654321',
             'body': b'^this is a really, really important message!$',
         },
         {
             'timestamp': 123456789,
             'sender_seq': 1,
             'sender_sid': 3,
-            'sender_id': b'0123456789abcdef',
-            'receiver_id': b'fedcba9876543210',
+            'sender_id': b'node0001',
+            'sender_sub_id': b'12345678',
+            'receiver_id': b'node0002',
+            'receiver_sub_id': b'87654321',
             'response_seq': 4,
             'response_sid': 9,
             'token': 31243,
@@ -109,8 +113,10 @@ class TestProtocol(unittest.TestCase):
         },
         {
             'timestamp': 100100100,
-            'sender_id': b'0123456789abcdef',
-            'receiver_id': b'fedcba9876543210',
+            'sender_id': b'node0001',
+            'sender_sub_id': b'12345678',
+            'receiver_id': b'node0002',
+            'receiver_sub_id': b'87654321',
             'body': b'x' * 4096,
         },
     ]

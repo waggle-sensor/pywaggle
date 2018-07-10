@@ -1,3 +1,4 @@
+import os
 import time
 from io import BytesIO
 from waggle.checksum import crc8
@@ -20,9 +21,9 @@ def get_timestamp_or_now(obj):
     return obj.get('timestamp') or int(time.time())
 
 
-def validate_user_id(user_id):
-    if len(user_id) != 16:
-        raise ValueError('Invalid user ID "{}"'.format(user_id.hex()))
+def assert_length(b, length):
+    if len(b) != 8:
+        raise ValueError('len({}) != {}'.format(b, length))
 
 
 class Encoder:
@@ -98,10 +99,16 @@ class Encoder:
         reserved = 0
 
         sender_id = value['sender_id']
-        validate_user_id(sender_id)
+        assert_length(sender_id, 8)
+
+        sender_sub_id = value['sender_sub_id']
+        assert_length(sender_sub_id, 8)
 
         receiver_id = value['receiver_id']
-        validate_user_id(receiver_id)
+        assert_length(receiver_id, 8)
+
+        receiver_sub_id = value['receiver_sub_id']
+        assert_length(receiver_sub_id, 8)
 
         sender_seq = value.get('sender_seq', 0)
         sender_sid = value.get('sender_sid', 0)
@@ -118,7 +125,9 @@ class Encoder:
         self.encode_int(1, message_minor_type)
         self.encode_int(2, reserved)
         self.encode_bytes(sender_id)
+        self.encode_bytes(sender_sub_id)
         self.encode_bytes(receiver_id)
+        self.encode_bytes(receiver_sub_id)
         self.encode_int(3, sender_seq)
         self.encode_int(2, sender_sid)
         self.encode_int(3, response_seq)
@@ -232,8 +241,10 @@ class Decoder:
         message_major_type = dec.decode_int(1)
         message_minor_type = dec.decode_int(1)
         reserved = dec.decode_int(2)
-        sender_id = dec.decode_bytes(16)
-        receiver_id = dec.decode_bytes(16)
+        sender_id = dec.decode_bytes(8)
+        sender_sub_id = dec.decode_bytes(8)
+        receiver_id = dec.decode_bytes(8)
+        receiver_sub_id = dec.decode_bytes(8)
         sender_seq = dec.decode_int(3)
         sender_sid = dec.decode_int(2)
         response_seq = dec.decode_int(3)
@@ -255,9 +266,11 @@ class Decoder:
             'message_major_type': message_major_type,
             'message_minor_type': message_minor_type,
             'sender_id': sender_id,
+            'sender_sub_id': sender_sub_id,
             'sender_seq': sender_seq,
             'sender_sid': sender_sid,
             'receiver_id': receiver_id,
+            'receiver_sub_id': receiver_sub_id,
             'response_seq': response_seq,
             'response_sid': response_sid,
             'token': token,
