@@ -11,22 +11,17 @@ class Plugin:
     def __init__(self, credentials=None):
         self.logger = logging.getLogger('pipeline.Plugin')
 
-        if credentials is None:
-            username, password = os.environ['WAGGLE_PLUGIN_CREDENTIALS'].split(':')
-        else:
-            username, password = credentials
-
-        self.user_id = username
-        self.run_id = random.randint(0, 0xffffffff-1)
-        self.queue = 'in-{}'.format(username)
-
         rabbitmq_url = os.environ.get('WAGGLE_PLUGIN_RABBITMQ_URL', 'amqp://localhost')
-        self.connection = pika.BlockingConnection(pika.URLParameters(rabbitmq_url))
+        parameters = pika.URLParameters(rabbitmq_url)
+
+        self.user_id = parameters.credentials.username
+        self.run_id = random.randint(0, 0xffffffff-1)
+        self.queue = 'in-{}'.format(self.user_id)
+
+        self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
 
-        self.channel.queue_declare(
-            queue=self.queue,
-            durable=True)
+        self.channel.queue_declare(queue=self.queue, durable=True)
 
     def publish(self, body):
         self.logger.debug('Publishing message %s', body)
