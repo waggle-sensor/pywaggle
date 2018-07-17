@@ -20,3 +20,17 @@ def pack_sensor_message(sensorgrams):
             ])
         }
     ])
+
+
+def pack_comm_message(message):
+    return pack_waggle_packets([
+        {
+            'receiver_id': message['receiver_id'],
+            'receiver_sub_id': message['receiver_sub_id'],
+            'body': pack_datagrams([
+                {
+                    'body': message['body'],
+                }
+            ])
+        }
+    ])
