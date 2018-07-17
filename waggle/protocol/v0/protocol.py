@@ -1,4 +1,3 @@
-import os
 import time
 from io import BytesIO
 from waggle.checksum import crc8
@@ -45,7 +44,7 @@ class Encoder:
         sensor_instance = value.get('sensor_instance', 0)
         parameter_id = value['parameter_id']
         timestamp = get_timestamp_or_now(value)
-        body = value['body']
+        body = value['value']
         body_length = len(body)
 
         self.encode_int(2, body_length)
@@ -58,9 +57,9 @@ class Encoder:
     def encode_datagram(self, value):
         protocol_version = value.get('protocol_version', PROTOCOL_MAJOR_VERSION)
         timestamp = get_timestamp_or_now(value)
-        packet_seq = 0
-        packet_type = 0
-        plugin_id = value['plugin_id']
+        packet_seq = value.get('packet_seq', 0)
+        packet_type = value.get('packet_type', 0)
+        plugin_id = value.get('plugin_id', 0)
         plugin_major_version = value.get('plugin_major_version', 0)
         plugin_minor_version = value.get('plugin_minor_version', 0)
         plugin_patch_version = value.get('plugin_patch_version', 0)
@@ -98,16 +97,16 @@ class Encoder:
         message_minor_type = value.get('message_minor_type', 0)
         reserved = 0
 
-        sender_id = value['sender_id']
+        sender_id = value.get('sender_id', b'00000000')
         assert_length(sender_id, 8)
 
-        sender_sub_id = value['sender_sub_id']
+        sender_sub_id = value.get('sender_sub_id', b'00000000')
         assert_length(sender_sub_id, 8)
 
-        receiver_id = value['receiver_id']
+        receiver_id = value.get('receiver_id', b'00000000')
         assert_length(receiver_id, 8)
 
-        receiver_sub_id = value['receiver_sub_id']
+        receiver_sub_id = value.get('receiver_sub_id', b'00000000')
         assert_length(receiver_sub_id, 8)
 
         sender_seq = value.get('sender_seq', 0)
@@ -180,7 +179,7 @@ class Decoder:
             'sensor_instance': sensor_instance,
             'parameter_id': parameter_id,
             'timestamp': timestamp,
-            'body': body,
+            'value': body,
         }
 
     def decode_datagram(self):

@@ -8,24 +8,24 @@ class TestProtocol(unittest.TestCase):
         {
             'sensor_id': 1,
             'parameter_id': 2,
-            'body': b'',
+            'value': b'',
         },
         {
             'sensor_id': 1,
             'parameter_id': 2,
-            'body': b'123',
+            'value': b'123',
         },
         {
             'timestamp': 1234567,
             'sensor_id': 2,
             'sensor_instance': 7,
             'parameter_id': 4,
-            'body': b'abc',
+            'value': b'abc',
         },
         {
             'sensor_id': 1,
             'parameter_id': 2,
-            'body': b'x' * 4096,
+            'value': b'x' * 4096,
         },
     ]
 
