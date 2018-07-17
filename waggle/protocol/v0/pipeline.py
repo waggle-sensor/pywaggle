@@ -2,8 +2,8 @@
 import logging
 import os
 import pika
-import secrets
-from waggle.protocol.v0 import *
+import random
+from waggle.protocol.v0 import unpack_waggle_packets
 
 
 class Plugin:
@@ -17,7 +17,7 @@ class Plugin:
             username, password = credentials
 
         self.user_id = username
-        self.run_id = secrets.randbelow(0xffffffff)
+        self.run_id = random.randint(0, 0xffffffff-1)
         self.queue = 'in-{}'.format(username)
 
         credentials = pika.credentials.PlainCredentials(
