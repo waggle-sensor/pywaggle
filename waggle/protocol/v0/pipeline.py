@@ -20,15 +20,8 @@ class Plugin:
         self.run_id = random.randint(0, 0xffffffff-1)
         self.queue = 'in-{}'.format(username)
 
-        credentials = pika.credentials.PlainCredentials(
-            username=username,
-            password=password)
-
-        parameters = pika.ConnectionParameters(
-            credentials=credentials,
-            virtual_host='node1')
-
-        self.connection = pika.BlockingConnection(parameters)
+        rabbitmq_url = os.environ.get('WAGGLE_PLUGIN_RABBITMQ_URL', 'amqp://localhost')
+        self.connection = pika.BlockingConnection(pika.URLParameters(rabbitmq_url))
         self.channel = self.connection.channel()
 
         self.channel.queue_declare(
