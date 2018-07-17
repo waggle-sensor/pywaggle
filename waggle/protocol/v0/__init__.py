@@ -11,8 +11,8 @@ from .protocol import unpack_waggle_packets
 def pack_sensor_message(sensorgrams):
     return pack_waggle_packets([
         {
-            'receiver_id': b'00000000',
-            'receiver_sub_id': b'00000000',
+            'receiver_id': '0000000000000000',
+            'receiver_sub_id': '0000000000000000',
             'body': pack_datagrams([
                 {
                     'body': pack_sensorgrams(sensorgrams),
