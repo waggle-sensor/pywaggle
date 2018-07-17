@@ -97,16 +97,16 @@ class Encoder:
         message_minor_type = value.get('message_minor_type', 0)
         reserved = 0
 
-        sender_id = value.get('sender_id', b'00000000')
+        sender_id = bytes.fromhex(value.get('sender_id', '0000000000000000'))
         assert_length(sender_id, 8)
 
-        sender_sub_id = value.get('sender_sub_id', b'00000000')
+        sender_sub_id = bytes.fromhex(value.get('sender_sub_id', '0000000000000000'))
         assert_length(sender_sub_id, 8)
 
-        receiver_id = value.get('receiver_id', b'00000000')
+        receiver_id = bytes.fromhex(value.get('receiver_id', '0000000000000000'))
         assert_length(receiver_id, 8)
 
-        receiver_sub_id = value.get('receiver_sub_id', b'00000000')
+        receiver_sub_id = bytes.fromhex(value.get('receiver_sub_id', '0000000000000000'))
         assert_length(receiver_sub_id, 8)
 
         sender_seq = value.get('sender_seq', 0)
@@ -240,10 +240,10 @@ class Decoder:
         message_major_type = dec.decode_int(1)
         message_minor_type = dec.decode_int(1)
         reserved = dec.decode_int(2)
-        sender_id = dec.decode_bytes(8)
-        sender_sub_id = dec.decode_bytes(8)
-        receiver_id = dec.decode_bytes(8)
-        receiver_sub_id = dec.decode_bytes(8)
+        sender_id = dec.decode_bytes(8).hex()
+        sender_sub_id = dec.decode_bytes(8).hex()
+        receiver_id = dec.decode_bytes(8).hex()
+        receiver_sub_id = dec.decode_bytes(8).hex()
         sender_seq = dec.decode_int(3)
         sender_sid = dec.decode_int(2)
         response_seq = dec.decode_int(3)
