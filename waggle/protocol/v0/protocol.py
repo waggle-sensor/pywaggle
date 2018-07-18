@@ -11,6 +11,8 @@ PROTOCOL_PATCH_VERSION = 0
 START_FLAG = 0xaa
 END_FLAG = 0x55
 
+packet_sequence = 0
+
 
 def crc16(data, value=0):
     return crc_hqx(data, value)
@@ -55,9 +57,13 @@ class Encoder:
         self.encode_bytes(body)
 
     def encode_datagram(self, value):
+        global packet_sequence
+        current_packet_sequence = packet_sequence
+        packet_sequence = (packet_sequence + 1) & 0xffff
+
         protocol_version = value.get('protocol_version', PROTOCOL_MAJOR_VERSION)
         timestamp = get_timestamp_or_now(value)
-        packet_seq = value.get('packet_seq', 0)
+        packet_seq = value.get('packet_seq', current_packet_sequence)
         packet_type = value.get('packet_type', 0)
         plugin_id = value.get('plugin_id', 0)
         plugin_major_version = value.get('plugin_major_version', 0)
