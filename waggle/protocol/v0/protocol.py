@@ -11,7 +11,22 @@ PROTOCOL_PATCH_VERSION = 0
 START_FLAG = 0xaa
 END_FLAG = 0x55
 
+sender_sequence = 0
 packet_sequence = 0
+
+
+def get_sender_sequence_number():
+    global sender_sequence
+    result = sender_sequence
+    sender_sequence = (sender_sequence + 1) & 0xffff
+    return result
+
+
+def get_packet_sequence_number():
+    global packet_sequence
+    result = packet_sequence
+    packet_sequence = (packet_sequence + 1) & 0xffff
+    return result
 
 
 def crc16(data, value=0):
@@ -57,13 +72,9 @@ class Encoder:
         self.encode_bytes(body)
 
     def encode_datagram(self, value):
-        global packet_sequence
-        current_packet_sequence = packet_sequence
-        packet_sequence = (packet_sequence + 1) & 0xffff
-
         protocol_version = value.get('protocol_version', PROTOCOL_MAJOR_VERSION)
         timestamp = get_timestamp_or_now(value)
-        packet_seq = value.get('packet_seq', current_packet_sequence)
+        packet_seq = value.get('packet_seq', get_packet_sequence_number())
         packet_type = value.get('packet_type', 0)
         plugin_id = value.get('plugin_id', 0)
         plugin_major_version = value.get('plugin_major_version', 0)
@@ -115,7 +126,7 @@ class Encoder:
         receiver_sub_id = bytes.fromhex(value.get('receiver_sub_id', '0000000000000000'))
         assert_length(receiver_sub_id, 8)
 
-        sender_seq = value.get('sender_seq', 0)
+        sender_seq = value.get('sender_seq', get_sender_sequence_number())
         sender_sid = value.get('sender_sid', 0)
         response_seq = value.get('response_seq', 0)
         response_sid = value.get('response_sid', 0)
