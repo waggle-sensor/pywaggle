@@ -50,3 +50,11 @@ def pack_datagram(datagram):
 
 def unpack_datagram(data):
     return unpack_datagrams(data)[0]
+
+
+def pack_sensorgram(sensorgram):
+    return pack_sensorgrams([sensorgram])
+
+
+def unpack_sensorgram(data):
+    return unpack_sensorgrams(data)[0]
