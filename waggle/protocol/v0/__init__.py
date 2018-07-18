@@ -34,3 +34,19 @@ def pack_comm_message(message):
             ])
         }
     ])
+
+
+def pack_message(message):
+    return pack_waggle_packets([message])
+
+
+def unpack_message(data):
+    return unpack_waggle_packets(data)[0]
+
+
+def pack_datagram(datagram):
+    return pack_datagrams([datagram])
+
+
+def unpack_datagram(data):
+    return unpack_datagrams(data)[0]
