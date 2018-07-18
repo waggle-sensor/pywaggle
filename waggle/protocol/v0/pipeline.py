@@ -16,7 +16,7 @@ class Plugin:
 
         self.user_id = parameters.credentials.username
         self.run_id = random.randint(0, 0xffffffff-1)
-        self.queue = 'in-{}'.format(self.user_id)
+        self.queue = 'to-{}'.format(self.user_id)
 
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
