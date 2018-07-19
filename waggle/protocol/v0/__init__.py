@@ -6,34 +6,6 @@ from .protocol import unpack_datagrams
 from .protocol import unpack_waggle_packets
 
 
-def pack_sensor_message(sensorgrams):
-    return pack_waggle_packets([
-        {
-            'receiver_id': '0000000000000000',
-            'receiver_sub_id': '0000000000000000',
-            'body': pack_datagrams([
-                {
-                    'body': pack_sensorgrams(sensorgrams),
-                }
-            ])
-        }
-    ])
-
-
-def pack_comm_message(message):
-    return pack_waggle_packets([
-        {
-            'receiver_id': message['receiver_id'],
-            'receiver_sub_id': message['receiver_sub_id'],
-            'body': pack_datagrams([
-                {
-                    'body': message['body'],
-                }
-            ])
-        }
-    ])
-
-
 def pack_message(message):
     return pack_waggle_packets([message])
 
@@ -56,3 +28,13 @@ def pack_sensorgram(sensorgram):
 
 def unpack_sensorgram(data):
     return unpack_sensorgrams(data)[0]
+
+
+def pack_sensor_data_message(sensorgrams):
+    return pack_message({
+        'receiver_id': '0000000000000000',
+        'receiver_sub_id': '0000000000000000',
+        'body': pack_datagram({
+            'body': pack_sensorgrams(sensorgrams)
+        })
+    })
