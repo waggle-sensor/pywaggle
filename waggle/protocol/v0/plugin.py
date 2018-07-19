@@ -3,7 +3,7 @@ import logging
 import os
 import pika
 import random
-from waggle.protocol.v0 import unpack_waggle_packets
+import protocol
 
 
 class Plugin:
@@ -41,7 +41,7 @@ class Plugin:
             if body is None:
                 break
 
-            for message in unpack_waggle_packets(body):
+            for message in protocol.unpack_waggle_packets(body):
                 yield message
 
             self.channel.basic_ack(delivery_tag=method.delivery_tag)
