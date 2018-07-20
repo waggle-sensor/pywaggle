@@ -31,10 +31,17 @@ def unpack_sensorgram(data):
 
 
 def pack_sensor_data_message(sensorgrams):
+    if isinstance(sensorgrams, list):
+        data = pack_sensorgrams(sensorgrams)
+    elif isinstance(sensorgrams, bytes) or isinstance(sensorgrams, bytearray):
+        data = sensorgrams
+    else:
+        raise ValueError('Invalid sensorgram type. Must be list or bytes.')
+
     return pack_message({
         'receiver_id': '0000000000000000',
         'receiver_sub_id': '0000000000000000',
         'body': pack_datagram({
-            'body': pack_sensorgrams(sensorgrams)
+            'body': data
         })
     })
