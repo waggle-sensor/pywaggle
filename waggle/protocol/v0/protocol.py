@@ -3,6 +3,10 @@ from io import BytesIO
 from waggle.checksum import crc8
 from binascii import crc_hqx
 from binascii import crc32
+import random
+
+
+RUN_ID = random.randint(0, 0xffff - 1)
 
 PROTOCOL_MAJOR_VERSION = 2
 PROTOCOL_MINOR_VERSION = 1
@@ -81,7 +85,7 @@ class Encoder:
         plugin_minor_version = value.get('plugin_minor_version', 0)
         plugin_patch_version = value.get('plugin_patch_version', 0)
         plugin_instance = value.get('plugin_instance', 0)
-        plugin_run_id = value.get('plugin_run_id', 0)
+        plugin_run_id = value.get('plugin_run_id', RUN_ID)
         body = value['body']
         body_length = len(body)
         body_crc = crc8(body)
