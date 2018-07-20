@@ -2,15 +2,12 @@
 import logging
 import os
 import pika
-import random
 
 
 class Plugin:
 
     def __init__(self, credentials=None):
         self.logger = logging.getLogger('pipeline.Plugin')
-
-        self.run_id = generate_run_id()
 
         parameters = pika.URLParameters(get_rabbitmq_url())
         self.user_id = parameters.credentials.username
@@ -48,7 +45,3 @@ class Plugin:
 
 def get_rabbitmq_url():
     return os.environ.get('WAGGLE_PLUGIN_RABBITMQ_URL', 'amqp://localhost')
-
-
-def generate_run_id():
-    return random.randint(0, 0xffffffff - 1)
