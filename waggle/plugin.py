@@ -2,6 +2,7 @@
 import logging
 import os
 import pika
+import waggle.protocol.v0 as protocol
 
 
 class Plugin:
@@ -15,6 +16,8 @@ class Plugin:
 
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
+
+        self.measurements = []
 
     def publish(self, body):
         self.logger.debug('Publishing message data %s.', body)
@@ -41,6 +44,31 @@ class Plugin:
 
             self.logger.debug('Acking message data.')
             self.channel.basic_ack(delivery_tag=method.delivery_tag)
+
+    def add_measurement(self, sensorgram):
+        if isinstance(sensorgram, (bytes, bytearray)):
+            data = sensorgram
+        elif isinstance(sensorgram, dict):
+            data = protocol.pack_sensorgram(sensorgram)
+        else:
+            raise ValueError('Sensorgram must be bytes or dict.')
+
+        self.measurements.append(data)
+
+    def clear_measurements(self):
+        self.measurements.clear()
+
+    def publish_measurements(self):
+        data = b''.join(self.measurements)
+
+        message = protocol.pack_message({
+            'body': protocol.pack_datagram({
+                'body': data
+            })
+        })
+
+        self.publish(message)
+        self.clear_measurements()
 
 
 def get_rabbitmq_url():
