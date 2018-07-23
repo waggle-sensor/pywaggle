@@ -46,6 +46,34 @@ class Plugin:
             self.channel.basic_ack(delivery_tag=method.delivery_tag)
 
     def add_measurement(self, sensorgram):
+        """Add a measument to measurement queue.
+
+        This function accepts both dict and bytes type objects.
+
+        dict objects support the following keys:
+        sensor_id -- sensor ID
+        parameter_id -- parameter ID
+        value -- raw sensor value bytes
+        sensor_instance -- sensor instance (default 0)
+        timestamp -- time measurement was taken (default now in seconds)
+
+        These objects will be packed and added to the publishing buffer upon
+        calling this function.
+
+        Example:
+        plugin.add_measurement({
+            'sensor_id': 2,
+            'parameter_id': 3,
+            'value': b'some register values',
+        })
+
+        bytes objects should be in the standard packed sensorgram format. These
+        will be published without modification.
+
+        Example:
+        data = read_sensorgram_bytes_from_serial_port()
+        plugin.add_measurement(data)
+        """
         if isinstance(sensorgram, (bytes, bytearray)):
             data = sensorgram
         elif isinstance(sensorgram, dict):
@@ -56,9 +84,11 @@ class Plugin:
         self.measurements.append(data)
 
     def clear_measurements(self):
+        """Clear measurement queue without publishing."""
         self.measurements.clear()
 
     def publish_measurements(self):
+        """Publish and clear the measurement queue."""
         data = b''.join(self.measurements)
 
         message = protocol.pack_message({
