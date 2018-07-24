@@ -31,7 +31,7 @@ class TestProtocol(unittest.TestCase):
             'sensor_id': 1,
             'parameter_id': 3,
             'value': b'some data',
-            'value_type': 7,
+            'type': 7,
         },
     ]
 

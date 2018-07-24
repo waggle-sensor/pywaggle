@@ -65,7 +65,7 @@ class Encoder:
         sensor_instance = value.get('sensor_instance', 0)
         parameter_id = value['parameter_id']
         timestamp = get_timestamp_or_now(value)
-        body_type = value.get('value_type', 0)
+        body_type = value.get('type', 0)
         body = value['value']
         body_length = len(body)
 
@@ -203,7 +203,7 @@ class Decoder:
             'sensor_instance': sensor_instance,
             'parameter_id': parameter_id,
             'timestamp': timestamp,
-            'value_type': body_type,
+            'type': body_type,
             'value': body,
         }
 
