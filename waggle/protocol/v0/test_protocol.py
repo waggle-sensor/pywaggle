@@ -1,4 +1,5 @@
 import unittest
+from io import BytesIO
 from protocol import *
 
 
