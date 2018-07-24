@@ -27,6 +27,12 @@ class TestProtocol(unittest.TestCase):
             'parameter_id': 2,
             'value': b'x' * 4096,
         },
+        {
+            'sensor_id': 1,
+            'parameter_id': 3,
+            'value': b'some data',
+            'value_type': 7,
+        },
     ]
 
     def test_encode_decode_sensorgram(self):
