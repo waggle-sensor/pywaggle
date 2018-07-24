@@ -65,6 +65,7 @@ class Encoder:
         sensor_instance = value.get('sensor_instance', 0)
         parameter_id = value['parameter_id']
         timestamp = get_timestamp_or_now(value)
+        body_type = value.get('value_type', 0)
         body = value['value']
         body_length = len(body)
 
@@ -73,6 +74,7 @@ class Encoder:
         self.encode_int(1, sensor_instance)
         self.encode_int(1, parameter_id)
         self.encode_int(4, timestamp)
+        self.encode_int(1, body_type)
         self.encode_bytes(body)
 
     def encode_datagram(self, value):
@@ -193,6 +195,7 @@ class Decoder:
         sensor_instance = self.decode_int(1)
         parameter_id = self.decode_int(1)
         timestamp = self.decode_int(4)
+        body_type = self.decode_int(1)
         body = self.decode_bytes(body_length)
 
         return {
@@ -200,6 +203,7 @@ class Decoder:
             'sensor_instance': sensor_instance,
             'parameter_id': parameter_id,
             'timestamp': timestamp,
+            'value_type': body_type,
             'value': body,
         }
 
