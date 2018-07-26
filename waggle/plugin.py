@@ -103,3 +103,49 @@ class Plugin:
 
 def get_rabbitmq_url():
     return os.environ.get('WAGGLE_PLUGIN_RABBITMQ_URL', 'amqp://localhost')
+
+
+class PrintPlugin:
+
+    def __init__(self):
+        self.measurements = []
+
+    def publish(self, body):
+        print('publish', body)
+
+    def get_waiting_messages(self):
+        return
+
+    def add_measurement(self, sensorgram):
+        if isinstance(sensorgram, (bytes, bytearray)):
+            data = sensorgram
+        elif isinstance(sensorgram, dict):
+            data = protocol.pack_sensorgram(sensorgram)
+        else:
+            raise ValueError('Sensorgram must be bytes or dict.')
+
+        self.measurements.append(data)
+
+    def clear_measurements(self):
+        """Clear measurement queue without publishing."""
+        self.measurements.clear()
+
+    def publish_measurements(self):
+        """Publish and clear the measurement queue."""
+        data = b''.join(self.measurements)
+
+        message = protocol.unpack_message(protocol.pack_message({
+            'body': protocol.pack_datagram({
+                'body': data
+            })
+        }))
+
+        datagram = protocol.unpack_datagram(message['body'])
+        sensorgrams = protocol.unpack_sensorgrams(datagram['body'])
+
+        print('publish measurements:')
+
+        for sensorgram in sensorgrams:
+            print(sensorgram)
+
+        self.clear_measurements()
