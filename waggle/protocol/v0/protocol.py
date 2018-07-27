@@ -305,67 +305,132 @@ class Decoder:
         }
 
 
+TYPE_BYTES = 0
+TYPE_STR = 1
+
+TYPE_NULL = 2
+TYPE_FALSE = 3
+TYPE_TRUE = 4
+
+# int types
+TYPE_INT8 = 10
+TYPE_INT16 = 11
+TYPE_INT24 = 12
+TYPE_INT32 = 13
+TYPE_INT64 = 14
+
+# uint types
+TYPE_UINT8 = 20
+TYPE_UINT16 = 21
+TYPE_UINT24 = 22
+TYPE_UINT32 = 23
+TYPE_UINT64 = 24
+
+TYPE_FLOAT32 = 30
+
+
 def pack_typed_value(value):
     if isinstance(value, (bytes, bytearray)):
-        return 0, value
+        return TYPE_BYTES, value
 
     if isinstance(value, str):
-        return 1, value.encode()
-
-    if isinstance(value, bool):
-        return 2, int(value).to_bytes(1, byteorder='big', signed=False)
+        return TYPE_STR, value.encode()
 
     if value is None:
-        return 3, b''
+        return TYPE_NULL, b''
+
+    if value is False:
+        return TYPE_FALSE, b''
+
+    if value is True:
+        return TYPE_TRUE, b''
 
     if isinstance(value, int):
-        return packed_type_int_value(value)
+        if value < 0:
+            return packed_type_int_value(value)
+        else:
+            return packed_type_uint_value(value)
 
     if isinstance(value, float):
-        return 30, struct.pack('f', value)
+        return TYPE_FLOAT32, struct.pack('f', value)
 
     raise ValueError('Unsupported value type.')
 
 
 def packed_type_int_value(value):
     try:
-        return 10, value.to_bytes(1, byteorder='big', signed=True)
+        return TYPE_INT8, value.to_bytes(1, byteorder='big', signed=True)
     except OverflowError:
         pass
 
     try:
-        return 11, value.to_bytes(2, byteorder='big', signed=True)
+        return TYPE_INT16, value.to_bytes(2, byteorder='big', signed=True)
     except OverflowError:
         pass
 
     try:
-        return 12, value.to_bytes(3, byteorder='big', signed=True)
+        return TYPE_INT24, value.to_bytes(3, byteorder='big', signed=True)
     except OverflowError:
         pass
 
     try:
-        return 13, value.to_bytes(4, byteorder='big', signed=True)
+        return TYPE_INT32, value.to_bytes(4, byteorder='big', signed=True)
     except OverflowError:
         pass
 
     try:
-        return 14, value.to_bytes(8, byteorder='big', signed=True)
+        return TYPE_INT64, value.to_bytes(8, byteorder='big', signed=True)
     except OverflowError:
         pass
 
     raise ValueError('Unsupported int size.')
 
 
+def packed_type_uint_value(value):
+    try:
+        return TYPE_UINT8, value.to_bytes(1, byteorder='big', signed=False)
+    except OverflowError:
+        pass
+
+    try:
+        return TYPE_UINT16, value.to_bytes(2, byteorder='big', signed=False)
+    except OverflowError:
+        pass
+
+    try:
+        return TYPE_UINT24, value.to_bytes(3, byteorder='big', signed=False)
+    except OverflowError:
+        pass
+
+    try:
+        return TYPE_UINT32, value.to_bytes(4, byteorder='big', signed=False)
+    except OverflowError:
+        pass
+
+    try:
+        return TYPE_UINT64, value.to_bytes(8, byteorder='big', signed=False)
+    except OverflowError:
+        pass
+
+    raise ValueError('Unsupported unsigned int size.')
+
+
 def unpack_typed_value(type, value):
-    if type == 0:
+    if type == TYPE_BYTES:
         return value
-    if type == 1:
+    if type == TYPE_STR:
         return value.decode()
-    if type == 2:
-        return bool(int.from_bytes(value, 'big'))
-    if type in [10, 11, 12, 13, 14]:
-        return int.from_bytes(value, 'big')
-    if type == 30:
+    if type == TYPE_NULL:
+        return None
+    if type == TYPE_FALSE:
+        return False
+    if type == TYPE_TRUE:
+        return True
+    if type in [TYPE_INT8, TYPE_INT16, TYPE_INT24, TYPE_INT32, TYPE_INT64]:
+        return int.from_bytes(value, 'big', signed=True)
+    if type in [TYPE_UINT8, TYPE_UINT16, TYPE_UINT24, TYPE_UINT32, TYPE_UINT64]:
+        return int.from_bytes(value, 'big', signed=False)
+    if type == TYPE_FLOAT32:
         return struct.unpack('f', value)[0]
 
 
