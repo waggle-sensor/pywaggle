@@ -154,6 +154,13 @@ class TestProtocol(unittest.TestCase):
             {'sensor_id': 1, 'parameter_id': 1, 'value': 123456},
             {'sensor_id': 1, 'parameter_id': 1, 'value': 123456789},
             {'sensor_id': 1, 'parameter_id': 1, 'value': 1234567890000},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': -1},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': -12},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': -123},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': -1234},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': -123456},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': -123456789},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': -1234567890000},
             {'sensor_id': 1, 'parameter_id': 1, 'value': 13.2},
         ]
 
