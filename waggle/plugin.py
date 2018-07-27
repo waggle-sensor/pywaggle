@@ -82,11 +82,9 @@ class Plugin:
 
     def publish_measurements(self):
         """Publish and clear the measurement queue."""
-        data = b''.join(self.measurements)
-
         message = protocol.pack_message({
             'body': protocol.pack_datagram({
-                'body': data
+                'body': b''.join(self.measurements)
             })
         })
 
@@ -104,7 +102,8 @@ class PrintPlugin:
         self.measurements = []
 
     def publish(self, body):
-        print('publish', body)
+        print('publish:')
+        print(body)
 
     def get_waiting_messages(self):
         return
@@ -118,11 +117,9 @@ class PrintPlugin:
 
     def publish_measurements(self):
         """Publish and clear the measurement queue."""
-        data = b''.join(self.measurements)
-
         message = protocol.unpack_message(protocol.pack_message({
             'body': protocol.pack_datagram({
-                'body': data
+                'body': b''.join(self.measurements)
             })
         }))
 
