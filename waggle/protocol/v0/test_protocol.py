@@ -28,12 +28,6 @@ class TestProtocol(unittest.TestCase):
             'parameter_id': 2,
             'value': b'x' * 4096,
         },
-        {
-            'sensor_id': 1,
-            'parameter_id': 3,
-            'value': b'some data',
-            'type': 7,
-        },
     ]
 
     def test_encode_decode_sensorgram(self):
@@ -145,6 +139,29 @@ class TestProtocol(unittest.TestCase):
         for c, r in zip(self.waggle_packet_test_cases, results):
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
+
+    def test_typed(self):
+        testcases = [
+            {'sensor_id': 1, 'parameter_id': 1, 'value': b'bytes'},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 'string'},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': True},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': False},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': None},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 1},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 12},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 123},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 1234},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 123456},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 123456789},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 1234567890000},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': 13.2},
+        ]
+
+        for t in testcases:
+            if isinstance(t['value'], float):
+                self.assertAlmostEqual(t['value'], decode_value_type(encode_value_type(t))['value'], 5)
+            else:
+                self.assertEqual(t['value'], decode_value_type(encode_value_type(t))['value'])
 
 
 if __name__ == '__main__':

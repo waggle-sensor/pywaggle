@@ -4,6 +4,7 @@ from waggle.checksum import crc8
 from binascii import crc_hqx
 from binascii import crc32
 import random
+import struct
 
 
 RUN_ID = random.randint(0, 0xffff - 1)
@@ -61,11 +62,13 @@ class Encoder:
         self.encode_bytes(value.to_bytes(length, 'big'))
 
     def encode_sensorgram(self, value):
+        value = encode_value_type(value)
+
         sensor_id = value['sensor_id']
         sensor_instance = value.get('sensor_instance', 0)
         parameter_id = value['parameter_id']
         timestamp = get_timestamp_or_now(value)
-        body_type = value.get('type', 0)
+        body_type = value['type']
         body = value['value']
         body_length = len(body)
 
@@ -198,14 +201,14 @@ class Decoder:
         body_type = self.decode_int(1)
         body = self.decode_bytes(body_length)
 
-        return {
+        return decode_value_type({
             'sensor_id': sensor_id,
             'sensor_instance': sensor_instance,
             'parameter_id': parameter_id,
             'timestamp': timestamp,
             'type': body_type,
             'value': body,
-        }
+        })
 
     def decode_datagram(self):
         start_flag = self.decode_int(1)
@@ -300,6 +303,87 @@ class Decoder:
             'token': token,
             'body': body,
         }
+
+
+def pack_typed_value(value):
+    if isinstance(value, (bytes, bytearray)):
+        return 0, value
+
+    if isinstance(value, str):
+        return 1, value.encode()
+
+    if isinstance(value, bool):
+        return 2, int(value).to_bytes(1, byteorder='big', signed=False)
+
+    if value is None:
+        return 3, b''
+
+    if isinstance(value, int):
+        return packed_type_int_value(value)
+
+    if isinstance(value, float):
+        return 30, struct.pack('f', value)
+
+    raise ValueError('Unsupported value type.')
+
+
+def packed_type_int_value(value):
+    try:
+        return 10, value.to_bytes(1, byteorder='big', signed=True)
+    except OverflowError:
+        pass
+
+    try:
+        return 11, value.to_bytes(2, byteorder='big', signed=True)
+    except OverflowError:
+        pass
+
+    try:
+        return 12, value.to_bytes(3, byteorder='big', signed=True)
+    except OverflowError:
+        pass
+
+    try:
+        return 13, value.to_bytes(4, byteorder='big', signed=True)
+    except OverflowError:
+        pass
+
+    try:
+        return 14, value.to_bytes(8, byteorder='big', signed=True)
+    except OverflowError:
+        pass
+
+    raise ValueError('Unsupported int size.')
+
+
+def unpack_typed_value(type, value):
+    if type == 0:
+        return value
+    if type == 1:
+        return value.decode()
+    if type == 2:
+        return bool(int.from_bytes(value, 'big'))
+    if type in [10, 11, 12, 13, 14]:
+        return int.from_bytes(value, 'big')
+    if type == 30:
+        return struct.unpack('f', value)[0]
+
+
+def encode_value_type(sensorgram):
+    if 'type' in sensorgram:
+        return sensorgram
+
+    sensorgram = sensorgram.copy()
+    type, value = pack_typed_value(sensorgram['value'])
+    sensorgram['type'] = type
+    sensorgram['value'] = value
+    return sensorgram
+
+
+def decode_value_type(sensorgram):
+    sensorgram = sensorgram.copy()
+    sensorgram['value'] = unpack_typed_value(sensorgram['type'], sensorgram['value'])
+    return sensorgram
 
 
 def make_pack_function(func):

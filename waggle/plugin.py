@@ -140,15 +140,3 @@ def pack_measurement(sensorgram):
     if isinstance(sensorgram, dict):
         return protocol.pack_sensorgram(sensorgram)
     raise ValueError('Sensorgram must be bytes or dict.')
-
-
-# def infer_measurement_type(sensorgram):
-#     sensorgram = sensorgram.copy()
-#
-#     # check if type exists already and use that if it does?
-#
-#     # otherwise, infer from value type
-#     if isinstance(sensorgram['value'], (bytes, bytearray)):
-#         sensorgram['type'] = 0
-#     elif isinstance(sensorgram['value'], int):
-#         sensorgram['type']
