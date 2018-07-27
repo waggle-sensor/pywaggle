@@ -74,14 +74,7 @@ class Plugin:
         data = read_sensorgram_bytes_from_serial_port()
         plugin.add_measurement(data)
         """
-        if isinstance(sensorgram, (bytes, bytearray)):
-            data = sensorgram
-        elif isinstance(sensorgram, dict):
-            data = protocol.pack_sensorgram(sensorgram)
-        else:
-            raise ValueError('Sensorgram must be bytes or dict.')
-
-        self.measurements.append(data)
+        self.measurements.append(pack_measurement(sensorgram))
 
     def clear_measurements(self):
         """Clear measurement queue without publishing."""
@@ -117,14 +110,7 @@ class PrintPlugin:
         return
 
     def add_measurement(self, sensorgram):
-        if isinstance(sensorgram, (bytes, bytearray)):
-            data = sensorgram
-        elif isinstance(sensorgram, dict):
-            data = protocol.pack_sensorgram(sensorgram)
-        else:
-            raise ValueError('Sensorgram must be bytes or dict.')
-
-        self.measurements.append(data)
+        self.measurements.append(pack_measurement(sensorgram))
 
     def clear_measurements(self):
         """Clear measurement queue without publishing."""
@@ -149,3 +135,23 @@ class PrintPlugin:
             print(sensorgram)
 
         self.clear_measurements()
+
+
+def pack_measurement(sensorgram):
+    if isinstance(sensorgram, (bytes, bytearray)):
+        return sensorgram
+    if isinstance(sensorgram, dict):
+        return protocol.pack_sensorgram(sensorgram)
+    raise ValueError('Sensorgram must be bytes or dict.')
+
+
+# def infer_measurement_type(sensorgram):
+#     sensorgram = sensorgram.copy()
+#
+#     # check if type exists already and use that if it does?
+#
+#     # otherwise, infer from value type
+#     if isinstance(sensorgram['value'], (bytes, bytearray)):
+#         sensorgram['type'] = 0
+#     elif isinstance(sensorgram['value'], int):
+#         sensorgram['type']
