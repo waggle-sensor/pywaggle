@@ -165,10 +165,13 @@ class TestProtocol(unittest.TestCase):
         ]
 
         for t in testcases:
-            if isinstance(t['value'], float):
-                self.assertAlmostEqual(t['value'], decode_value_type(encode_value_type(t))['value'], 5)
+            v1 = t['value']
+            v2 = decode_value_type(encode_value_type(t))['value']
+
+            if isinstance(v1, float):
+                self.assertAlmostEqual(v1, v2, 5)
             else:
-                self.assertEqual(t['value'], decode_value_type(encode_value_type(t))['value'])
+                self.assertEqual(v1, v2)
 
 
 if __name__ == '__main__':
