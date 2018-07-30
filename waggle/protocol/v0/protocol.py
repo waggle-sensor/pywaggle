@@ -328,8 +328,8 @@ TYPE_UINT64 = 24
 
 TYPE_FLOAT32 = 30
 
-# TODO make sure type table is clean
-TYPE_FLOAT32_LIST = 130
+# TODO make sure type table IDs are organized
+TYPE_LIST_OF_FLOAT32 = 130
 
 
 def pack_typed_value(value):
@@ -358,7 +358,7 @@ def pack_typed_value(value):
         return TYPE_FLOAT32, struct.pack('f', value)
 
     if isinstance(value, list) and isinstance(value[0], float):
-        return TYPE_FLOAT32_LIST, struct.pack('{}f'.format(len(value)), *value)
+        return TYPE_LIST_OF_FLOAT32, struct.pack('{}f'.format(len(value)), *value)
 
     raise ValueError('Unsupported value type.')
 
@@ -421,26 +421,50 @@ def packed_type_uint_value(value):
     raise ValueError('Unsupported unsigned int size.')
 
 
+def unpack_signed_int(x):
+    return int.from_bytes(x, 'big', signed=True)
+
+
+def unpack_unsigned_int(x):
+    return int.from_bytes(x, 'big', signed=False)
+
+
+def unpack_float32(x):
+    return struct.unpack('f', x)[0]
+
+
+def unpack_list_of_float32(x):
+    n = len(x) // 4
+    return list(struct.unpack('{}f'.format(n), x))
+
+
+unpack_type_table = {
+    TYPE_BYTES: lambda x: x,
+    TYPE_STR: bytes.decode,
+    TYPE_NULL: lambda x: None,
+    TYPE_FALSE: lambda x: False,
+    TYPE_TRUE: lambda x: True,
+
+    TYPE_INT8: unpack_signed_int,
+    TYPE_INT16: unpack_signed_int,
+    TYPE_INT24: unpack_signed_int,
+    TYPE_INT32: unpack_signed_int,
+    TYPE_INT64: unpack_signed_int,
+
+    TYPE_UINT8: unpack_unsigned_int,
+    TYPE_UINT16: unpack_unsigned_int,
+    TYPE_UINT24: unpack_unsigned_int,
+    TYPE_UINT32: unpack_unsigned_int,
+    TYPE_UINT64: unpack_unsigned_int,
+
+    TYPE_FLOAT32: unpack_float32,
+
+    TYPE_LIST_OF_FLOAT32: unpack_list_of_float32,
+}
+
+
 def unpack_typed_value(type, value):
-    if type == TYPE_BYTES:
-        return value
-    if type == TYPE_STR:
-        return value.decode()
-    if type == TYPE_NULL:
-        return None
-    if type == TYPE_FALSE:
-        return False
-    if type == TYPE_TRUE:
-        return True
-    if type in [TYPE_INT8, TYPE_INT16, TYPE_INT24, TYPE_INT32, TYPE_INT64]:
-        return int.from_bytes(value, 'big', signed=True)
-    if type in [TYPE_UINT8, TYPE_UINT16, TYPE_UINT24, TYPE_UINT32, TYPE_UINT64]:
-        return int.from_bytes(value, 'big', signed=False)
-    if type == TYPE_FLOAT32:
-        return struct.unpack('f', value)[0]
-    if type == TYPE_FLOAT32_LIST:
-        n = len(value) // 4
-        return list(struct.unpack('{}f'.format(n), value))
+    return unpack_type_table[type](value)
 
 
 def encode_value_type(sensorgram):
