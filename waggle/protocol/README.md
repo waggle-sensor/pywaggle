@@ -57,8 +57,8 @@ The protocol API provides a few core areas of functionality:
 
 ### Sensorgram packing / unpacking
 
-* `pack_sensorgrams(list of sensorgrams) -> data`
-* `unpack_sensorgrams(data) -> list of sensorgrams`
+* `pack_sensorgrams(sensorgrams) -> data`
+* `unpack_sensorgrams(data) -> sensorgrams`
 
 A sensorgram is provided as a dictionary with the following items:
 
