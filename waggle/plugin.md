@@ -5,7 +5,7 @@ for processing messages sent back to a node.
 
 ## API
 
-The current API can be broken down into a few core areas.
+The current API provides a few core functions:
 
 ### Publishing Measurements
 
@@ -17,6 +17,10 @@ The current API can be broken down into a few core areas.
 
 * `get_waiting_messages()` - Enumerates messages send to the plugin.
 
+### Robustness
+
+* `publish_heartbeat()` - Publish a heartbeat message. May be used by system to ensure plugin code is not locked up.
+
 ## Examples
 
 ### Basic Example
@@ -26,17 +30,22 @@ to the console to make sure that our code is working.
 
 ```python
 import waggle.plugin
+import time
 
 # Initialize our test plugin.
 plugin = waggle.plugin.PrintPlugin()
 
-# Add our three measurements to the batch.
-plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 100})
-plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 32.1})
-plugin.add_measurement({'sensor_id': 2, 'parameter_id': 0, 'value': b'blob of data'})
+while True:
+  # Add our three measurements to the batch.
+  plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 100})
+  plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 32.1})
+  plugin.add_measurement({'sensor_id': 2, 'parameter_id': 0, 'value': b'blob of data'})
 
-# Publish the batch.
-plugin.publish_measurements()
+  # Publish the batch.
+  plugin.publish_measurements()
+
+  # Wait five seconds before repeating.
+  time.sleep(5)
 ```
 
 ### Development, Testing and Deployment

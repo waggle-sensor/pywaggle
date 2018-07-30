@@ -125,6 +125,9 @@ class Plugin:
         self.publish(message)
         self.clear_measurements()
 
+    def publish_heartbeat(self):
+        pass
+
 
 def get_rabbitmq_url():
     return os.environ.get('WAGGLE_PLUGIN_RABBITMQ_URL', 'amqp://localhost')
@@ -170,6 +173,9 @@ class PrintPlugin:
             print(sensorgram)
 
         self.clear_measurements()
+
+    def publish_heartbeat(self):
+        print('publish heartbeat')
 
 
 def pack_measurement(sensorgram):
