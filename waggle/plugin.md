@@ -21,8 +21,8 @@ The current API can be broken down into a few core areas.
 
 ### Basic Example
 
-In our first example, we prepare three made-up measurements and publish them to
-the console to make sure that our code is working.
+In our first example, we prepare three synthetic measurements and publish them
+to the console to make sure that our code is working.
 
 ```python
 import waggle.plugin
@@ -48,7 +48,6 @@ the plugin interface. In our example above, this was chosen during the step:
 # Initialize our test plugin.
 plugin = waggle.plugin.PrintPlugin()
 ```
-
 
 Once we get plugin code working and ready for deployment, we'll instead use:
 
