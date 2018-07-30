@@ -82,3 +82,9 @@ plugin = waggle.plugin.Plugin()
 
 This version is implemented on top of the local data cache so that published
 data can be forwarded to Beehive.
+
+### Complete Measurement Reference
+
+The example above represents the most basic usage of measurements. For a
+complete reference to what functionality is supported, please see the
+[sensorgram section](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol#sensorgram-operations) of the protocol docs.
