@@ -85,6 +85,8 @@ data can be forwarded to Beehive.
 
 ### Complete Measurement Reference
 
-The example above represents the most basic usage of measurements. For a
-complete reference to what functionality is supported, please see the
-[sensorgram section](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol#sensorgram-operations) of the protocol docs.
+The example above represents the most basic usage of measurements. Plugins
+leverage the waggle protocol for preparing measurements, so more advanced
+functionality is available.
+
+For a complete reference to this, please see the sections on [sensorgrams] (https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md#sensorgram-operations) in the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md).
