@@ -55,7 +55,7 @@ support for:
 
 The protocol API provides a few core areas of functionality:
 
-### Sensorgram packing / unpacking
+### Sensorgram Operations
 
 In Python, a sensorgram is defined by a dictionary with the following items:
 
