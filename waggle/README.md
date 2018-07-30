@@ -1,4 +1,4 @@
-# waggle
+# Waggle Module
 
 This page gives an overview of the core functionality provided by this module.
 
