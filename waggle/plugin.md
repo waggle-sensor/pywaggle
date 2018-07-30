@@ -50,7 +50,7 @@ while True:
 
 Running this should produce:
 
-```
+```sh
 $ python3 plugin
 publish measurements:
 {'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965991, 'type': 20, 'value': 100}
