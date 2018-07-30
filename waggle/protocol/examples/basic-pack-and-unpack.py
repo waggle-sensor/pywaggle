@@ -10,6 +10,7 @@ sensorgrams = [
   {'sensor_id': 4, 'parameter_id': 0, 'value': True, 'sensor_instance': 0},
   {'sensor_id': 4, 'parameter_id': 1, 'value': False, 'sensor_instance': 0},
   {'sensor_id': 4, 'parameter_id': 2, 'value': None, 'sensor_instance': 1},
+  {'sensor_id': 4, 'parameter_id': 2, 'value': [1.1, 2.2, 3.3]},
 ]
 
 # First, we'll pack some data of many different types.
