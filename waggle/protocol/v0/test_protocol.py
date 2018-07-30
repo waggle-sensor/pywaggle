@@ -162,13 +162,19 @@ class TestProtocol(unittest.TestCase):
             {'sensor_id': 1, 'parameter_id': 1, 'value': -123456789},
             {'sensor_id': 1, 'parameter_id': 1, 'value': -1234567890000},
             {'sensor_id': 1, 'parameter_id': 1, 'value': 13.2},
+            {'sensor_id': 1, 'parameter_id': 1, 'value': [1.2, 3.2, 4.5, 9.3]},
         ]
 
         for t in testcases:
             v1 = t['value']
             v2 = decode_value_type(encode_value_type(t))['value']
 
-            if isinstance(v1, float):
+            if isinstance(v1, list):
+                self.assertEqual(len(v1), len(v2))
+
+                for x, y in zip(v1, v2):
+                    self.assertAlmostEqual(x, y, 5)
+            elif isinstance(v1, float):
                 self.assertAlmostEqual(v1, v2, 5)
             else:
                 self.assertEqual(v1, v2)

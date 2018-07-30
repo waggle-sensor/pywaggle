@@ -328,6 +328,9 @@ TYPE_UINT64 = 24
 
 TYPE_FLOAT32 = 30
 
+# TODO make sure type table is clean
+TYPE_FLOAT32_LIST = 130
+
 
 def pack_typed_value(value):
     if isinstance(value, (bytes, bytearray)):
@@ -353,6 +356,9 @@ def pack_typed_value(value):
 
     if isinstance(value, float):
         return TYPE_FLOAT32, struct.pack('f', value)
+
+    if isinstance(value, list) and isinstance(value[0], float):
+        return TYPE_FLOAT32_LIST, struct.pack('{}f'.format(len(value)), *value)
 
     raise ValueError('Unsupported value type.')
 
@@ -432,6 +438,9 @@ def unpack_typed_value(type, value):
         return int.from_bytes(value, 'big', signed=False)
     if type == TYPE_FLOAT32:
         return struct.unpack('f', value)[0]
+    if type == TYPE_FLOAT32_LIST:
+        n = len(value) // 4
+        return list(struct.unpack('{}f'.format(n), value))
 
 
 def encode_value_type(sensorgram):
