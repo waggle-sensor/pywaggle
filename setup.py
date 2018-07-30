@@ -19,7 +19,7 @@ setup(
         'waggle.plugin',
         'waggle.protocol',
         'waggle.protocol.utils',
-        # 'waggle.protocol.v0',
+        'waggle.protocol.v0',
         'waggle.protocol.v3',
         'waggle.protocol.v4',
         'waggle.protocol.v5',
