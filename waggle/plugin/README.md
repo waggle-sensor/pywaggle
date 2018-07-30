@@ -19,7 +19,7 @@ The plugin API provides a few core areas of functionality:
 
 ### Plugin Resilience
 
-* `publish_heartbeat()` - Publish a heartbeat message. _May_ be used by system to provide software watchdog.
+* `publish_heartbeat()` - Publish a heartbeat message. _May_ be used by node to provide software watchdog.
 
 ## Examples
 
