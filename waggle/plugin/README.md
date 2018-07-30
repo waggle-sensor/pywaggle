@@ -9,7 +9,7 @@ The plugin API provides a few core areas of functionality:
 
 ### Publishing Measurements
 
-* `add_measurement(measument)` - Add measument to batch.
+* `add_measurement(measurment)` - Add measurment to batch.
 * `publish_measurements()` - Publish current batch of measurements.
 * `clear_measurements()` - Clear current batch of measurements without publishing.
 
@@ -85,5 +85,14 @@ data can be forwarded to Beehive.
 
 ### Complete Measurement Reference
 
-Our `add_measurement` example only covered the most common usage. For a
-complete reference, please see the [section on sensorgrams](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md#sensorgram-operations) in the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md).
+Our `add_measurement` example only covered the most common usage.
+
+For a complete reference of support fields, please see the [section on sensorgrams](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md#sensorgram-operations) in the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md).
+
+In addition, `add_measurement` can also be used with prepacked sensorgram data.
+For example:
+
+```python
+data = read_sensorgram_bytes_from_external_system()
+plugin.add_measurement(data)
+```
