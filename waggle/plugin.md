@@ -1,7 +1,7 @@
 # pywaggle.plugin
 
 Plugins provide a simple interface for publishing sensor data to Beehive and
-for processing messages sent to a plugin.
+for processing messages sent back to a node.
 
 ## API
 
