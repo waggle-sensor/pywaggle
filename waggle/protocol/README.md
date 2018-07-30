@@ -1,4 +1,4 @@
-# waggle.protocol
+# Protocol Submodule
 
 This package provides functionality for packing and unpacking the various
 protocols used by the Waggle platform.

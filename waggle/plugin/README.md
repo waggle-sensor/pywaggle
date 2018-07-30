@@ -1,4 +1,4 @@
-# waggle.plugin
+# Plugin Submodule
 
 Plugins provide a simple interface for publishing sensor data to Beehive and
 for processing messages sent back to a node.
