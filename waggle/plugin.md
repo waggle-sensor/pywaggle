@@ -24,7 +24,7 @@ The current API can be broken down into a few core areas.
 In our first example, we prepare three made-up measurements and publish them to
 the console to make sure that our code is working.
 
-```
+```python
 import waggle.plugin
 
 # Initialize our test plugin.
@@ -44,7 +44,7 @@ plugin.publish_measurements()
 To facilitate developing and testing, we used a "print out" implementation of
 the plugin interface. In our example above, this was chosen during the step:
 
-```
+```python
 # Initialize our test plugin.
 plugin = waggle.plugin.PrintPlugin()
 ```
@@ -52,7 +52,7 @@ plugin = waggle.plugin.PrintPlugin()
 
 Once we get plugin code working and ready for deployment, we'll instead use:
 
-```
+```python
 # Initialize our real plugin.
 plugin = waggle.plugin.Plugin()
 ```

@@ -2,6 +2,33 @@
 """
 This module provides an easy way to integrate sensor code into the Waggle data
 pipeline as a plugin.
+
+Plugins provide a standard interface to publishing data and processing
+messages. The current API can be broken down into a few core areas:
+
+Publishing:
+
+* plugin.add_measurement(measument)
+* plugin.publish_measurements()
+* plugin.clear_measurements()
+
+Example:
+
+```
+import waggle.plugin
+
+# Initialize our plugin.
+plugin = waggle.plugin.PrintPlugin()
+
+# Add measurements to batch.
+plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 1})
+plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 2})
+plugin.add_measurement({'sensor_id': 2, 'parameter_id': 0, 'value': 3})
+
+# Publish the batch.
+plugin.publish_measurements()
+```
+
 """
 import logging
 import os
@@ -10,6 +37,9 @@ import waggle.protocol.v0 as protocol
 
 
 class Plugin:
+    """
+    Implements the plugin interface using a local RabbitMQ broker for the messaging layer.
+    """
 
     def __init__(self, credentials=None):
         self.logger = logging.getLogger('pipeline.Plugin')
@@ -101,6 +131,10 @@ def get_rabbitmq_url():
 
 
 class PrintPlugin:
+    """
+    Implements the plugin interface and prints resutls to console. This class
+    is intended for development and testing of plugin code.
+    """
 
     def __init__(self):
         self.measurements = []
