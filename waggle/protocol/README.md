@@ -57,10 +57,7 @@ The protocol API provides a few core areas of functionality:
 
 ### Sensorgram packing / unpacking
 
-* `pack_sensorgrams(sensorgrams) -> data`
-* `unpack_sensorgrams(data) -> sensorgrams`
-
-A sensorgram is provided as a dictionary with the following items:
+In Python, a sensorgram is defined by a dictionary with the following items:
 
 Required:
 
