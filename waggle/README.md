@@ -1,6 +1,11 @@
 # waggle
 
-## Sections
+This page gives an overview of the core functionality provided by this module.
 
-* [Plugin Subpackage](./plugin/README.md)
-* [Protocol Subpackage](./protocol/README.md)
+## [Plugin Submodule](./plugin/README.md)
+
+Provides functionality for publishing sensor data and for processing messages.
+
+## [Protocol Submodule](./protocol/README.md)
+
+Provides functionality for packing and unpacking sensor and messaging data.
