@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+This module provides an easy way to integrate sensor code into the Waggle data
+pipeline as a plugin.
+"""
 import logging
 import os
 import pika
