@@ -9,7 +9,7 @@ The plugin API provides a few core areas of functionality:
 
 ### Publishing Measurements
 
-* `add_measurement(measurment)` - Add measurment to batch.
+* `add_measurement(measurement)` - Add measurement to batch.
 * `publish_measurements()` - Publish current batch of measurements.
 * `clear_measurements()` - Clear current batch of measurements without publishing.
 
