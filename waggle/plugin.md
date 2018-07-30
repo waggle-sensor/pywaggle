@@ -17,9 +17,9 @@ The current API provides a few core functions:
 
 * `get_waiting_messages()` - Enumerates messages send to the plugin.
 
-### Robustness
+### Plugin Resilience
 
-* `publish_heartbeat()` - Publish a heartbeat message. May be used by system to ensure plugin code is not locked up.
+* `publish_heartbeat()` - Publish a heartbeat message.
 
 ## Examples
 
