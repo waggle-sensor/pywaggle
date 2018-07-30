@@ -8,11 +8,11 @@ protocols used by the Waggle platform.
 The Waggle platform implements a variety of data types, each used for a specific
 layer of the message pipeline. The typical data flow looks like:
 
-1. Plugin publishes *sensorgrams*.
-2. Node bundles *sensorgrams* and plugin info into *datagram*.
-3. Node bundles *datagrams* with receiver info into *waggle message*.
+1. Plugin publishes **sensorgrams**.
+2. Node bundles **sensorgrams** and plugin info into **datagram**.
+3. Node bundles **datagrams** with receiver info into **waggle message**.
 
-The result *waggle message*, depicted visually, would be organized like:
+The result waggle message, depicted visually, would be organized like:
 
 ```
 +-------------------------+
