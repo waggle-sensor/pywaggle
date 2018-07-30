@@ -85,9 +85,8 @@ data can be forwarded to Beehive.
 
 ### Complete Measurement Reference
 
-Our `add_measurement` example only covered the most common usage.
-
-For a complete reference of support fields, please see the [section on sensorgrams](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md#sensorgram-operations) in the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md).
+Our `add_measurement` example only covered the most common usage. For a complete
+reference of support fields, please see the [section on sensorgrams](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md#sensorgram-operations) in the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md).
 
 In addition, `add_measurement` can also be used with prepacked sensorgram data.
 For example:
