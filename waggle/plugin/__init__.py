@@ -33,7 +33,7 @@ plugin.publish_measurements()
 import logging
 import os
 import pika
-import waggle.protocol.v0 as protocol
+import waggle.protocol
 
 
 class Plugin:
@@ -116,8 +116,8 @@ class Plugin:
 
     def publish_measurements(self):
         """Publish and clear the measurement queue."""
-        message = protocol.pack_message({
-            'body': protocol.pack_datagram({
+        message = waggle.protocol.pack_message({
+            'body': waggle.protocol.pack_datagram({
                 'body': b''.join(self.measurements)
             })
         })
@@ -158,14 +158,14 @@ class PrintPlugin:
 
     def publish_measurements(self):
         """Publish and clear the measurement queue."""
-        message = protocol.unpack_message(protocol.pack_message({
-            'body': protocol.pack_datagram({
+        message = waggle.protocol.unpack_message(waggle.protocol.pack_message({
+            'body': waggle.protocol.pack_datagram({
                 'body': b''.join(self.measurements)
             })
         }))
 
-        datagram = protocol.unpack_datagram(message['body'])
-        sensorgrams = protocol.unpack_sensorgrams(datagram['body'])
+        datagram = waggle.protocol.unpack_datagram(message['body'])
+        sensorgrams = waggle.protocol.unpack_sensorgrams(datagram['body'])
 
         print('publish measurements:')
 
@@ -182,5 +182,5 @@ def pack_measurement(sensorgram):
     if isinstance(sensorgram, (bytes, bytearray)):
         return sensorgram
     if isinstance(sensorgram, dict):
-        return protocol.pack_sensorgram(sensorgram)
+        return waggle.protocol.pack_sensorgram(sensorgram)
     raise ValueError('Sensorgram must be bytes or dict.')
