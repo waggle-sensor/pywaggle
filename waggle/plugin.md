@@ -48,6 +48,21 @@ while True:
   time.sleep(5)
 ```
 
+Running this should produce:
+
+```
+$ python3 plugin
+publish measurements:
+{'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965991, 'type': 20, 'value': 100}
+{'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 1, 'timestamp': 1532965991, 'type': 30, 'value': 32.099998474121094}
+{'sensor_id': 2, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965991, 'type': 0, 'value': b'blob of data'}
+publish measurements:
+{'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965996, 'type': 20, 'value': 100}
+{'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 1, 'timestamp': 1532965996, 'type': 30, 'value': 32.099998474121094}
+{'sensor_id': 2, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965996, 'type': 0, 'value': b'blob of data'}
+...
+```
+
 ### Development, Testing and Deployment
 
 To facilitate developing and testing, we used a "print out" implementation of
