@@ -65,7 +65,7 @@ publish measurements:
 
 ### Development, Testing and Deployment
 
-To facilitate developing and testing, we used a "print out" implementation of
+To facilitate development and testing, we used a "print out" implementation of
 the plugin interface. In our example above, this was chosen during the step:
 
 ```python
@@ -85,8 +85,5 @@ data can be forwarded to Beehive.
 
 ### Complete Measurement Reference
 
-The example above represents the most basic usage of measurements. Plugins
-leverage the waggle protocol for preparing measurements, so more advanced
-functionality is available.
-
-For a complete reference to this, please see the [section on sensorgrams](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md#sensorgram-operations) in the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md).
+The `add_measurement` usage above only covered the typical use case. For a
+complete reference, please see the [section on sensorgrams](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md#sensorgram-operations) in the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol/README.md).
