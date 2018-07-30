@@ -34,7 +34,9 @@ crc8_table = [
     0xb6, 0xe8, 0x0a, 0x54, 0xd7, 0x89, 0x6b, 0x35,
 ]
 
+
 def crc8(data, crc=0):
+    """Computes CRC of data using CRC8 with 0x8c polynomial."""
     for value in data:
         crc = crc8_table[crc ^ value]
     return crc
