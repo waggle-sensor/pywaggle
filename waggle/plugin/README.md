@@ -9,14 +9,16 @@ for processing messages sent back to a node.
 
 This class implements a few key groups of functionality:
 
-* Publishing measurements to Beehive.
+* Publish measurements to Beehive.
 * Processing messages sent to a node.
 
 Each of the functions are documented below.
 
 #### add_measurement(measurement)
 
-Adds a measurement to the current batch to be published. A measurement may either be a dictionary with fields:
+Adds a **measurement** to the current batch to be published.
+
+A **measurement** is either be a dictionary with fields:
 
 * `sensor_id` **required** Sensor ID.
 * `parameter_id` **required** Parameter ID.
@@ -29,11 +31,11 @@ Or, prepacked sensorgram bytes. See the [protocol docs](https://github.com/waggl
 
 #### publish_measurements()
 
-Publish current batch of measurements.
+Publish and empty the current batch of measurements.
 
 #### clear_measurements()
 
-Clear current batch of measurements without publishing.
+Empty the current batch of measurements without publishing.
 
 #### get_waiting_messages()
 
