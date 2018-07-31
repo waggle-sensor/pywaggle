@@ -16,9 +16,9 @@ Each of the functions are documented below.
 
 #### add_measurement(measurement)
 
-Adds a **measurement** to the current batch to be published.
+Adds a measurement to the current batch to be published.
 
-A **measurement** is either be a dictionary with fields:
+A measurement is either be a dictionary with fields:
 
 * `sensor_id` **required** Sensor ID.
 * `parameter_id` **required** Parameter ID.
