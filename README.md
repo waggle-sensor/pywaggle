@@ -3,24 +3,26 @@
 This module provides abstractions which simplify the design of scripts and
 plugins running on the [Waggle platform](https://github.com/waggle-sensor/waggle).
 
+## Requirements
+
+This module is written with Python 3 in mind. It _may_ work fine with Python 2,
+but we don't specifically aim to support this.
+
 ## Installation
 
-### Installing from Github with pip
-
-#### Python 3
-
-```
-pip3 install git+https://github.com/waggle-sensor/pywaggle
-```
-
-#### Python 2
+### Installing from Github
 
 ```
 pip install git+https://github.com/waggle-sensor/pywaggle
 ```
 
-This will automatically fetch and install the module along with all of its
-dependencies.
+### Installation from local repo
+
+```
+git clone https://github.com/waggle-sensor/pywaggle
+cd pywaggle
+pip install .
+```
 
 ## Documentation and Examples
 
