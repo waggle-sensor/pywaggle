@@ -1,17 +1,20 @@
-# pywaggle
+# Waggle Python Module
 
-The Python waggle module contains a number of utilities and classes intended to
-simplify the design of scripts, plugins and workers to be used with the Waggle
-platform.
+This module provides abstractions which simplify the design of scripts and
+plugins running on the [Waggle platform](https://github.com/waggle-sensor/waggle).
 
-## Installation using pip
+## Installation
 
-### Python 3
+### Installing from Github with pip
+
+#### Python 3
+
 ```
 pip3 install git+https://github.com/waggle-sensor/pywaggle
 ```
 
-### Python 2
+#### Python 2
+
 ```
 pip install git+https://github.com/waggle-sensor/pywaggle
 ```
@@ -19,6 +22,7 @@ pip install git+https://github.com/waggle-sensor/pywaggle
 This will automatically fetch and install the module along with all of its
 dependencies.
 
-## Documentation
+## Documentation and Examples
 
-Documentation and examples can be found [here](https://github.com/waggle-sensor/pywaggle/blob/master/waggle).
+Documentation and examples for each core submodule is indexed
+[here](https://github.com/waggle-sensor/pywaggle/blob/master/waggle).
