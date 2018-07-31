@@ -7,6 +7,15 @@ import logging
 import os.path
 
 
+logger = logging.getLogger('waggle.pipeline')
+
+logger.warning(
+    'waggle.pipeline is deprecated. Please see the new '
+    'waggle.plugin docs for the new interface: '
+    'https://github.com/waggle-sensor/pywaggle/blob/master/waggle/plugin/README.md'
+)
+
+
 class PluginHandler(object):
 
     def send(self, sensor, data, headers={}):
