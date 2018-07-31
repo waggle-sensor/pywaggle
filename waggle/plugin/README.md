@@ -3,27 +3,40 @@
 Plugins provide a simple interface for publishing sensor data to Beehive and
 for processing messages sent back to a node.
 
-## Plugin API
+## Core Plugin API
 
-The plugin API provides a few core areas of functionality:
+### class waggle.plugin.Plugin
 
-### Publishing Measurements
+#### add_measurement(measurement)
 
-* `add_measurement(measurement)` - Add measurement to batch.
-* `publish_measurements()` - Publish current batch of measurements.
-* `clear_measurements()` - Clear current batch of measurements without publishing.
+Adds a measurement to the current batch to be published. A measurement may either be a dictionary with fields:
 
-### Processing Messages
+* `sensor_id` **required** Sensor ID.
+* `parameter_id` **required** Parameter ID.
+* `value` **required** Measurement value.
+* `timestamp` **optional** Seconds since epoch. Default is current time.
+* `sensor_instance` **optional** Sensor instance. Default is 0.
+* `type` **optional** Value type. Derived from value's Python type if not specified.
 
-* `get_waiting_messages()` - Enumerates messages send to the plugin.
+Or, prepacked sensorgram bytes. See the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol) for more information.
 
-### Plugin Resilience
+#### publish_measurements()
 
-* `publish_heartbeat()` - Publish a heartbeat message. _May_ be used by node to provide software watchdog.
+Publish current batch of measurements.
 
-## Examples
+#### clear_measurements()
 
-### Basic Example
+Clear current batch of measurements without publishing.
+
+#### get_waiting_messages()
+
+Enumerates messages send to the plugin.
+
+#### publish_heartbeat()
+
+Publish a heartbeat message. _May_ be used by node to provide software watchdog.
+
+## Basic Example
 
 In our first example, we prepare three synthetic measurements and publish them
 to the console to make sure that our code is working.
@@ -63,7 +76,7 @@ publish measurements:
 ...
 ```
 
-### Development, Testing and Deployment
+## Development, Testing and Deployment
 
 To facilitate development and testing, we used a "print out" implementation of
 the plugin interface. In our example above, this was chosen during the step:
@@ -82,17 +95,3 @@ plugin = waggle.plugin.Plugin()
 
 This version is implemented on top of the local data cache so that published
 data can be forwarded to Beehive.
-
-### Complete Reference to Measurements
-
-Our example only covered the most common usage of `add_measurement`. For a complete
-reference of supported parameters, please see the [section on sensorgrams](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol#sensorgram-operations) in the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol).
-
-In addition, the `add_measurement` function can be used with prepacked
-sensorgram data to support interfacing with other systems and sensors. For
-example:
-
-```python
-data = read_sensorgram_bytes_from_external_system()
-plugin.add_measurement(data)
-```
