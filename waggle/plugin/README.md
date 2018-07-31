@@ -9,7 +9,7 @@ for processing messages sent back to a node.
 
 This class implements a few key groups of functionality:
 
-* Publishing measurements.
+* Publishing measurements to Beehive.
 * Processing messages sent to a node.
 
 Each of the functions are documented below.
