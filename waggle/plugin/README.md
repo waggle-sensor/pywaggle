@@ -48,8 +48,8 @@ Publish a heartbeat message. _May_ be used by node to provide software watchdog.
 This class provides the same interface as waggle.plugin.Plugin, but will print
 results to the console rather than interacting with the message pipeline.
 
-It is intended to be used for local development and testing without needing to
-run a full node environment.
+It's intended for local development and testing without needing to run the full
+node environment.
 
 ## Basic Example
 
