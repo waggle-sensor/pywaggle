@@ -21,4 +21,4 @@ dependencies.
 
 ## Documentation
 
-Documentation and examples can be found [here](https://github.com/waggle-sensor/pywaggle/blob/master/waggle/README.md).
+Documentation and examples can be found [here](https://github.com/waggle-sensor/pywaggle/blob/master/waggle).
