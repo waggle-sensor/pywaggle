@@ -17,7 +17,7 @@ If you have both Python 2 and 3 installed, you may specify `pip3` rather than
 pip install git+https://github.com/waggle-sensor/pywaggle
 ```
 
-### Installation from local repo
+### Installing from local repo
 
 ```
 git clone https://github.com/waggle-sensor/pywaggle
