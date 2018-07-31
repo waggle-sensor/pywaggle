@@ -18,3 +18,7 @@ pip install git+https://github.com/waggle-sensor/pywaggle
 
 This will automatically fetch and install the module along with all of its
 dependencies.
+
+## Documentation
+
+Documentation and examples can be found [here](https://github.com/waggle-sensor/pywaggle/blob/master/waggle/README.md).
