@@ -74,7 +74,7 @@ Supported types are:
 * none type
 * int signed / unsigned
 * float32
-* list of ints
+* list of int
 * list of float32
 
 #### unpack_sensorgram(data)
