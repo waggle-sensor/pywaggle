@@ -66,6 +66,17 @@ Pack a dictionary into a sensorgram. The supported fields are:
 * `sensor_instance` **optional** Sensor instance. Default is 0.
 * `type` **optional** Value type. Derived from value's Python type if not specified.
 
+Currently support types are:
+
+* bytes
+* str
+* bool
+* none type
+* int signed / unsigned
+* float32
+* list of ints
+* list of float32
+
 #### unpack_sensorgram(data)
 
 Unpacks a sensorgram into a dictionary.
