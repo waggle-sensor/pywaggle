@@ -106,6 +106,9 @@ Unpacks a waggle message into a dictionary.
 
 ## Basic Example
 
+In our simplest example, we'll test packing and then unpacking some made up
+sensorgrams.
+
 ```python
 import waggle.protocol
 
