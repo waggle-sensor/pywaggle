@@ -25,7 +25,7 @@ Adds a measurement to the current batch to be published. A measurement may eithe
 * `sensor_instance` **optional** Sensor instance. Default is 0.
 * `type` **optional** Value type. Derived from value's Python type if not specified.
 
-Or, prepacked sensorgram bytes. See the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol) for more information about protocol data types.
+Or, prepacked sensorgram bytes. See the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol) for more information about sensorgrams and other data types.
 
 #### publish_measurements()
 
