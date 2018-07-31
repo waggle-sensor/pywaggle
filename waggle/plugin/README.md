@@ -7,6 +7,13 @@ for processing messages sent back to a node.
 
 ### class waggle.plugin.Plugin
 
+This class implements a few key groups of functionality:
+
+* Publishing measurements.
+* Processing messages sent to a node.
+
+Each of the functions are documented below.
+
 #### add_measurement(measurement)
 
 Adds a measurement to the current batch to be published. A measurement may either be a dictionary with fields:
@@ -35,6 +42,12 @@ Enumerates messages send to the plugin.
 #### publish_heartbeat()
 
 Publish a heartbeat message. _May_ be used by node to provide software watchdog.
+
+### class waggle.plugin.PrintPlugin
+
+This class provides the same interface as waggle.plugin.Plugin, but will print
+results to the console rather than interacting with the message pipeline. It's
+intended to be used for development and testing.
 
 ## Basic Example
 
