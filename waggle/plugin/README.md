@@ -46,8 +46,10 @@ Publish a heartbeat message. _May_ be used by node to provide software watchdog.
 ### class waggle.plugin.PrintPlugin
 
 This class provides the same interface as waggle.plugin.Plugin, but will print
-results to the console rather than interacting with the message pipeline. It's
-intended to be used for development and testing.
+results to the console rather than interacting with the message pipeline.
+
+It is intended to be used for local development and testing without needing to
+run a full node environment.
 
 ## Basic Example
 
