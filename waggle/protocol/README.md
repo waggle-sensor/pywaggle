@@ -3,7 +3,7 @@
 This package provides functionality for packing and unpacking the various
 protocols used by the Waggle platform.
 
-## Core Data Types
+## Core Protocol Data Types
 
 The Waggle platform implements a variety of data types, each used for a specific
 layer of the message pipeline. The typical data flow looks like:
@@ -51,27 +51,50 @@ support for:
 
 ### Waggle Message
 
-## Protocol API
+## Core Protocol API
 
-The protocol API provides a few core areas of functionality:
+### waggle.protocol
 
-### Sensorgram Operations
+#### pack_sensorgram(sensorgram)
 
-In Python, a sensorgram is defined by a dictionary with the following items:
+Pack a dictionary into a sensorgram. The supported fields are:
 
-Required:
+* `sensor_id` **required** Sensor ID.
+* `parameter_id` **required** Parameter ID.
+* `value` **required** Measurement value.
+* `timestamp` **optional** Seconds since epoch. Default is current time.
+* `sensor_instance` **optional** Sensor instance. Default is 0.
+* `type` **optional** Value type. Derived from value's Python type if not specified.
 
-* `sensor_id` - Sensor ID.
-* `parameter_id` - Parameter ID.
-* `value`: Measurement value.
+#### unpack_sensorgram(data)
 
-Optional:
+Unpacks a sensorgram into a dictionary.
 
-* `timestamp` - Seconds since epoch. Defaults is current time.
-* `sensor_instance` - Sensor instance. Defaults is 0.
-* `type` - Value type. Default automatically derived from value's Python type.
+#### pack_sensorgrams(list_of_sensorgrams)
 
-Example:
+Packs a list of sensorgrams into a stream of sensorgram bytes.
+
+#### unpack_sensorgrams(data)
+
+Unpacks a stream of sensorgram bytes into a list of dictionaries.
+
+#### pack_datagram(datagram)
+
+Packs a dictionary into a datagram.
+
+#### unpack_datagram(data)
+
+Unpacks a datagram into a dictionary.
+
+#### pack_message(message)
+
+Packs a dictionary into a waggle message.
+
+#### unpack_message(data)
+
+Unpacks a waggle message into a dictionary.
+
+## Basic Example
 
 ```python
 import waggle.protocol
