@@ -88,23 +88,3 @@ publish measurements:
 {'sensor_id': 2, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965996, 'type': 0, 'value': b'blob of data'}
 ...
 ```
-
-## Development, Testing and Deployment
-
-To facilitate development and testing, we used a "print out" implementation of
-the plugin interface. In our example above, this was chosen during the step:
-
-```python
-# Initialize our test plugin.
-plugin = waggle.plugin.PrintPlugin()
-```
-
-Once we get plugin code working and ready for deployment, we'll instead use:
-
-```python
-# Initialize our real plugin.
-plugin = waggle.plugin.Plugin()
-```
-
-This version is implemented on top of the local data cache so that published
-data can be forwarded to Beehive.
