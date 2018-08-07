@@ -42,14 +42,109 @@ Revision	: 000a
 Serial		: 1b00000000000000
 '''
 
+xu4_ip_link = '''
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enx001e06324dcb: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP mode DEFAULT group default qlen 1000
+    link/ether 00:1e:06:32:4d:cb brd ff:ff:ff:ff:ff:ff
+'''
+
+xu4_cpuinfo = '''
+processor	: 0
+model name	: ARMv7 Processor rev 3 (v7l)
+BogoMIPS	: 84.00
+Features	: swp half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt
+CPU implementer	: 0x41
+CPU architecture: 7
+CPU variant	: 0x0
+CPU part	: 0xc07
+CPU revision	: 3
+
+processor	: 1
+model name	: ARMv7 Processor rev 3 (v7l)
+BogoMIPS	: 84.00
+Features	: swp half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt
+CPU implementer	: 0x41
+CPU architecture: 7
+CPU variant	: 0x0
+CPU part	: 0xc07
+CPU revision	: 3
+
+processor	: 2
+model name	: ARMv7 Processor rev 3 (v7l)
+BogoMIPS	: 84.00
+Features	: swp half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt
+CPU implementer	: 0x41
+CPU architecture: 7
+CPU variant	: 0x0
+CPU part	: 0xc07
+CPU revision	: 3
+
+processor	: 3
+model name	: ARMv7 Processor rev 3 (v7l)
+BogoMIPS	: 84.00
+Features	: swp half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt
+CPU implementer	: 0x41
+CPU architecture: 7
+CPU variant	: 0x0
+CPU part	: 0xc07
+CPU revision	: 3
+
+processor	: 4
+model name	: ARMv7 Processor rev 3 (v7l)
+BogoMIPS	: 120.00
+Features	: swp half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt
+CPU implementer	: 0x41
+CPU architecture: 7
+CPU variant	: 0x2
+CPU part	: 0xc0f
+CPU revision	: 3
+
+processor	: 5
+model name	: ARMv7 Processor rev 3 (v7l)
+BogoMIPS	: 120.00
+Features	: swp half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt
+CPU implementer	: 0x41
+CPU architecture: 7
+CPU variant	: 0x2
+CPU part	: 0xc0f
+CPU revision	: 3
+
+processor	: 6
+model name	: ARMv7 Processor rev 3 (v7l)
+BogoMIPS	: 120.00
+Features	: swp half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt
+CPU implementer	: 0x41
+CPU architecture: 7
+CPU variant	: 0x2
+CPU part	: 0xc0f
+CPU revision	: 3
+
+processor	: 7
+model name	: ARMv7 Processor rev 3 (v7l)
+BogoMIPS	: 120.00
+Features	: swp half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt
+CPU implementer	: 0x41
+CPU architecture: 7
+CPU variant	: 0x2
+CPU part	: 0xc0f
+CPU revision	: 3
+
+Hardware	: ODROID-XU3
+Revision	: 0100
+Serial		: 0000000000000000
+'''
+
 
 class TestPlatform(unittest.TestCase):
 
-    def test_hardware(self):
+    def test_scan_hardware(self):
         self.assertEqual(scan_hardware(c1p_cpuinfo), 'C1+')
+        self.assertEqual(scan_hardware(xu4_cpuinfo), 'XU4')
 
-    def test_macaddr(self):
+    def test_scan_macaddr(self):
         self.assertEqual(scan_macaddr(c1p_ip_link), '0000001e0610e34e')
+        self.assertEqual(scan_macaddr(xu4_ip_link), '0000001e06324dcb')
 
 
 if __name__ == '__main__':
