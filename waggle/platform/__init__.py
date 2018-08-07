@@ -28,3 +28,7 @@ def macaddr():
 def scan_macaddr(s):
     match = re.search(r'link/ether (00:1e:06:\S+)', s)
     return match.group(1).replace(':', '').rjust(16, '0')
+
+
+def node_id():
+    return macaddr()
