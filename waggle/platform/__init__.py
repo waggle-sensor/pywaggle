@@ -8,7 +8,11 @@ def read_file(path):
 
 
 def hardware():
-    match = re.search('ODROID-?(.*)', read_file('/proc/cpuinfo'))
+    return scan_hardware(read_file('/proc/cpuinfo'))
+
+
+def scan_hardware(s):
+    match = re.search('ODROID-?(.*)', s)
     model = match.group(1)
     if model.startswith('C'):
         return 'C1+'
@@ -18,6 +22,9 @@ def hardware():
 
 
 def macaddr():
-    output = subprocess.check_output(['ip', 'link']).decode()
-    match = re.search(r'link/ether (00:1e:06:\S+)', output)
+    return scan_macaddr(subprocess.check_output(['ip', 'link']).decode())
+
+
+def scan_macaddr(s):
+    match = re.search(r'link/ether (00:1e:06:\S+)', s)
     return match.group(1).replace(':', '').rjust(16, '0')
