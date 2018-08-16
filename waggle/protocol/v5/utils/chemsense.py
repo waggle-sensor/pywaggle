@@ -93,22 +93,30 @@ def chemical_sensor(ky, IpA, mid_dict):
 
 def convert_pair(key, val, mid_dict):
     if key == 'SQN':
-        return 'sqn', int(val, 16), ''
+        return 'sqn', []
 
     if key == 'BAD':
-        return 'id', val.lower(), ''
+        return 'id', (val.lower(), '')
 
     if 'SH' in key or 'HD' in key or 'LP' in key or 'AT' in key or 'LT' in key:
-        return key, float(val)/100.0, key_unit(key)
+        v = float(val)
+        return key, [
+            (v, 'raw'),
+            (v/100.0, key_unit(key)),
+        ]
 
     if 'SVL' in key or 'SIR' in key or 'SUV' in key:
-        return key, int(val), 'raw'
+        return key, (int(val), 'raw')
 
     if 'AC' in key or 'GY' in key or 'VIX' in key or 'OIX' in key:
-        return key, int(val), 'raw'
+        return key, (int(val), 'raw')
 
     conv_val, unit = chemical_sensor(key, val, mid_dict)
-    return key, conv_val, unit
+
+    return key, [
+        (val, 'raw'),
+        (conv_val, unit),
+    ]
 
 
 chemsense_pattern = re.compile(r'(\S+)=(\S+)')
@@ -120,7 +128,7 @@ def convert(value):
     chem_dict = {}
 
     for key, value in mid_dict.items():
-        k, v, u = convert_pair(key, value, mid_dict)
-        chem_dict['chemsense_' + k.lower()] = (v, u)
+        newkey, results = convert_pair(key, value, mid_dict)
+        chem_dict['chemsense_' + newkey.lower()] = results
 
     return chem_dict

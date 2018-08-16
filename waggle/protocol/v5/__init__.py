@@ -22,6 +22,17 @@ drop_raw = [
 ]
 
 
+def unpack_result(results, key, value, unit):
+    if key not in results:
+        results[key] = {}
+
+    if unit == 'raw':
+        results[key]['raw'] = value
+    else:
+        results[key]['hrf'] = value
+        results[key]['hrf_units'] = unit
+
+
 def unpack_sensors(packet):
     unpacked_data = decode_frame(packet)
 
@@ -33,18 +44,14 @@ def unpack_sensors(packet):
 
     for sensor_id, sensor_data in unpacked_data.items():
         try:
-            for key, (value, unit) in convert(sensor_data, sensor_id).items():
-                if unit == 'raw':
-                    results[key] = {'raw': value}
-                elif key.startswith('chemsense_at') or key.startswith('chemsense_sh') or key.startswith('chemsense_lp'):
-                    results[key] = {'raw': int(value * 100), 'hrf': value, 'hrf_units': unit}
-                else:
-                    if key not in results:
-                        results[key] = {}
-                    results[key]['hrf'] = value
-                    results[key]['hrf_units'] = unit
+            for key, entry in convert(sensor_data, sensor_id).items():
+                # hack in support for multiple results
+                if not isinstance(entry, list):
+                    entry = [entry]
+
+                for value, unit in entry:
+                    unpack_result(results, key, value, unit)
         except Exception:
-             # TODO add warning logging
             pass
 
     for key in drop_raw:
