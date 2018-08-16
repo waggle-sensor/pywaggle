@@ -1,5 +1,5 @@
 import unittest
-import checksum
+from waggle.checksum import crc8
 
 
 class ChecksumTestCase(unittest.TestCase):
@@ -13,7 +13,7 @@ class ChecksumTestCase(unittest.TestCase):
         ]
 
         for data, crc in test_cases:
-            self.assertEqual(checksum.crc8(data), crc)
+            self.assertEqual(crc8(data), crc)
 
 
 if __name__ == '__main__':
