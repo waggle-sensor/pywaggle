@@ -67,7 +67,7 @@ def chemical_sensor(ky, IpA, mid_dict):
     try:
         instance_data = get_instance_data(instance_id)
     except KeyError:
-        return IpA, 'raw'
+        return [(IpA, 'raw')]
 
     coeffs = instance_data[ky]
 
@@ -88,7 +88,10 @@ def chemical_sensor(ky, IpA, mid_dict):
     InA = float(IpA)/1000.0 - baseline*math.exp((Tavg - Tzero) / Minv)
     converted = InA / sensitivity
 
-    return round(converted, 6), 'ppm'
+    return [
+        (IpA, 'raw'),
+        (round(converted, 6), 'ppm'),
+    ]
 
 
 def convert_pair(key, val, mid_dict):
@@ -111,12 +114,7 @@ def convert_pair(key, val, mid_dict):
     if 'AC' in key or 'GY' in key or 'VIX' in key or 'OIX' in key:
         return key, (int(val), 'raw')
 
-    conv_val, unit = chemical_sensor(key, val, mid_dict)
-
-    return key, [
-        (val, 'raw'),
-        (conv_val, unit),
-    ]
+    return key, chemical_sensor(key, val, mid_dict)
 
 
 chemsense_pattern = re.compile(r'(\S+)=(\S+)')
