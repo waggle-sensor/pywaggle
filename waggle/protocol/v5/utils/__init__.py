@@ -1,7 +1,12 @@
 import os
 
-utils = os.listdir(os.path.dirname(__file__))
-utils = [util.replace('.py', '') for util in utils if '__' not in util]
-__all__ = utils
+
+def isimported(filename):
+    name, ext = os.path.splitext(filename)
+    return ext == '.py' and not name.startswith('test_')
+
+
+imported = list(filter(isimported, os.listdir(os.path.dirname(__file__))))
+__all__ = [filename.replace('.py', '') for filename in imported]
 
 from . import *

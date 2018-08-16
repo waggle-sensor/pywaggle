@@ -10,28 +10,32 @@
 #############################################################################################################################################################
 
 import math
+import re
+# from waggle.protocol.v5.res import chemsense_empty_data as chemsense_res
+from waggle.protocol.v5.res import chemsense_calib_data as chemsense_res
 
-from waggle.protocol.v5.res import chemsense_empty_data
+# mid_dict = {}
+imported_data = None
 
-mid_dict = {}
-imported_data = {}
 
 def import_data():
     xl_data = {}
 
-    rows = chemsense_empty_data.chemsense_empty_data_raw.strip().split('\n')
+    rows = chemsense_res.calib_data.strip().splitlines()
+
     for row in rows:
-        rowValues = row.strip().split(';')
-        chem_id = rowValues[1].lower()
+        fields = row.strip().split(';')
+        chem_id = fields[1].lower()
 
         xl_data[chem_id] = {
-            'IRR': {'sensitivity': rowValues[-42], 'baseline40': rowValues[-21], 'Mvalue': rowValues[-7]},   # IRR = RESP, baseline = Izero@25C
-            'IAQ': {'sensitivity': rowValues[-41], 'baseline40': rowValues[-20], 'Mvalue': rowValues[-6]},
-            'SO2': {'sensitivity': rowValues[-40], 'baseline40': rowValues[-19], 'Mvalue': rowValues[-5]},
-            'H2S': {'sensitivity': rowValues[-39], 'baseline40': rowValues[-18], 'Mvalue': rowValues[-4]},
-            'OZO': {'sensitivity': rowValues[-38], 'baseline40': rowValues[-17], 'Mvalue': rowValues[-3]},
-            'NO2': {'sensitivity': rowValues[-37], 'baseline40': rowValues[-16], 'Mvalue': rowValues[-2]},
-            'CMO': {'sensitivity': rowValues[-36], 'baseline40': rowValues[-15], 'Mvalue': rowValues[-1]}
+            # IRR = RESP, baseline = Izero@25C
+            'IRR': {'sensitivity': fields[-42], 'baseline40': fields[-21], 'Mvalue': fields[-7]},
+            'IAQ': {'sensitivity': fields[-41], 'baseline40': fields[-20], 'Mvalue': fields[-6]},
+            'SO2': {'sensitivity': fields[-40], 'baseline40': fields[-19], 'Mvalue': fields[-5]},
+            'H2S': {'sensitivity': fields[-39], 'baseline40': fields[-18], 'Mvalue': fields[-4]},
+            'OZO': {'sensitivity': fields[-38], 'baseline40': fields[-17], 'Mvalue': fields[-3]},
+            'NO2': {'sensitivity': fields[-37], 'baseline40': fields[-16], 'Mvalue': fields[-2]},
+            'CMO': {'sensitivity': fields[-36], 'baseline40': fields[-15], 'Mvalue': fields[-1]},
         }
 
     return xl_data
@@ -46,30 +50,38 @@ def key_unit(k):
     return '%RH'
 
 
-def chemical_sensor(ky, IpA):
+def chemical_sensor(ky, IpA, mid_dict):
     global imported_data
-    Tzero = 40.0
 
-    if len(imported_data) == 0:
+    if imported_data is None:
         imported_data = import_data()
 
-    if mid_dict['BAD'] in imported_data:
-        Tavg = (float(mid_dict['AT0']) + float(mid_dict['AT1']) + float(mid_dict['AT2']) + float(mid_dict['AT3'])) / 400.0
-
-        sensitivity = float(imported_data[mid_dict['BAD']][ky]['sensitivity'])
-        baseline = float(imported_data[mid_dict['BAD']][ky]['baseline40'])
-        Minv = float(imported_data[mid_dict['BAD']][ky]['Mvalue'])
-
-        InA = float(IpA)/1000.0 - baseline*math.exp((Tavg - Tzero) / Minv)
-        converted = InA / sensitivity
-
-        converted_rounded = round(converted, 6)
-        return converted_rounded, 'ppm'
-    else:
+    try:
+        coeffs = imported_data[mid_dict['BAD']][ky]
+    except KeyError:
         return IpA, 'raw'
 
+    AT = [
+        float(mid_dict['AT0']),
+        float(mid_dict['AT1']),
+        float(mid_dict['AT2']),
+        float(mid_dict['AT3']),
+    ]
 
-def convert_pair(key, val):
+    Tavg = sum(AT) / 400.0
+    Tzero = 40.0
+
+    sensitivity = float(coeffs['sensitivity'])
+    baseline = float(coeffs['baseline40'])
+    Minv = float(coeffs['Mvalue'])
+
+    InA = float(IpA)/1000.0 - baseline*math.exp((Tavg - Tzero) / Minv)
+    converted = InA / sensitivity
+
+    return round(converted, 6), 'ppm'
+
+
+def convert_pair(key, val, mid_dict):
     if 'BAD' in key:
         chem_id = val.lower()
         return 'id', chem_id, ''
@@ -80,29 +92,20 @@ def convert_pair(key, val):
     if 'AC' in key or 'GY' in key or 'VIX' in key or 'OIX' in key:
         return key, int(val), 'raw'
 
-    conv_val, unit = chemical_sensor(key, val)
+    conv_val, unit = chemical_sensor(key, val, mid_dict)
     return key, conv_val, unit
 
 
+chemsense_pattern = re.compile(r'(\S+)=(\S+)')
+
+
 def convert(value):
-    global mid_dict
+    mid_dict = dict(chemsense_pattern.findall(value['chemsense_raw']))
 
     chem_dict = {}
-    mid_dict = {}
-    for pair in value['chemsense_raw'].split():
-        try:
-            key, val = pair.split('=')
-        except ValueError:
-            continue
-
-        # ignore sequence number
-        if key == 'SQN':
-            continue
-
-        mid_dict[key] = val
 
     for key, value in mid_dict.items():
-        k, v, u = convert_pair(key, value)
+        k, v, u = convert_pair(key, value, mid_dict)
         chem_dict['chemsense_' + k.lower()] = (v, u)
 
     return chem_dict
