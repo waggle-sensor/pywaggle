@@ -1,21 +1,10 @@
-#############################################################################################################################################################
-#
-# Conversion for chemsense
-# Conversion of chemical sensors are not going through in this code, because the same procedure is processed in other place, maybe beehive server (May 2018)
-#
-# If you want to revive chemical sensor conversion in here, then change:
-# from waggle.protocol.v5.res import chemsense_empty_data >> import empty dataset to
-# from waggle.protocol.v5.res import chemsense_calib_data.py >> import the correct dataset for each chemical sensors calibration
-#
-#############################################################################################################################################################
-
+import logging
 import math
 import re
-# from waggle.protocol.v5.res import chemsense_empty_data as chemsense_res
 from waggle.protocol.v5.res import chemsense_calib_data as chemsense_res
+# from waggle.protocol.v5.res import chemsense_empty_data as chemsense_res
 
-# mid_dict = {}
-imported_data = None
+logger = logging.getLogger('waggle.protocol.v5.utils.chemsense')
 
 
 def import_data():
@@ -41,6 +30,28 @@ def import_data():
     return xl_data
 
 
+imported_data = None
+
+
+def get_imported_data():
+    global imported_data
+
+    if imported_data is None:
+        imported_data = import_data()
+
+    return imported_data
+
+
+def get_instance_data(instance_id):
+    imported_data = get_imported_data()
+
+    try:
+        return imported_data[instance_id]
+    except KeyError:
+        logger.warning('No instance_id %s in calibration data.')
+        raise
+
+
 def key_unit(k):
     if 'T' in k:
         return 'C'
@@ -51,15 +62,14 @@ def key_unit(k):
 
 
 def chemical_sensor(ky, IpA, mid_dict):
-    global imported_data
-
-    if imported_data is None:
-        imported_data = import_data()
+    instance_id = mid_dict['BAD'].lower()
 
     try:
-        coeffs = imported_data[mid_dict['BAD']][ky]
+        instance_data = get_instance_data(instance_id)
     except KeyError:
         return IpA, 'raw'
+
+    coeffs = instance_data[ky]
 
     AT = [
         float(mid_dict['AT0']),
@@ -82,13 +92,18 @@ def chemical_sensor(ky, IpA, mid_dict):
 
 
 def convert_pair(key, val, mid_dict):
-    if 'BAD' in key:
-        chem_id = val.lower()
-        return 'id', chem_id, ''
+    if key == 'SQN':
+        return 'sqn', int(val, 16), ''
+
+    if key == 'BAD':
+        return 'id', val.lower(), ''
+
     if 'SH' in key or 'HD' in key or 'LP' in key or 'AT' in key or 'LT' in key:
         return key, float(val)/100.0, key_unit(key)
+
     if 'SVL' in key or 'SIR' in key or 'SUV' in key:
         return key, int(val), 'raw'
+
     if 'AC' in key or 'GY' in key or 'VIX' in key or 'OIX' in key:
         return key, int(val), 'raw'
 

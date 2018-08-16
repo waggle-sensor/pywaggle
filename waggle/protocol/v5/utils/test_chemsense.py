@@ -1,4 +1,5 @@
 import unittest
+import pprint
 from chemsense import convert
 
 
@@ -11,4 +12,4 @@ testdata = [
 if __name__ == '__main__':
     for data in testdata:
         value = {'chemsense_raw': data}
-        print(convert(value))
+        pprint.pprint(convert(value))
