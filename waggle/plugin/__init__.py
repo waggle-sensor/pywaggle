@@ -141,6 +141,7 @@ class PrintPlugin:
 
     def __init__(self):
         self.measurements = []
+        self.process_callback = default_test_callback
 
     def publish(self, body):
         print('publish:')
@@ -167,15 +168,29 @@ class PrintPlugin:
         datagram = waggle.protocol.unpack_datagram(message['body'])
         sensorgrams = waggle.protocol.unpack_sensorgrams(datagram['body'])
 
-        print('publish measurements:')
-
-        for sensorgram in sensorgrams:
-            print(sensorgram)
-
+        self.process_callback(message, sensorgrams)
         self.clear_measurements()
 
     def publish_heartbeat(self):
         print('publish heartbeat')
+
+    def process_measurements(self, process_callback):
+        # NOTE Eventually wrap callback and make compatible
+        # with a raw process_messages version.
+        self.process_callback = process_callback
+
+    def start_processing(self):
+        pass
+
+
+def default_test_callback(message, sensorgrams):
+    print('message:')
+    print(message)
+
+    print('measurements:')
+
+    for sensorgram in sensorgrams:
+        print(sensorgram)
 
 
 def pack_measurement(sensorgram):
@@ -184,3 +199,10 @@ def pack_measurement(sensorgram):
     if isinstance(sensorgram, dict):
         return waggle.protocol.pack_sensorgram(sensorgram)
     raise ValueError('Sensorgram must be bytes or dict.')
+
+
+if __name__ == '__main__':
+    plugin = PrintPlugin()
+    plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 23.1})
+    plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 23.3})
+    plugin.publish_measurements()
