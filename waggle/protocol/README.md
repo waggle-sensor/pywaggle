@@ -136,6 +136,8 @@ Unpacks a waggle message into a dictionary.
 
 ## Basic Example
 
+### Packing and Unpacking Sensorgrams
+
 In our simplest example, we'll test packing and then unpacking some made up
 sensorgrams.
 
@@ -153,8 +155,27 @@ sensorgrams = [
 ]
 
 # First, we'll pack some data of many different types.
-data = waggle.protocol.pack_sensorgrams(sensorgrams)
+packed_sensorgrams = waggle.protocol.pack_sensorgrams(sensorgrams)
 
 # Now, we'll unpack and print all of that data.
-print(waggle.protocol.unpack_sensorgrams(data))
+print(waggle.protocol.unpack_sensorgrams(packed_sensorgrams))
+```
+
+### Packing and Unpacking Datagrams
+
+```python
+import waggle.protocol
+
+datagram = {
+    'timestamp': 1234567,
+    'plugin_id': 2,
+    'plugin_major_version': 3,
+    'plugin_minor_version': 5,
+    'plugin_patch_version': 7,
+    'plugin_instance': 11,
+    'body': b'some data body here',
+}
+
+packed_datagram = waggle.protocol.pack_datagram(datagram)
+print(packed_datagram)
 ```
