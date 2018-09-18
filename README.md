@@ -8,13 +8,10 @@ plugins running on the [Waggle platform](https://github.com/waggle-sensor/waggle
 This module is developed for Python 3. It _may_ work fine with Python 2,
 but we don't specifically aim to support this.
 
-If you have both Python 2 and 3 installed, you may specify `pip3` rather than
-`pip` when following the steps below.
-
 ### Installing from Github
 
 ```
-pip install git+https://github.com/waggle-sensor/pywaggle
+pip3 install git+https://github.com/waggle-sensor/pywaggle
 ```
 
 ### Installing from local repo
@@ -22,7 +19,7 @@ pip install git+https://github.com/waggle-sensor/pywaggle
 ```
 git clone https://github.com/waggle-sensor/pywaggle
 cd pywaggle
-pip install .
+pip3 install .
 ```
 
 ## Documentation and Examples
