@@ -79,5 +79,14 @@ class Messenger:
         else:
             return None
 
+    def readMessages(self):
+        while True:
+            msg = self.readMessage()
+
+            if msg is None:
+                return
+
+            yield msg
+
     def writeMessage(self, msg):
         self.writer.writeMessage(msg)
