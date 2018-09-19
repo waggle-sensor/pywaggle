@@ -15,6 +15,7 @@ setup(
     ],
     packages=[
         'waggle',
+        'waggle.messaging',
         'waggle.platform',
         'waggle.plugin',
         'waggle.protocol',
