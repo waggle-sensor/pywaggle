@@ -68,12 +68,7 @@ class Plugin:
         self.logger = logging.getLogger('pipeline.Plugin')
 
         self.plugin_id = plugin_id
-
-        if not isinstance(plugin_version, tuple):
-            plugin_version = tuple(int(n) for n in plugin_version.split('.', 2))
-
         self.plugin_version = plugin_version
-
         self.plugin_instance = plugin_instance
         self.credentials = credentials
 
