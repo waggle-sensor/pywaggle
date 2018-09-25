@@ -14,6 +14,13 @@ This class implements a few key groups of functionality:
 
 Each of the functions are documented below.
 
+#### Plugin(id, version, instance, credentials)
+
+* `id` **required** Plugin ID.
+* `version` **required** Plugin major, minor, patch version number tuple.
+* `instance` **required** Plugin instance number.
+* `credentials` **required** Credentials used by underlying connection.
+
 #### add_measurement(measurement)
 
 Adds a measurement to the current batch to be published.
@@ -63,7 +70,7 @@ import waggle.plugin
 import time
 
 # Initialize our test plugin.
-plugin = waggle.plugin.PrintPlugin()
+plugin = waggle.plugin.PrintPlugin(id=123, version=(0, 0, 1))
 
 while True:
     # Add our three measurements to the batch.
