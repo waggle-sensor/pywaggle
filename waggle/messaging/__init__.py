@@ -79,6 +79,7 @@ class Messenger:
         else:
             return None
 
+    # make bounded...?
     def readMessages(self):
         while True:
             msg = self.readMessage()

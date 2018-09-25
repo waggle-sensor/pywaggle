@@ -33,7 +33,32 @@ plugin.publish_measurements()
 import logging
 import os
 import pika
+import pika.credentials
+import ssl
 import waggle.protocol
+
+
+def URLCredentials(url=None):
+    if url is None:
+        url = os.environ.get('WAGGLE_PLUGIN_RABBITMQ_URL', 'amqp://localhost')
+    parameters = pika.URLParameters(url)
+    return parameters, parameters.credentials.username
+
+
+def SSLCredentials(host=None, port=None, cacertfile=None, certfile=None, keyfile=None, node_id=None):
+    node_id = node_id.rjust(16, '0').lower()
+
+    return pika.ConnectionParameters(
+        host=host or 'localhost',
+        port=port or 23181,
+        credentials=pika.credentials.ExternalCredentials(),
+        ssl=True,
+        ssl_options={
+            'ca_certs': os.path.abspath(cacertfile),
+            'keyfile': os.path.abspath(keyfile),
+            'certfile': os.path.abspath(certfile),
+            'cert_reqs': ssl.CERT_REQUIRED,
+        }), 'node-{}'.format(node_id)
 
 
 class Plugin:
@@ -44,8 +69,12 @@ class Plugin:
     def __init__(self, credentials=None):
         self.logger = logging.getLogger('pipeline.Plugin')
 
-        parameters = pika.URLParameters(get_rabbitmq_url())
-        self.user_id = parameters.credentials.username
+        if credentials is None:
+            parameters, user_id = URLCredentials()
+        else:
+            parameters, user_id = credentials
+
+        self.user_id = user_id
         self.queue = 'to-{}'.format(self.user_id)
 
         self.connection = pika.BlockingConnection(parameters)
@@ -129,10 +158,6 @@ class Plugin:
         pass
 
 
-def get_rabbitmq_url():
-    return os.environ.get('WAGGLE_PLUGIN_RABBITMQ_URL', 'amqp://localhost')
-
-
 class PrintPlugin:
     """
     Implements the plugin interface and prints resutls to console. This class
@@ -202,6 +227,8 @@ def pack_measurement(sensorgram):
 
 
 if __name__ == '__main__':
+    import time
+
     plugin = PrintPlugin()
 
     def my_callback(message, sensorgrams):
@@ -213,3 +240,21 @@ if __name__ == '__main__':
     plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 23.1})
     plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 23.3})
     plugin.publish_measurements()
+
+    credentials = SSLCredentials(
+        host='cookie',
+        node_id='0000000000000002',
+        cacertfile='/Users/Sean/node-cred/creds/cacert.pem',
+        certfile='/Users/Sean/node-cred/creds/cert.pem',
+        keyfile='/Users/Sean/node-cred/creds/key.pem')
+
+    p = Plugin(credentials)
+
+    print('ok')
+
+    while True:
+        plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 23.1})
+        plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 23.3})
+        plugin.publish_measurements()
+        print('pub')
+        time.sleep(10)
