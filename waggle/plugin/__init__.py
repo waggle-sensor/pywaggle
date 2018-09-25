@@ -240,21 +240,3 @@ if __name__ == '__main__':
     plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 23.1})
     plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 23.3})
     plugin.publish_measurements()
-
-    credentials = SSLCredentials(
-        host='cookie',
-        node_id='0000000000000002',
-        cacertfile='/Users/Sean/node-cred/creds/cacert.pem',
-        certfile='/Users/Sean/node-cred/creds/cert.pem',
-        keyfile='/Users/Sean/node-cred/creds/key.pem')
-
-    p = Plugin(credentials)
-
-    print('ok')
-
-    while True:
-        plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 23.1})
-        plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 23.3})
-        plugin.publish_measurements()
-        print('pub')
-        time.sleep(10)
