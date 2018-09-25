@@ -90,7 +90,7 @@ class Plugin:
     Implements the plugin interface using a local RabbitMQ broker for the messaging layer.
     """
 
-    def __init__(self, plugin_id=0, plugin_version='0.0.0', plugin_instance=0, credentials=None):
+    def __init__(self, plugin_id=0, plugin_version=(0, 0, 0), plugin_instance=0, credentials=None):
         self.logger = logging.getLogger('pipeline.Plugin')
 
         self.plugin_id = plugin_id
@@ -195,7 +195,10 @@ class PrintPlugin:
     is intended for development and testing of plugin code.
     """
 
-    def __init__(self):
+    def __init__(self, plugin_id=0, plugin_version=(0, 0, 0), plugin_instance=0, credentials=None):
+        self.plugin_id = plugin_id
+        self.plugin_version = plugin_version
+        self.plugin_instance = plugin_instance
         self.measurements = []
         self.process_callback = default_test_callback
 
@@ -215,11 +218,16 @@ class PrintPlugin:
 
     def publish_measurements(self):
         """Publish and clear the measurement queue."""
-        message = waggle.protocol.unpack_message(waggle.protocol.pack_message({
+        message = waggle.protocol.pack_message({
             'body': waggle.protocol.pack_datagram({
+                'plugin_id': self.plugin_id,
+                'plugin_major_version': self.plugin_version[0],
+                'plugin_minor_version': self.plugin_version[1],
+                'plugin_patch_version': self.plugin_version[2],
+                'plugin_instance': self.plugin_instance,
                 'body': b''.join(self.measurements)
             })
-        }))
+        })
 
         datagram = waggle.protocol.unpack_datagram(message['body'])
         sensorgrams = waggle.protocol.unpack_sensorgrams(datagram['body'])
