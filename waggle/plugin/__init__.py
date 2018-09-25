@@ -100,7 +100,8 @@ class Plugin:
 
         self.queue = 'to-{}'.format(self.credentials.user_id)
 
-        self.connection = pika.BlockingConnection(credentials.connection_parameters)
+        connection_parameters = get_connection_parameters(credentials)
+        self.connection = pika.BlockingConnection(connection_parameters)
         self.channel = self.connection.channel()
 
         self.measurements = []
