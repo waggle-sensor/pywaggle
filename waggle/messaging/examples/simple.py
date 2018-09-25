@@ -6,16 +6,16 @@ from waggle.messaging import Messenger
 def run_messenger_example(messenger):
     while True:
         # write a hello message
-        messenger.writeMessage(b'hello!')
+        messenger.write_message(b'hello!')
 
         # attempt to read a single message
-        msg = messenger.readMessage()
+        msg = messenger.read_message()
 
         if msg is not None:
             print('got message', msg)
 
         # attempt to read all waiting messages
-        for msg in messenger.readMessages():
+        for msg in messenger.read_messages():
             print('got message', msg)
 
 
