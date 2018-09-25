@@ -94,7 +94,7 @@ class Plugin:
     Implements the plugin interface using a local RabbitMQ broker for the messaging layer.
     """
 
-    def __init__(self, id=0, version=(0, 0, 0), instance=0, credentials=None):
+    def __init__(self, id, version, instance=0, credentials=None):
         self.logger = logging.getLogger('pipeline.Plugin')
 
         self.plugin_id = id
@@ -199,7 +199,7 @@ class PrintPlugin:
     is intended for development and testing of plugin code.
     """
 
-    def __init__(self, id=0, version=(0, 0, 0), instance=0, credentials=None):
+    def __init__(self, id, version, instance=0, credentials=None):
         self.plugin_id = id
         self.plugin_version = version
         self.plugin_instance = instance
