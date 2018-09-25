@@ -76,13 +76,17 @@ class Credentials:
     def __init__(self, **kwargs):
         self.node_id = kwargs.get('node_id', '0').rjust(16, '0')
         self.sub_id = kwargs.get('sub_id', '0').rjust(16, '0')
-        self.user_id = kwargs.get('username', 'node-{}'.format(self.node_id))
+
+        self.username = kwargs.get('username', 'node-{}'.format(self.node_id))
+        self.user_id = self.username
+
+        self.password = kwargs.get('password')
 
         self.host = kwargs.get('host', 'localhost')
         self.port = kwargs.get('port', 23181)
-        self.cacertfile = kwargs.get('cacertfile')
-        self.certfile = kwargs.get('certfile')
-        self.keyfile = kwargs.get('keyfile')
+        self.cacertfile = kwargs.get('cacert')
+        self.certfile = kwargs.get('cert')
+        self.keyfile = kwargs.get('key')
 
 
 class Plugin:
