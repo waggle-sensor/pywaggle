@@ -99,3 +99,24 @@ publish measurements:
 {'sensor_id': 2, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965996, 'type': 0, 'value': b'blob of data'}
 ...
 ```
+
+## Advanced Example
+
+Additional plugin connection info can be specified through the Credentials
+object. For example, we can connect directly to a beehive server as a specific
+node assuming we have the SSL files.
+
+```
+credentials = waggle.plugin.Credentials(
+    host='my-beehive',
+    node_id='0000000000000001',
+    sub_id='0000000000000002',
+    cacert='/path/to/cacert.pem',
+    cert='/path/to/cert.pem',
+    key='/path/to/key.pem')
+
+plugin = waggle.plugin.Plugin(
+    id=37,
+    version=(1, 0, 0),
+    credentials=credentials)
+```
