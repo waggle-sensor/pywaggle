@@ -39,24 +39,50 @@ import waggle.protocol
 
 
 # NOTE Will fix old URL credentials...don't need to maintain compatibility!
+def get_connection_parameters(c):
+    if c.cacertfile or c.certfile or c.keyfile:
+        return get_ssl_connection_parameters(c)
+    else:
+        return get_plain_connection_parameters(c)
+
+
+def get_plain_connection_parameters(c):
+    credentials = pika.credentials.PlainCredentials(
+        username=c.username,
+        password=c.password)
+
+    return pika.ConnectionParameters(
+        host=c.host,
+        port=c.port,
+        credentials=credentials)
+
+
+def get_ssl_connection_parameters(c):
+    return pika.ConnectionParameters(
+        host=c.host,
+        port=c.port,
+        credentials=pika.credentials.ExternalCredentials(),
+        ssl=True,
+        ssl_options={
+            'ca_certs': os.path.abspath(c.cacertfile),
+            'keyfile': os.path.abspath(c.keyfile),
+            'certfile': os.path.abspath(c.certfile),
+            'cert_reqs': ssl.CERT_REQUIRED,
+        })
+
+
 class Credentials:
 
-    def __init__(self, node_id=None, sub_id=None, host=None, port=None, cacertfile=None, certfile=None, keyfile=None):
-        self.node_id = (node_id or '0').rjust(16, '0')
-        self.sub_id = (sub_id or '0').rjust(16, '0')
-        self.user_id = 'node-{}'.format(node_id)
+    def __init__(self, **kwargs):
+        self.node_id = kwargs.get('node_id', '0').rjust(16, '0')
+        self.sub_id = kwargs.get('sub_id', '0').rjust(16, '0')
+        self.user_id = kwargs.get('username', 'node-{}'.format(self.node_id))
 
-        self.connection_parameters = pika.ConnectionParameters(
-            host=host or 'localhost',
-            port=port or 23181,
-            credentials=pika.credentials.ExternalCredentials(),
-            ssl=True,
-            ssl_options={
-                'ca_certs': os.path.abspath(cacertfile),
-                'keyfile': os.path.abspath(keyfile),
-                'certfile': os.path.abspath(certfile),
-                'cert_reqs': ssl.CERT_REQUIRED,
-            })
+        self.host = kwargs.get('host', 'localhost')
+        self.port = kwargs.get('port', 23181)
+        self.cacertfile = kwargs.get('cacertfile')
+        self.certfile = kwargs.get('certfile')
+        self.keyfile = kwargs.get('keyfile')
 
 
 class Plugin:
