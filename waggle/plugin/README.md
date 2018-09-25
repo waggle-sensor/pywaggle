@@ -106,7 +106,7 @@ Additional plugin connection info can be specified through the Credentials
 object. For example, we can connect directly to a beehive server as a specific
 node assuming we have the SSL files.
 
-```
+```python
 credentials = waggle.plugin.Credentials(
     host='my-beehive',
     node_id='0000000000000001',
