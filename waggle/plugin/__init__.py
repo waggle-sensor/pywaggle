@@ -38,27 +38,25 @@ import ssl
 import waggle.protocol
 
 
-def URLCredentials(url=None):
-    if url is None:
-        url = os.environ.get('WAGGLE_PLUGIN_RABBITMQ_URL', 'amqp://localhost')
-    parameters = pika.URLParameters(url)
-    return parameters, parameters.credentials.username
+# NOTE Will fix old URL credentials...don't need to maintain compatibility!
+class Credentials:
 
+    def __init__(self, node_id=None, sub_id=None, host=None, port=None, cacertfile=None, certfile=None, keyfile=None):
+        self.node_id = (node_id or '0').rjust(16, '0')
+        self.sub_id = (sub_id or '0').rjust(16, '0')
+        self.user_id = 'node-{}'.format(node_id)
 
-def SSLCredentials(host=None, port=None, cacertfile=None, certfile=None, keyfile=None, node_id=None):
-    node_id = node_id.rjust(16, '0').lower()
-
-    return pika.ConnectionParameters(
-        host=host or 'localhost',
-        port=port or 23181,
-        credentials=pika.credentials.ExternalCredentials(),
-        ssl=True,
-        ssl_options={
-            'ca_certs': os.path.abspath(cacertfile),
-            'keyfile': os.path.abspath(keyfile),
-            'certfile': os.path.abspath(certfile),
-            'cert_reqs': ssl.CERT_REQUIRED,
-        }), 'node-{}'.format(node_id)
+        self.connection_parameters = pika.ConnectionParameters(
+            host=host or 'localhost',
+            port=port or 23181,
+            credentials=pika.credentials.ExternalCredentials(),
+            ssl=True,
+            ssl_options={
+                'ca_certs': os.path.abspath(cacertfile),
+                'keyfile': os.path.abspath(keyfile),
+                'certfile': os.path.abspath(certfile),
+                'cert_reqs': ssl.CERT_REQUIRED,
+            })
 
 
 class Plugin:
@@ -66,18 +64,22 @@ class Plugin:
     Implements the plugin interface using a local RabbitMQ broker for the messaging layer.
     """
 
-    def __init__(self, credentials=None):
+    def __init__(self, plugin_id=0, plugin_version='0.0.0', plugin_instance=0, credentials=None):
         self.logger = logging.getLogger('pipeline.Plugin')
 
-        if credentials is None:
-            parameters, user_id = URLCredentials()
-        else:
-            parameters, user_id = credentials
+        self.plugin_id = plugin_id
 
-        self.user_id = user_id
-        self.queue = 'to-{}'.format(self.user_id)
+        if not isinstance(plugin_version, tuple):
+            plugin_version = tuple(int(n) for n in plugin_version.split('.', 2))
 
-        self.connection = pika.BlockingConnection(parameters)
+        self.plugin_version = plugin_version
+
+        self.plugin_instance = plugin_instance
+        self.credentials = credentials
+
+        self.queue = 'to-{}'.format(self.credentials.user_id)
+
+        self.connection = pika.BlockingConnection(credentials.connection_parameters)
         self.channel = self.connection.channel()
 
         self.measurements = []
@@ -86,11 +88,11 @@ class Plugin:
         self.logger.debug('Publishing message data %s.', body)
 
         self.channel.basic_publish(
-            exchange='publish',
+            exchange='messages',
             routing_key='',
             properties=pika.BasicProperties(
                 delivery_mode=2,
-                user_id=self.user_id),
+                user_id=self.credentials.user_id),
             body=body)
 
     def get_waiting_messages(self):
@@ -146,7 +148,14 @@ class Plugin:
     def publish_measurements(self):
         """Publish and clear the measurement queue."""
         message = waggle.protocol.pack_message({
+            'sender_id': self.credentials.node_id,
+            'sender_sub_id': self.credentials.sub_id,
             'body': waggle.protocol.pack_datagram({
+                'plugin_id': self.plugin_id,
+                'plugin_major_version': self.plugin_version[0],
+                'plugin_minor_version': self.plugin_version[1],
+                'plugin_patch_version': self.plugin_version[2],
+                'plugin_instance': self.plugin_instance,
                 'body': b''.join(self.measurements)
             })
         })
@@ -227,8 +236,6 @@ def pack_measurement(sensorgram):
 
 
 if __name__ == '__main__':
-    import time
-
     plugin = PrintPlugin()
 
     def my_callback(message, sensorgrams):
