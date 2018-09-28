@@ -30,20 +30,81 @@ plugin.publish_measurements()
 ```
 
 """
+import configparser
 import logging
 import os
+import sys
 import pika
 import pika.credentials
 import ssl
 import waggle.protocol
 
 
-# NOTE Will fix old URL credentials...don't need to maintain compatibility!
+def load_package_configs(*filenames):
+    program_path = os.path.abspath(sys.argv[0])
+    plugin_dir = os.path.dirname(os.path.dirname(program_path))
+
+    config = configparser.ConfigParser()
+
+    for filename in filenames:
+        config.read(os.path.join(plugin_dir, filename))
+
+    return config
+
+
+def parse_version_string(s):
+    if isinstance(s, tuple):
+        return s
+    return tuple(int(x) for x in s.split('.', 2))
+
+
+def load_package_plugin_config():
+    config = load_package_configs('plugin.ver', 'plugin.instance')
+    section = config['plugin']
+
+    return {
+        'name': section.get('name'),
+        'description': section.get('description'),
+        'reference': section.get('reference'),
+        'id': section.getint('id'),
+        'version': parse_version_string(section.get('version')),
+        'instance': section.getint('instance'),
+    }
+
+
+# probably can just turn Credentials into dictionary too... That would be
+# more consistent.
+def load_package_plugin_credentials():
+    config = load_package_configs('plugin.credentials')
+    section = config['credentials']
+
+    return Credentials(
+        host=section.get('host'),
+        port=section.getint('port'),
+        username=section.get('username'),
+        password=section.get('password'),
+        cacertfile=section.get('cacertfile'),
+        certfile=section.get('certfile'),
+        keyfile=section.get('keyfile'),
+    )
+
+
+def load_plugin_config(**kwargs):
+    plugin_config = {
+        'id': 0,
+        'version': (0, 0, 0),
+        'instance': 0,
+    }
+
+    plugin_config.update(load_package_configs('plugin.ver', 'plugin.instance')['plugin'])
+    plugin_config.update(kwargs)
+    return plugin_config
+
+
 def get_connection_parameters(c):
-    if c.cacertfile or c.certfile or c.keyfile:
+    if c.cacertfile:
         return get_ssl_connection_parameters(c)
-    else:
-        return get_plain_connection_parameters(c)
+    return get_plain_connection_parameters(c)
 
 
 def get_plain_connection_parameters(c):
@@ -71,19 +132,28 @@ def get_ssl_connection_parameters(c):
         })
 
 
+def format_device_id(s):
+    return s.rjust(16, '0')
+
+
 class Credentials:
 
     def __init__(self, **kwargs):
-        self.node_id = kwargs.get('node_id', '0').rjust(16, '0')
-        self.sub_id = kwargs.get('sub_id', '0').rjust(16, '0')
+        # we'll leave these out for now. in all cases, our system will validate
+        # them.
+        self.node_id = format_device_id(kwargs.get('node_id') or '0')
+        self.sub_id = format_device_id(kwargs.get('sub_id') or '0')
 
-        self.username = kwargs.get('username', 'node-{}'.format(self.node_id))
-        self.user_id = self.username
+        self.host = kwargs.get('host') or 'localhost'
+        self.port = kwargs.get('port') or 23181
 
+        # TODO Main use of derived use case is getting username from cert
+        # Could later just directly extract from cert.
+        # Then, even better, we can just use these credentials universally and
+        # only have one connection system for RabbitMQ.
+        self.username = kwargs.get('username') or 'node-{}'.format(self.node_id)
         self.password = kwargs.get('password')
 
-        self.host = kwargs.get('host', 'localhost')
-        self.port = kwargs.get('port', 23181)
         self.cacertfile = kwargs.get('cacert')
         self.certfile = kwargs.get('cert')
         self.keyfile = kwargs.get('key')
@@ -94,17 +164,26 @@ class Plugin:
     Implements the plugin interface using a local RabbitMQ broker for the messaging layer.
     """
 
-    def __init__(self, id, version, instance=0, credentials=None):
+    def __init__(self, **kwargs):
         self.logger = logging.getLogger('pipeline.Plugin')
 
-        self.plugin_id = id
-        self.plugin_version = version
-        self.plugin_instance = instance
-        self.credentials = credentials
+        plugin_config = load_plugin_config(**kwargs)
+        self.plugin_id = plugin_config['id']
+        self.plugin_version = parse_version_string(plugin_config['version'])
+        self.plugin_instance = plugin_config['instance']
 
-        self.queue = 'to-{}'.format(self.credentials.user_id)
+        print('plugin_id', self.plugin_id)
+        print('plugin_version', self.plugin_version)
+        print('plugin_instance', self.plugin_instance)
 
-        connection_parameters = get_connection_parameters(credentials)
+        self.credentials = kwargs.get('credentials')
+
+        if self.credentials is None:
+            self.credentials = load_package_plugin_credentials()
+
+        self.queue = 'to-{}'.format(self.credentials.username)
+
+        connection_parameters = get_connection_parameters(self.credentials)
         self.connection = pika.BlockingConnection(connection_parameters)
         self.channel = self.connection.channel()
 
@@ -118,7 +197,7 @@ class Plugin:
             routing_key='',
             properties=pika.BasicProperties(
                 delivery_mode=2,
-                user_id=self.credentials.user_id),
+                user_id=self.credentials.username),
             body=body)
 
     def get_waiting_messages(self):

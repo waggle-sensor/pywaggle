@@ -306,7 +306,7 @@ class Decoder:
 
 
 TYPE_BYTES = 0
-TYPE_STR = 1
+TYPE_STRING = 1
 
 TYPE_NULL = 2
 TYPE_FALSE = 3
@@ -337,7 +337,7 @@ def pack_typed_value(value):
         return TYPE_BYTES, value
 
     if isinstance(value, str):
-        return TYPE_STR, value.encode()
+        return TYPE_STRING, value.encode()
 
     if value is None:
         return TYPE_NULL, b''
@@ -440,7 +440,7 @@ def unpack_list_of_float32(x):
 
 unpack_type_table = {
     TYPE_BYTES: lambda x: x,
-    TYPE_STR: bytes.decode,
+    TYPE_STRING: bytes.decode,
     TYPE_NULL: lambda x: None,
     TYPE_FALSE: lambda x: False,
     TYPE_TRUE: lambda x: True,
