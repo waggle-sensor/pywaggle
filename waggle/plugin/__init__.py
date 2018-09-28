@@ -113,15 +113,15 @@ def get_plain_connection_parameters(c):
         password=c.password)
 
     return pika.ConnectionParameters(
-        host=c.host,
-        port=c.port,
+        host=c.host or 'localhost',
+        port=c.port or 5672,
         credentials=credentials)
 
 
 def get_ssl_connection_parameters(c):
     return pika.ConnectionParameters(
-        host=c.host,
-        port=c.port,
+        host=c.host or 'localhost',
+        port=c.port or 23181,
         credentials=pika.credentials.ExternalCredentials(),
         ssl=True,
         ssl_options={
@@ -144,8 +144,8 @@ class Credentials:
         self.node_id = format_device_id(kwargs.get('node_id') or '0')
         self.sub_id = format_device_id(kwargs.get('sub_id') or '0')
 
-        self.host = kwargs.get('host') or 'localhost'
-        self.port = kwargs.get('port') or 23181
+        self.host = kwargs.get('host')
+        self.port = kwargs.get('port')
 
         # TODO Main use of derived use case is getting username from cert
         # Could later just directly extract from cert.
