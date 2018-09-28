@@ -86,6 +86,8 @@ def load_package_plugin_credentials():
         cacertfile=section.get('cacertfile'),
         certfile=section.get('certfile'),
         keyfile=section.get('keyfile'),
+        node_id=section.get('node_id'),
+        sub_id=section.get('sub_id'),
     )
 
 
@@ -141,8 +143,8 @@ class Credentials:
     def __init__(self, **kwargs):
         # we'll leave these out for now. in all cases, our system will validate
         # them.
-        self.node_id = format_device_id(kwargs.get('node_id') or '0')
-        self.sub_id = format_device_id(kwargs.get('sub_id') or '0')
+        self.node_id = format_device_id(kwargs.get('node_id') or '')
+        self.sub_id = format_device_id(kwargs.get('sub_id') or '')
 
         self.host = kwargs.get('host')
         self.port = kwargs.get('port')
@@ -171,10 +173,6 @@ class Plugin:
         self.plugin_id = plugin_config['id']
         self.plugin_version = parse_version_string(plugin_config['version'])
         self.plugin_instance = plugin_config['instance']
-
-        print('plugin_id', self.plugin_id)
-        print('plugin_version', self.plugin_version)
-        print('plugin_instance', self.plugin_instance)
 
         self.credentials = kwargs.get('credentials')
 
