@@ -5,6 +5,10 @@ from binascii import crc_hqx
 from binascii import crc32
 import random
 import struct
+import logging
+
+
+logger = logging.getLogger('waggle.protocol')
 
 
 RUN_ID = random.randint(0, 0xffff - 1)
@@ -53,12 +57,14 @@ class Encoder:
         self.writer = writer
 
     def encode_bytes(self, value):
+        logger.debug('encode_bytes %s', value)
         length = self.writer.write(value)
 
         if length != len(value):
             raise IOError('Failed to encode bytes.')
 
     def encode_int(self, length, value):
+        logger.debug('encode_int %s %s', length, value)
         self.encode_bytes(value.to_bytes(length, 'big'))
 
     def encode_sensorgram(self, value):
