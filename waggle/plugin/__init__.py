@@ -171,9 +171,10 @@ class Plugin:
         self.logger = logging.getLogger('pipeline.Plugin')
 
         plugin_config = load_plugin_config(**kwargs)
-        self.plugin_id = plugin_config['id']
+
+        self.plugin_id = int(plugin_config['id'])
         self.plugin_version = parse_version_string(plugin_config['version'])
-        self.plugin_instance = plugin_config['instance']
+        self.plugin_instance = int(plugin_config['instance'])
 
         self.credentials = kwargs.get('credentials')
 
