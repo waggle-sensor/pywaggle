@@ -57,14 +57,14 @@ class Encoder:
         self.writer = writer
 
     def encode_bytes(self, value):
-        logger.debug('encode_bytes %s', value)
+        logger.debug('encode_bytes %r', value)
         length = self.writer.write(value)
 
         if length != len(value):
             raise IOError('Failed to encode bytes.')
 
     def encode_int(self, length, value):
-        logger.debug('encode_int %s %s', length, value)
+        logger.debug('encode_int %r %r', length, value)
         self.encode_bytes(value.to_bytes(length, 'big'))
 
     def encode_sensorgram(self, value):
