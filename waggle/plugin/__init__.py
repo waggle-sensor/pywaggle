@@ -144,8 +144,8 @@ class Credentials:
     def __init__(self, **kwargs):
         # we'll leave these out for now. in all cases, our system will validate
         # them.
-        self.node_id = format_device_id(kwargs.get('node_id') or '')
-        self.sub_id = format_device_id(kwargs.get('sub_id') or '')
+        self.node_id = format_device_id(kwargs.get('node_id') or '0000000000000000')
+        self.sub_id = format_device_id(kwargs.get('sub_id') or '0000000000000000')
 
         self.host = kwargs.get('host')
         self.port = kwargs.get('port')
@@ -222,8 +222,8 @@ class Plugin:
 
     def publish_measurements(self):
         message = waggle.protocol.pack_message({
-            # 'sender_id': self.credentials.node_id,
-            # 'sender_sub_id': self.credentials.sub_id,
+            'sender_id': self.credentials.node_id,
+            'sender_sub_id': self.credentials.sub_id,
             'body': waggle.protocol.pack_datagram({
                 'plugin_id': self.plugin_id,
                 'plugin_major_version': self.plugin_version[0],
