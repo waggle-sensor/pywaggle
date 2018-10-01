@@ -99,7 +99,7 @@ def load_plugin_config(**kwargs):
         'instance': 0,
     }
 
-    plugin_config.update(load_package_configs('plugin.ver', 'plugin.instance')['plugin'])
+    plugin_config.update(load_package_plugin_config())
     plugin_config.update(kwargs)
     return plugin_config
 
