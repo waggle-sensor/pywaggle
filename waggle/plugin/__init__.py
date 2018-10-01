@@ -54,7 +54,8 @@ def load_package_configs(*filenames):
 
 def parse_version_string(s):
     if isinstance(s, tuple):
-        return s
+        assert len(s) == 3
+        return tuple(int(x) for x in s)
     return tuple(int(x) for x in s.split('.', 2))
 
 
@@ -83,9 +84,9 @@ def load_package_plugin_credentials():
         port=section.getint('port'),
         username=section.get('username'),
         password=section.get('password'),
-        cacertfile=section.get('cacertfile'),
-        certfile=section.get('certfile'),
-        keyfile=section.get('keyfile'),
+        cacertfile=section.get('cacert'),
+        certfile=section.get('cert'),
+        keyfile=section.get('key'),
         node_id=section.get('node_id'),
         sub_id=section.get('sub_id'),
     )
@@ -221,8 +222,8 @@ class Plugin:
 
     def publish_measurements(self):
         message = waggle.protocol.pack_message({
-            'sender_id': self.credentials.node_id,
-            'sender_sub_id': self.credentials.sub_id,
+            # 'sender_id': self.credentials.node_id,
+            # 'sender_sub_id': self.credentials.sub_id,
             'body': waggle.protocol.pack_datagram({
                 'plugin_id': self.plugin_id,
                 'plugin_major_version': self.plugin_version[0],
