@@ -250,7 +250,7 @@ class PrintPlugin:
 
     def __init__(self, id, version, instance=0, credentials=None):
         self.plugin_id = id
-        self.plugin_version = version
+        self.plugin_version = parse_version_string(version)
         self.plugin_instance = instance
         self.measurements = []
         self.process_callback = default_test_callback
@@ -301,10 +301,7 @@ class PrintPlugin:
 
 
 def default_test_callback(message, sensorgrams):
-    print('message:')
-    print(message)
-
-    print('measurements:')
+    print('published measurements:')
 
     for sensorgram in sensorgrams:
         print(sensorgram)
