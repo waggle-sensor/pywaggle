@@ -162,20 +162,23 @@ class Credentials:
         self.keyfile = kwargs.get('key')
 
 
-class Plugin:
+class PluginBase:
+
+    def load_config(self, **kwargs):
+        plugin_config = load_plugin_config(**kwargs)
+        self.plugin_id = int(plugin_config['id'])
+        self.plugin_version = parse_version_string(plugin_config['version'])
+        self.plugin_instance = int(plugin_config['instance'])
+
+
+class Plugin(PluginBase):
     """
     Implements the plugin interface using a local RabbitMQ broker for the messaging layer.
     """
 
     def __init__(self, **kwargs):
         self.logger = logging.getLogger('pipeline.Plugin')
-
-        plugin_config = load_plugin_config(**kwargs)
-
-        self.plugin_id = int(plugin_config['id'])
-        self.plugin_version = parse_version_string(plugin_config['version'])
-        self.plugin_instance = int(plugin_config['instance'])
-
+        self.load_config(**kwargs)
         self.credentials = kwargs.get('credentials')
 
         if self.credentials is None:
@@ -242,16 +245,14 @@ class Plugin:
         pass
 
 
-class PrintPlugin:
+class PrintPlugin(PluginBase):
     """
     Implements the plugin interface and prints resutls to console. This class
     is intended for development and testing of plugin code.
     """
 
-    def __init__(self, id, version, instance=0, credentials=None):
-        self.plugin_id = id
-        self.plugin_version = parse_version_string(version)
-        self.plugin_instance = instance
+    def __init__(self, **kwargs):
+        self.load_config(**kwargs)
         self.measurements = []
         self.process_callback = default_test_callback
 
