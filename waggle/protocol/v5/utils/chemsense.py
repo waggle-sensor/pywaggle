@@ -90,7 +90,7 @@ def chemical_sensor(ky, IpA, mid_dict):
 
     return [
         (IpA, 'raw'),
-        # (round(converted, 6), 'ppm'),
+        (round(converted, 6), 'ppm'),
     ]
 
 
