@@ -370,7 +370,10 @@ def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.s
                 results = handler(sensorgram)
 
                 for r in results:
-                    del r['type']
+                    try:
+                        del r['type']
+                    except KeyError:
+                        continue
 
                 datagram['body'] = waggle.protocol.pack_sensorgrams(results)
                 message['body'] = waggle.protocol.pack_datagram(datagram)
