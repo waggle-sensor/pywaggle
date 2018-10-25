@@ -523,10 +523,12 @@ def make_unpack_function(func):
 pack_sensorgrams = make_pack_function(Encoder.encode_sensorgram)
 pack_datagrams = make_pack_function(Encoder.encode_datagram)
 pack_waggle_packets = make_pack_function(Encoder.encode_waggle_packet)
+pack_messages = pack_waggle_packets
 
 unpack_sensorgrams = make_unpack_function(Decoder.decode_sensorgram)
 unpack_datagrams = make_unpack_function(Decoder.decode_datagram)
 unpack_waggle_packets = make_unpack_function(Decoder.decode_waggle_packet)
+unpack_messages = unpack_waggle_packets
 
 
 def pack_message(message):

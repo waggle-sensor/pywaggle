@@ -364,10 +364,7 @@ def pack_measurement(sensorgram):
 
 
 def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.stdout.buffer):
-    decoder = waggle.protocol.Decoder(reader)
-
-    while True:
-        message = decoder.decode_waggle_packet()
+    for message in waggle.protocol.unpack_messages(reader.read()):
         for datagram in waggle.protocol.unpack_datagrams(message['body']):
             for sensorgram in waggle.protocol.unpack_sensorgrams(datagram['body']):
                 results = handler(sensorgram)
