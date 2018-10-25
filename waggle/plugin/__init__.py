@@ -37,6 +37,7 @@ import sys
 import pika
 import pika.credentials
 import ssl
+import sys
 import waggle.protocol
 
 
@@ -301,6 +302,52 @@ class PrintPlugin(PluginBase):
         pass
 
 
+class PipePlugin(PluginBase):
+
+    def __init__(self, **kwargs):
+        self.load_config(**kwargs)
+        self.measurements = []
+        self.process_callback = default_test_callback
+
+    def publish(self, body):
+        sys.stdout.buffer.write(body)
+        sys.stdout.buffer.flush()
+
+    def get_waiting_messages(self):
+        return
+
+    def add_measurement(self, sensorgram):
+        self.measurements.append(pack_measurement(sensorgram))
+
+    def clear_measurements(self):
+        """Clear measurement queue without publishing."""
+        self.measurements.clear()
+
+    def publish_measurements(self):
+        """Publish and clear the measurement queue."""
+        self.publish(waggle.protocol.pack_message({
+            'body': waggle.protocol.pack_datagram({
+                'plugin_id': self.plugin_id,
+                'plugin_major_version': self.plugin_version[0],
+                'plugin_minor_version': self.plugin_version[1],
+                'plugin_patch_version': self.plugin_version[2],
+                'plugin_instance': self.plugin_instance,
+                'body': b''.join(self.measurements)
+            })
+        }))
+
+        self.clear_measurements()
+
+    def publish_heartbeat(self):
+        pass
+
+    def process_measurements(self, process_callback):
+        self.process_callback = process_callback
+
+    def start_processing(self):
+        pass
+
+
 def default_test_callback(message, sensorgrams):
     print('published measurements:')
 
@@ -314,6 +361,24 @@ def pack_measurement(sensorgram):
     if isinstance(sensorgram, dict):
         return waggle.protocol.pack_sensorgram(sensorgram)
     raise ValueError('Sensorgram must be bytes or dict.')
+
+
+def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.stdout.buffer):
+    decoder = waggle.protocol.Decoder(reader)
+
+    while True:
+        message = decoder.decode_waggle_packet()
+        for datagram in waggle.protocol.unpack_datagrams(message['body']):
+            for sensorgram in waggle.protocol.unpack_sensorgrams(datagram['body']):
+                results = handler(sensorgram)
+
+                for r in results:
+                    del r['type']
+
+                datagram['body'] = waggle.protocol.pack_sensorgrams(results)
+                message['body'] = waggle.protocol.pack_datagram(datagram)
+                output = waggle.protocol.pack_message(message)
+                writer.write(output)
 
 
 if __name__ == '__main__':
