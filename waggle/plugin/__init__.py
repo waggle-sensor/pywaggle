@@ -30,6 +30,7 @@ plugin.publish_measurements()
 ```
 
 """
+import json
 import configparser
 import logging
 import os
@@ -37,7 +38,6 @@ import sys
 import pika
 import pika.credentials
 import ssl
-import sys
 import waggle.protocol
 
 
@@ -363,22 +363,25 @@ def pack_measurement(sensorgram):
     raise ValueError('Sensorgram must be bytes or dict.')
 
 
-def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.stdout.buffer):
-    for message in waggle.protocol.unpack_messages(reader.read()):
+def measurements_in_message_data(message_data):
+    for message in waggle.protocol.unpack_messages(message_data):
         for datagram in waggle.protocol.unpack_datagrams(message['body']):
             for sensorgram in waggle.protocol.unpack_sensorgrams(datagram['body']):
-                results = handler(sensorgram)
+                yield message, datagram, sensorgram
 
-                for r in results:
-                    try:
-                        del r['type']
-                    except KeyError:
-                        continue
 
-                datagram['body'] = waggle.protocol.pack_sensorgrams(results)
-                message['body'] = waggle.protocol.pack_datagram(datagram)
-                output = waggle.protocol.pack_message(message)
-                writer.write(output)
+def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.stdout):
+    results = []
+
+    for message, datagram, sensorgram in measurements_in_message_data(reader.read()):
+        rows = handler(message, datagram, sensorgram)
+
+        for r in rows:
+            r['timestamp'] = sensorgram['timestamp']
+
+        results.extend(rows)
+
+    json.dump(results, writer, separators=(',', ':'))
 
 
 if __name__ == '__main__':
