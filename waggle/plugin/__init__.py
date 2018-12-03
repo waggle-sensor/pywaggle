@@ -95,13 +95,17 @@ def load_package_plugin_credentials():
 
 def load_plugin_config(**kwargs):
     plugin_config = {
-        'id': 0,
-        'version': (0, 0, 0),
         'instance': 0,
     }
 
-    plugin_config.update(load_package_plugin_config())
+    # attempt to load plugin config files
+    try:
+        plugin_config.update(load_package_plugin_config())
+    except KeyError:
+        pass
+
     plugin_config.update(kwargs)
+
     return plugin_config
 
 
@@ -374,12 +378,9 @@ def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.s
     results = []
 
     for message, datagram, sensorgram in measurements_in_message_data(reader.read()):
-        rows = handler(message, datagram, sensorgram)
-
-        for r in rows:
+        for r in handler(message, datagram, sensorgram):
             r['timestamp'] = sensorgram['timestamp']
-
-        results.extend(rows)
+            results.append(r)
 
     json.dump(results, writer, separators=(',', ':'))
 
