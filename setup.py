@@ -28,4 +28,5 @@ setup(
         'waggle.protocol.v5.res',
         'waggle.coresense',
     ],
+    include_package_data=True,
 )
