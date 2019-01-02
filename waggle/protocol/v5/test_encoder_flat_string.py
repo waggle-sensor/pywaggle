@@ -1,6 +1,9 @@
+import logging
 import unittest
 from waggle.protocol.v5.decoder import decode_frame
 from waggle.protocol.v5.encoder import encode_frame_from_flat_string
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 def flatten_sensor_values(sensor_values):
@@ -57,7 +60,8 @@ class WaggleProtocolTestUnit(unittest.TestCase):
         self.assertAlmostEqual(values['net_broadband_tx'], 654321)
 
         self.assertEqual(values['wagman_ver_git'], '1ef3')
-        self.assertEqual(values['nc_boot_id'], '12345678901234567890123456789012')
+        self.assertEqual(values['nc_boot_id'],
+                         '12345678901234567890123456789012')
 
 
 if __name__ == '__main__':

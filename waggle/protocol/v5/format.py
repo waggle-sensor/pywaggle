@@ -14,9 +14,11 @@ Format Reference
 - float_3: fixed point (-31.999, 31.999)
 
 '''
-
+import logging
 from math import ceil
 from bitstring import BitArray
+
+logger = logging.getLogger('waggle.protocol.v5.format')
 
 
 def pack_unsigned_int(value, length):
@@ -42,7 +44,8 @@ def pack_float(value, length):
 
 
 def unpack_float(buffer, offset, length):
-    value = BitArray(bytes=buffer, length=to_bit(length), offset=to_bit(offset))
+    value = BitArray(bytes=buffer, length=to_bit(
+        length), offset=to_bit(offset))
     return value.float
 
 
@@ -88,7 +91,8 @@ def pack_float_format8(value, length=2.0):
     intpart = int(absvalue)
     fracpart = int(1000 * round(absvalue - intpart, 3))
 
-    packed = (((intpart & 0b00011111) << 2) | ((fracpart >> 8) & 0b00000011)) << 8
+    packed = (((intpart & 0b00011111) << 2) | (
+        (fracpart >> 8) & 0b00000011)) << 8
     packed |= fracpart & 0xFF
 
     if value < 0:
@@ -189,9 +193,12 @@ def waggle_unpack_from(format, length, buffer):
 # =================================================
 # Waggle protocol v 0.5
 # =================================================
+
+
 def waggle_pack(format, length, values):
     assert len(format) == len(values)
     assert len(format) == len(length)
+    logger.debug('pack %s %s %s', format, length, values)
 
     packed_values_in_bit = ''.join(waggle_pack_into(format, length, values))
     return BitArray(bin=packed_values_in_bit).tobytes()
