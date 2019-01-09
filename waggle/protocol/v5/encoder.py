@@ -121,8 +121,11 @@ def encode_frame_from_flat_string(frame_data, verbose=False):
 
     keys = []
     values = []
-    list_of_inputs = frame_data.split('\n')
+    list_of_inputs = frame_data.splitlines()
     for line in list_of_inputs:
+        if not line.strip():
+            continue
+
         key, value = get_key_value(line)
         if key is not None and value is not None:
             keys.append(key)

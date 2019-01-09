@@ -11,26 +11,23 @@ class WaggleProtocolTestUnit(unittest.TestCase):
     def test_encode(self):
         data = {
             0x50: ['010203040506'],
-            # 0x71: ['73c02022aeab4e7fb5ac6be2b0d7d771'],
-            # 0x1D: [100, 30],
+            0x71: ['73c02022aeab4e7fb5ac6be2b0d7d771'],
             0x5A: [123, 234, 345, 456, 567, 678],
             0x07: [123, 234, 345],
-            0x7C: [False, True, False, True],
-            0x78: ['%15s' % ('abcde',)]
         }
 
         encoded_data = encode_frame(data)
+        self.assertIsInstance(encoded_data, bytes)
+
         decoded_data = decode_frame(encoded_data)
 
-        for sensor in data:
-            # self.assertIn(decoded_data, sensor)
-            decoded_values = decoded_data.get(sensor)
-
-            self.assertNotEqual(decoded_values, None)
+        for sensor_id in data.keys():
+            self.assertIn(sensor_id, decoded_data)
+            decoded_values = decoded_data[sensor_id]
             self.assertIsInstance(decoded_values, dict)
             decoded_values = list(decoded_values.values())
-            original_values = data[sensor]
-            self.assertEqual(len(decoded_values), len(original_values))
+            original_values = data[sensor_id]
+            self.assertEqual(decoded_values, original_values)
 
 
 if __name__ == '__main__':

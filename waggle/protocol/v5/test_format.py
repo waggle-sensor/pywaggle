@@ -254,6 +254,23 @@ class WaggleFormatTest(unittest.TestCase):
             self.assertEqual(len(values), len(unpacked))
             self.assertAlmostEqual(values[0], unpacked[0], places=8)
 
+    def test_string(self):
+        examples = [
+            '',
+            'hello',
+            'testing',
+            'x' * 100,
+        ]
+
+        for example in examples:
+            formats = ['str']
+            lengths = [len(example)]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
     def test_hex(self):
         examples = [
             '',

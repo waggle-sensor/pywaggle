@@ -3,8 +3,6 @@ import unittest
 from waggle.protocol.v5.decoder import decode_frame
 from waggle.protocol.v5.encoder import encode_frame_from_flat_string
 
-logging.basicConfig(level=logging.DEBUG)
-
 
 def flatten_sensor_values(sensor_values):
     flattened_values = {}
@@ -47,6 +45,8 @@ class WaggleProtocolTestUnit(unittest.TestCase):
         '''
 
         encoded_data = encode_frame_from_flat_string(text, verbose=True)
+        self.assertIsInstance(encoded_data, bytes)
+
         decoded_data = decode_frame(encoded_data)
 
         values = flatten_sensor_values(decoded_data)
