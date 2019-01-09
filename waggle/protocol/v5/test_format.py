@@ -1,46 +1,276 @@
 import unittest
+import format
 
-from waggle.protocol.v5 import format
-from bitstring import BitArray
 
 class WaggleFormatTest(unittest.TestCase):
 
-    # Test unsinged int up to 2^32
-    def test_unsigned_int(self):
-        for x in range(0, 32):
-            value = pow(2, x)
-            length = float(x + 1) / 8
-            packed_bit = format.pack_unsigned_int(value, length)
-            packed_byte = BitArray(bin=packed_bit).tobytes() 
-            unpacked = format.unpack_unsigned_int(packed_byte, 0, length)
-            
-            self.assertEqual(value, unpacked)
+    def test_uint8(self):
+        examples = [
+            0,
+            1,
+            2,
+            3,
+            5,
+            7,
+            11,
+            2**8-1,
+        ]
 
-    def test_signed_int(self):
-        # For negetives
-        for x in range(0, 32):
-            value = -pow(2, x)
-            length = float(x + 1) / 8
-            packed_bit = format.pack_signed_int(value, length)
-            packed_byte = BitArray(bin=packed_bit).tobytes()
-            unpacked = format.unpack_signed_int(packed_byte, 0, length)
-            
-            self.assertEqual(value, unpacked)
-        
-        # For positives
-        for x in range(0, 32):
-            value = pow(2, x) - 1
-            length = float(x + 1) / 8
-            packed_bit = format.pack_signed_int(value, length)
-            packed_byte = BitArray(bin=packed_bit).tobytes()
-            unpacked = format.unpack_signed_int(packed_byte, 0, length)
-            
-            self.assertEqual(value, unpacked)
+        for example in examples:
+            formats = ['uint']
+            lengths = [1]
+            values = [example]
 
-    def test_float(self):
-        for value in [-1234.56789, 1234.56789]:
-            pass
-            
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+    def test_uint16(self):
+        examples = [
+            0,
+            1,
+            2,
+            3,
+            5,
+            7,
+            11,
+            2**8-1,
+            2**16-1,
+        ]
+
+        for example in examples:
+            formats = ['uint']
+            lengths = [2]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+    def test_uint24(self):
+        examples = [
+            0,
+            1,
+            2,
+            3,
+            5,
+            7,
+            11,
+            2**8-1,
+            2**16-1,
+            2**24-1,
+        ]
+
+        for example in examples:
+            formats = ['uint']
+            lengths = [3]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+    def test_uint32(self):
+        examples = [
+            0,
+            1,
+            2,
+            3,
+            5,
+            7,
+            11,
+            2**8-1,
+            2**16-1,
+            2**24-1,
+            2**32-1,
+        ]
+
+        for example in examples:
+            formats = ['uint']
+            lengths = [4]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+    def test_int8(self):
+        examples = [
+            0,
+            1,
+            2,
+            3,
+            5,
+            7,
+            11,
+            2**7-1,
+        ]
+
+        for example in examples:
+            formats = ['int']
+            lengths = [1]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+            formats = ['int']
+            lengths = [1]
+            values = [-example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+    def test_int16(self):
+        examples = [
+            0,
+            1,
+            2,
+            3,
+            5,
+            7,
+            11,
+            2**7-1,
+            2**15-1,
+        ]
+
+        for example in examples:
+            formats = ['int']
+            lengths = [2]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+            formats = ['int']
+            lengths = [2]
+            values = [-example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+    def test_int24(self):
+        examples = [
+            0,
+            1,
+            2,
+            3,
+            5,
+            7,
+            11,
+            2**7-1,
+            2**15-1,
+            2**23-1,
+        ]
+
+        for example in examples:
+            formats = ['int']
+            lengths = [3]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+            formats = ['int']
+            lengths = [3]
+            values = [-example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+    def test_int32(self):
+        examples = [
+            0,
+            1,
+            2,
+            3,
+            5,
+            7,
+            11,
+            2**7-1,
+            2**15-1,
+            2**23-1,
+            2**31-1,
+        ]
+
+        for example in examples:
+            formats = ['int']
+            lengths = [4]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+            formats = ['int']
+            lengths = [4]
+            values = [-example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
+    def test_float32(self):
+        examples = [
+            0.0,
+            1.0,
+            -1.0,
+            -1234.56789,
+            1234.56789,
+        ]
+
+        for example in examples:
+            formats = ['float']
+            lengths = [4]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertEqual(len(values), len(unpacked))
+            self.assertAlmostEqual(values[0], unpacked[0], places=4)
+
+    def test_float64(self):
+        examples = [
+            0.0,
+            1.0,
+            -1.0,
+            -1234.56789,
+            1234.56789,
+        ]
+
+        for example in examples:
+            formats = ['float']
+            lengths = [8]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertEqual(len(values), len(unpacked))
+            self.assertAlmostEqual(values[0], unpacked[0], places=6)
+
+    def test_hex(self):
+        examples = [
+            '',
+            '12',
+            'aa55aa55',
+            '123456',
+        ]
+
+        for example in examples:
+            formats = ['hex']
+            lengths = [len(example) // 2]
+            values = [example]
+
+            packed = format.waggle_pack(formats, lengths, values)
+            unpacked = format.waggle_unpack(formats, lengths, packed)
+            self.assertListEqual(values, unpacked)
+
 
 if __name__ == '__main__':
     unittest.main()

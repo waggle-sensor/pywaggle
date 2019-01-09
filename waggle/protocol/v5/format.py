@@ -40,7 +40,7 @@ def unpack_signed_int(buffer, offset, length):
 def pack_float(value, length):
     assert int(length) == 4 or int(length) == 8
     assert isinstance(value, float)
-    return BitArray(float=value, length=to_bit(length)).bin
+    return BitArray(float=value, length=to_bit(length)).bytes
 
 
 def unpack_float(buffer, offset, length):
@@ -71,7 +71,7 @@ def pack_float_format6(value, length=2.0):
     if value < 0:
         packed |= 0x8000
 
-    return BitArray(uint=packed, length=to_bit(length)).bin
+    return BitArray(uint=packed, length=to_bit(length)).bytes
 
 
 def unpack_float_format6(buffer, offset, length=2.0):
@@ -97,7 +97,7 @@ def pack_float_format8(value, length=2.0):
 
     if value < 0:
         packed |= 0x80
-    return BitArray(uint=packed, length=to_bit(length)).bin
+    return BitArray(uint=packed, length=to_bit(length)).bytes
 
 
 def unpack_float_format8(buffer, offset, length=2.0):
@@ -114,7 +114,7 @@ def pack_string(value, length):
         value = value.encode()
     value = BitArray(value)
     assert value.length == to_bit(length)
-    return value.bin
+    return value.bytes
 
 
 def unpack_string(buffer, offset, length):
@@ -126,7 +126,7 @@ def unpack_string(buffer, offset, length):
 def pack_byte(value, length):
     value = BitArray(value)
     assert value.length == to_bit(length)
-    return value.bin
+    return value.bytes
 
 
 def unpack_byte(buffer, offset, length):
@@ -174,6 +174,8 @@ def to_bit(value):
 
 
 def waggle_pack_into(format, length, values):
+    logger.debug('pack_into %s %s %s', format, length, values)
+
     for f, l, v in zip(format, length, values):
         yield formatpack[f](v, l)
 
@@ -199,10 +201,8 @@ def waggle_pack(format, length, values):
     assert len(format) == len(values)
     assert len(format) == len(length)
     logger.debug('pack %s %s %s', format, length, values)
-
-    packed_values_in_bit = ''.join(waggle_pack_into(format, length, values))
-    return BitArray(bin=packed_values_in_bit).tobytes()
+    return b''.join(waggle_pack_into(format, length, values))
 
 
 def waggle_unpack(format, length, buffer):
-    return waggle_unpack_from(format, length, buffer)
+    return list(waggle_unpack_from(format, length, buffer))
