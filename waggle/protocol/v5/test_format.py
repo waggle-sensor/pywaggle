@@ -252,7 +252,7 @@ class WaggleFormatTest(unittest.TestCase):
             packed = format.waggle_pack(formats, lengths, values)
             unpacked = format.waggle_unpack(formats, lengths, packed)
             self.assertEqual(len(values), len(unpacked))
-            self.assertAlmostEqual(values[0], unpacked[0], places=6)
+            self.assertAlmostEqual(values[0], unpacked[0], places=8)
 
     def test_hex(self):
         examples = [
