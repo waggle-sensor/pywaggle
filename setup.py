@@ -2,11 +2,11 @@ from distutils.core import setup
 
 setup(
     name='waggle',
-    version='0.25.0',
+    version='0.26.0',
     description='Python Waggle Module',
     url='https://github.com/waggle-sensor/pywaggle',
     install_requires=[
-        'pika',
+        'pika>=1.0.0',
         'crcmod',
         'requests',
         'pyserial',

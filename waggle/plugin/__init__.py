@@ -128,17 +128,25 @@ def get_plain_connection_parameters(c):
 
 
 def get_ssl_connection_parameters(c):
+    host = c.host or 'localhost'
+    port = c.port or 23181
+
+    context = ssl.create_default_context(
+        cafile=os.path.abspath(c.cacertfile))
+
+    context.load_cert_chain(
+        os.path.abspath(c.certfile),
+        os.path.abspath(c.keyfile))
+    
+    context.check_hostname = False
+    
+    ssl_options = pika.SSLOptions(context, host)
+
     return pika.ConnectionParameters(
-        host=c.host or 'localhost',
-        port=c.port or 23181,
+        host=host,
+        port=port,
         credentials=pika.credentials.ExternalCredentials(),
-        ssl=True,
-        ssl_options={
-            'ca_certs': os.path.abspath(c.cacertfile),
-            'keyfile': os.path.abspath(c.keyfile),
-            'certfile': os.path.abspath(c.certfile),
-            'cert_reqs': ssl.CERT_REQUIRED,
-        })
+        ssl_options=ssl_options)
 
 
 def format_device_id(s):
