@@ -212,7 +212,7 @@ class Plugin(PluginBase):
         self.channel.queue_declare(queue=self.queue, durable=True)
 
         while True:
-            method, properties, body = self.channel.basic_get(queue=self.queue)
+            method, _, body = self.channel.basic_get(queue=self.queue)
 
             if body is None:
                 break
@@ -245,6 +245,24 @@ class Plugin(PluginBase):
 
         self.publish(message)
         self.clear_measurements()
+
+    def publish_message(self, receiver_id, receiver_sub_id, body):
+        message = waggle.protocol.pack_message({
+            'sender_id': self.credentials.node_id,
+            'sender_sub_id': self.credentials.sub_id,
+            'receiver_id': receiver_id,
+            'receiver_sub_id': receiver_sub_id,
+            'body': waggle.protocol.pack_datagram({
+                'plugin_id': self.plugin_id,
+                'plugin_major_version': self.plugin_version[0],
+                'plugin_minor_version': self.plugin_version[1],
+                'plugin_patch_version': self.plugin_version[2],
+                'plugin_instance': self.plugin_instance,
+                'body': body,
+            })
+        })
+
+        self.publish(message)
 
     def publish_heartbeat(self):
         pass
@@ -380,6 +398,10 @@ def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.s
     for message, datagram, sensorgram in measurements_in_message_data(reader.read()):
         for r in handler(message, datagram, sensorgram):
             r['timestamp'] = sensorgram['timestamp']
+            if isinstance(r['value_raw'], bytes):
+                r['value_raw'] = r['value_raw'].hex()
+            if isinstance(r['value_hrf'], bytes):
+                r['value_hrf'] = r['value_hrf'].hex()
             results.append(r)
 
     json.dump(results, writer, separators=(',', ':'))
