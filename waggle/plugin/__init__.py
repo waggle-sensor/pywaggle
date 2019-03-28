@@ -39,6 +39,7 @@ import pika
 import pika.credentials
 import ssl
 import waggle.protocol
+from base64 import b64encode
 
 
 def load_package_configs(*filenames):
@@ -392,16 +393,24 @@ def measurements_in_message_data(message_data):
                 yield message, datagram, sensorgram
 
 
+def encode_bytes(b):
+    return b64encode(b).decode()
+
+
+def ensure_valid_type(x):
+    if isinstance(x, bytes):
+        return encode_bytes(x)
+    return x
+
+
 def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.stdout):
     results = []
 
     for message, datagram, sensorgram in measurements_in_message_data(reader.read()):
         for r in handler(message, datagram, sensorgram):
             r['timestamp'] = sensorgram['timestamp']
-            if isinstance(r['value_raw'], bytes):
-                r['value_raw'] = r['value_raw'].hex()
-            if isinstance(r['value_hrf'], bytes):
-                r['value_hrf'] = r['value_hrf'].hex()
+            r['value_raw'] = ensure_valid_type(r['value_raw'])
+            r['value_hrf'] = ensure_valid_type(r['value_hrf'])
             results.append(r)
 
     json.dump(results, writer, separators=(',', ':'))
