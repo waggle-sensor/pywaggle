@@ -1,3 +1,7 @@
+# This file is part of the Waggle Platform.  Please see the file
+# LICENSE.waggle.txt for the legal details of the copyright and software
+# license.  For more details on the Waggle project, visit:
+#          http://www.wa8.gl
 '''
 This module contains methods relating to the construction and interpretation of waggle packets. This module provides how to pack and unpack waggle message version 0.4.
 The main functions to examine in this class are pack and unpack. This module handles

@@ -1,3 +1,7 @@
+# This file is part of the Waggle Platform.  Please see the file
+# LICENSE.waggle.txt for the legal details of the copyright and software
+# license.  For more details on the Waggle project, visit:
+#          http://www.wa8.gl
 import waggle.protocol
 
 # We'll do a more involved example, where we pack and unpack a datagram with

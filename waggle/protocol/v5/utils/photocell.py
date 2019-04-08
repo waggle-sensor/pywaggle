@@ -1,3 +1,7 @@
+# This file is part of the Waggle Platform.  Please see the file
+# LICENSE.waggle.txt for the legal details of the copyright and software
+# license.  For more details on the Waggle project, visit:
+#          http://www.wa8.gl
 # Conversion for Photocellpth-kit (PDV-P8103)
 
 # This conversion is only valid/tested in Wagman hw 3.1
