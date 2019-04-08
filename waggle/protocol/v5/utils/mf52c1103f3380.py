@@ -1,7 +1,10 @@
+# ANL:waggle-license
 # This file is part of the Waggle Platform.  Please see the file
 # LICENSE.waggle.txt for the legal details of the copyright and software
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
+# ANL:waggle-license
+#
 # Conversion to temperature in degree Celsius
 
 # Coefficients for MF12 10k 3380 thermistor in -30 C to 110 C

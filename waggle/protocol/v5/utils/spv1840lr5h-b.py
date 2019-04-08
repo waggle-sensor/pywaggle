@@ -1,7 +1,10 @@
+# ANL:waggle-license
 # This file is part of the Waggle Platform.  Please see the file
 # LICENSE.waggle.txt for the legal details of the copyright and software
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
+# ANL:waggle-license
+#
 # Conversion for SPV1840LR5H-B
 
 # V_I = (SPV_TSL_RAW - 1.75) / 453.33 - 1.75   # raw voltage of SPV
