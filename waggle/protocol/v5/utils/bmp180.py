@@ -1,9 +1,16 @@
+# ANL:waggle-license
+# This file is part of the Waggle Platform.  Please see the file
+# LICENSE.waggle.txt for the legal details of the copyright and software
+# license.  For more details on the Waggle project, visit:
+#          http://www.wa8.gl
+# ANL:waggle-license
+#
 # Conversion for BMP180 temperature
-
+#
 # temperature = 
 # int32_t X1 = (ut - (int32_t)_bmp085_coeffs.ac6) * (
 # (int32_t)_bmp085_coeffs.ac5) >> 15;
-
+#
 #   int32_t X2 = ((int32_t)_bmp085_coeffs.mc << 11) / 
 # (X1+(int32_t)_bmp085_coeffs.md);
 #   return X1 + X2;

@@ -1,3 +1,10 @@
+# ANL:waggle-license
+# This file is part of the Waggle Platform.  Please see the file
+# LICENSE.waggle.txt for the legal details of the copyright and software
+# license.  For more details on the Waggle project, visit:
+#          http://www.wa8.gl
+# ANL:waggle-license
+
 # precomputed for 0x8c polynomial
 crc8_table = [
     0x00, 0x5e, 0xbc, 0xe2, 0x61, 0x3f, 0xdd, 0x83,
