@@ -416,7 +416,7 @@ def stringify(x):
         return encode_bytes(x)
     if isinstance(x, list):
         return ','.join(stringify(xi) for xi in x)
-    return x
+    return str(x)
 
 
 def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.stdout):
