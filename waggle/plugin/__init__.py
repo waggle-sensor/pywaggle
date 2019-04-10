@@ -405,9 +405,11 @@ def encode_bytes(b):
     return b64encode(b).decode()
 
 
-def ensure_valid_type(x):
+def stringify(x):
     if isinstance(x, bytes):
         return encode_bytes(x)
+    if isinstance(x, list):
+        return ','.join(stringify(xi) for xi in x)
     return x
 
 
@@ -417,8 +419,8 @@ def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.s
     for message, datagram, sensorgram in measurements_in_message_data(reader.read()):
         for r in handler(message, datagram, sensorgram):
             r['timestamp'] = sensorgram['timestamp']
-            r['value_raw'] = ensure_valid_type(r['value_raw'])
-            r['value_hrf'] = ensure_valid_type(r['value_hrf'])
+            r['value_raw'] = stringify(r['value_raw'])
+            r['value_hrf'] = stringify(r['value_hrf'])
             results.append(r)
 
     json.dump(results, writer, separators=(',', ':'))
