@@ -411,11 +411,13 @@ def encode_bytes(b):
     return b64encode(b).decode()
 
 
-def stringify(x):
+def encode_for_channel(x):
     if isinstance(x, bytes):
         return encode_bytes(x)
     if isinstance(x, list):
-        return ','.join(stringify(xi) for xi in x)
+        return ','.join(encode_for_channel(xi) for xi in x)
+    if isinstance(x, bool):
+        return str(int(x))
     return str(x)
 
 
@@ -425,8 +427,8 @@ def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.s
     for message, datagram, sensorgram in measurements_in_message_data(reader.read()):
         for r in handler(message, datagram, sensorgram):
             r['timestamp'] = sensorgram['timestamp']
-            r['value_raw'] = stringify(r['value_raw'])
-            r['value_hrf'] = stringify(r['value_hrf'])
+            r['value_raw'] = encode_for_channel(r['value_raw'])
+            r['value_hrf'] = encode_for_channel(r['value_hrf'])
             results.append(r)
 
     json.dump(results, writer, separators=(',', ':'))
