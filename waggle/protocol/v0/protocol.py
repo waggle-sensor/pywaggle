@@ -386,6 +386,12 @@ def pack_typed_values(value):
     if not isinstance(value, tuple):
         value = (value,)
 
+    # ensure "expanding" values are the last argument
+    for v in value[:-1]:
+        if isinstance(v, (bytes, bytearray, str, list)):
+            raise TypeError(
+                'Value {} of type {} must be last argument'.format(v, type(v)))
+
     chunks = []
 
     for v in value:
