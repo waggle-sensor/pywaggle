@@ -150,8 +150,6 @@ class Encoder:
         self.uint(2, crc16(header))
         self.uint(4, p.get('token') or 0)
         self.bytes(body)
-        bodycrc = crc32(body)
-        print('bodycrc', bodycrc)
         self.uint(4, crc32(body))
         return self
 
@@ -265,7 +263,7 @@ class Decoder:
 
     def packet(self):
         r, bodysize = self.packet_header()
-        r['token'] = self.uint(2)
+        r['token'] = self.uint(4)
 
         crcCalc = crc32(self.buf[:bodysize])
 
