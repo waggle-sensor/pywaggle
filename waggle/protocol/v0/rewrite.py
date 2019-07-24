@@ -68,12 +68,26 @@ class Encoder:
 
     def bytes(self, b):
         self.blocks.append(b)
+        return self
 
     def uint(self, size, x):
         self.bytes(x.to_bytes(size, 'big'))
+        return self
 
     def int(self, size, x):
         self.bytes(x.to_bytes(size, 'big', signed=True))
+        return self
+
+    def tuple2(self, t):
+        self.uint(1, t[0])
+        self.uint(1, t[1])
+        return self
+
+    def tuple3(self, t):
+        self.uint(1, t[0])
+        self.uint(1, t[1])
+        self.uint(1, t[2])
+        return self
 
     def sensorgram(self, sg):
         body = sg['value']
@@ -85,6 +99,7 @@ class Encoder:
         self.uint(2, sg.get('sourceid', 0))
         self.uint(1, sg.get('sourceinst', 0))
         self.bytes(body)
+        return self
 
     def datagram(self, dg):
         body = dg['body']
@@ -95,41 +110,47 @@ class Encoder:
         self.uint(2, dg.get('packet_seq') or 0)
         self.uint(1, dg.get('packet_type') or 0)
         self.uint(2, dg['plugin_id'])
-        self.uint(1, dg['plugin_version'][0])
-        self.uint(1, dg['plugin_version'][1])
-        self.uint(1, dg['plugin_version'][2])
+        self.tuple3(dg['plugin_version'])
         self.uint(1, dg.get('plugin_instance') or 0)
         self.uint(2, dg.get('plugin_run_id') or 0)
         self.bytes(body)
         self.uint(1, calccrc8(body))
         self.bytes(DATAGRAM_FOOTER)
+        return self
+
+    def ident(self, b):
+        if len(b) != 8:
+            raise ValueError(b)
+        return self.bytes(b)
+
+    def packet_header(self, p):
+        self.tuple3(p.get('protocol_version') or (0, 0, 0))
+        self.uint(1, p.get('message_priority') or 0)
+        self.uint(4, p.get('body_length') or 0)
+        self.uint(4, p.get('timestamp') or nows())
+        self.tuple2(p.get('message_type') or (0, 0))
+        self.uint(2, p.get('reserved') or 0)
+        self.ident(p.get('sender_id') or b'00000000')
+        self.ident(p.get('sender_sub_id') or b'00000000')
+        self.ident(p.get('receiver_id') or b'00000000')
+        self.ident(p.get('receiver_sub_id') or b'00000000')
+        self.uint(3, p.get('sender_seq') or 0)
+        self.uint(2, p.get('sender_sid') or 0)
+        self.uint(3, p.get('response_seq') or 0)
+        self.uint(2, p.get('response_sid') or 0)
+        return self
 
     def packet(self, p):
-        e = Encoder()
-        e.uint(1, p.get('protocol_major_version') or 0),
-        e.uint(1, p.get('protocol_minor_version') or 0),
-        e.uint(1, p.get('protocol_patch_version') or 0),
-        e.uint(1, p.get('message_priority') or 0),
-        e.uint(4, p.get('body_length') or 0),
-        e.uint(4, p.get('timestamp') or nows()),
-        e.uint(1, p.get('message_major_type') or 0),
-        e.uint(1, p.get('message_minor_type') or 0),
-        e.uint(2, p.get('reserved') or 0),
-        e.bytes(p.get('sender_id') or b'0000000000000000'),
-        e.bytes(p.get('sender_sub_id') or b'0000000000000000'),
-        e.bytes(p.get('receiver_id') or b'0000000000000000'),
-        e.bytes(p.get('receiver_sub_id') or b'0000000000000000'),
-        e.uint(3, p.get('sender_seq') or 0),
-        e.uint(2, p.get('sender_sid') or 0),
-        e.uint(3, p.get('response_seq') or 0),
-        e.uint(2, p.get('response_sid') or 0),
-        header = e.encoded_bytes()
-
+        header = Encoder().packet_header(p).encoded_bytes()
+        body = p['body']
         self.bytes(header)
         self.uint(2, crc16(header))
         self.uint(4, p.get('token') or 0)
-        self.bytes(p['body'])
-        self.uint(4, crc32(p['body']))
+        self.bytes(body)
+        bodycrc = crc32(body)
+        print(bodycrc)
+        self.uint(4, crc32(body))
+        return self
 
 
 class Decoder:
@@ -148,6 +169,9 @@ class Decoder:
 
     def uint(self, size):
         return int.from_bytes(self.bytes(size), 'big')
+
+    def int(self, size):
+        return int.from_bytes(self.bytes(size), 'big', signed=True)
 
     def tuple2(self):
         t0 = self.uint(1)
@@ -172,10 +196,6 @@ class Decoder:
             'sourceinst': self.uint(1),
             'value': self.bytes(bodysize),
         }
-
-    def sensorgrams(self):
-        while self.buf:
-            yield self.sensorgram()
 
     def datagram(self):
         r = {}
@@ -209,9 +229,34 @@ class Decoder:
 
         return r
 
-    def datagrams(self):
-        while self.buf:
-            yield self.datagram()
+    def ident(self):
+        return self.bytes(8)
+
+    # def packet_header(self, p):
+    #     self.tuple3(p.get('protocol_version') or (0, 0, 0))
+    #     self.uint(1, p.get('message_priority') or 0)
+    #     self.uint(4, p.get('body_length') or 0)
+    #     self.uint(4, p.get('timestamp') or nows())
+    #     self.tuple2(p.get('message_type') or (0, 0))
+    #     self.uint(2, p.get('reserved') or 0)
+    #     self.bytes(p.get('sender_id') or b'0000000000000000')
+    #     self.bytes(p.get('sender_sub_id') or b'0000000000000000')
+    #     self.bytes(p.get('receiver_id') or b'0000000000000000')
+    #     self.bytes(p.get('receiver_sub_id') or b'0000000000000000')
+    #     self.uint(3, p.get('sender_seq') or 0)
+    #     self.uint(2, p.get('sender_sid') or 0)
+    #     self.uint(3, p.get('response_seq') or 0)
+    #     self.uint(2, p.get('response_sid') or 0)
+    #     return self
+
+    # def packet(self, p):
+    #     header = Encoder().packet_header(p).encoded_bytes()
+    #     self.bytes(header)
+    #     self.uint(2, crc16(header))
+    #     self.uint(4, p.get('token') or 0)
+    #     self.bytes(p['body'])
+    #     self.uint(4, crc32(p['body']))
+    #     return self
 
     def packet(self):
         r = {}
@@ -239,12 +284,21 @@ class Decoder:
         calccrc16 = crc16(bufstart[:headersize])
         print(sentcrc16, calccrc16)
 
+        # right... *could* actually just compute crc16 / crc32 in correct length and see if zero
         r['token'] = self.uint(2)
         r['body'] = self.bytes(bodysize)
 
         print(crc32(r['body']), self.uint(4))
 
         return r
+
+    def sensorgrams(self):
+        while self.buf:
+            yield self.sensorgram()
+
+    def datagrams(self):
+        while self.buf:
+            yield self.datagram()
 
     def packets(self):
         while self.buf:
