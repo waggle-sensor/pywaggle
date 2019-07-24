@@ -69,31 +69,30 @@ class Encoder:
         if length != len(value):
             raise IOError('Failed to encode bytes.')
 
-    def encode_int(self, length, value):
-        logger.debug('encode_int %r %r', length, value)
+    def encode_string(self, s):
+        self.encode_bytes(s.encode())
+
+    def encode_uint(self, length, value):
         self.encode_bytes(value.to_bytes(length, 'big'))
 
-    def encode_sensorgram(self, value):
-        value = encode_value_type(value)
+    def encode_int(self, length, value):
+        self.encode_bytes(value.to_bytes(length, 'big', signed=True))
 
-        sensor_id = value['sensor_id']
-        sensor_instance = value.get('sensor_instance', 0)
-        parameter_id = value['parameter_id']
-        timestamp = get_timestamp_or_now(value)
-        body_type = value['type']
-        body = value['value']
-        body_length = len(body)
+    def encode_float(self, x):
+        self.encode_bytes(struct.pack('f', x))
 
-        self.encode_int(2, body_length)
-        self.encode_int(2, sensor_id)
-        self.encode_int(1, sensor_instance)
-        self.encode_int(1, parameter_id)
-        self.encode_int(4, timestamp)
-        self.encode_int(1, body_type)
+    def encode_sensorgram(self, sg):
+        body = pack_typed_values(sg['value'])
+        self.encode_uint(2, len(body))
+        self.encode_uint(2, sg['sensor_id'])
+        self.encode_uint(1, sg.get('sensor_instance', 0))
+        self.encode_uint(1, sg['parameter_id'])
+        self.encode_uint(4, get_timestamp_or_now(sg))
         self.encode_bytes(body)
 
     def encode_datagram(self, value):
-        protocol_version = value.get('protocol_version', PROTOCOL_MAJOR_VERSION)
+        protocol_version = value.get(
+            'protocol_version', PROTOCOL_MAJOR_VERSION)
         timestamp = get_timestamp_or_now(value)
         packet_seq = value.get('packet_seq', get_packet_sequence_number())
         packet_type = value.get('packet_type', 0)
@@ -107,26 +106,29 @@ class Encoder:
         body_length = len(body)
         body_crc = crc8(body)
 
-        self.encode_int(1, START_FLAG)
-        self.encode_int(3, body_length)
-        self.encode_int(1, protocol_version)
-        self.encode_int(4, timestamp)
-        self.encode_int(2, packet_seq)
-        self.encode_int(1, packet_type)
-        self.encode_int(2, plugin_id)
-        self.encode_int(1, plugin_major_version)
-        self.encode_int(1, plugin_minor_version)
-        self.encode_int(1, plugin_patch_version)
-        self.encode_int(1, plugin_instance)
-        self.encode_int(2, plugin_run_id)
+        self.encode_uint(1, START_FLAG)
+        self.encode_uint(3, body_length)
+        self.encode_uint(1, protocol_version)
+        self.encode_uint(4, timestamp)
+        self.encode_uint(2, packet_seq)
+        self.encode_uint(1, packet_type)
+        self.encode_uint(2, plugin_id)
+        self.encode_uint(1, plugin_major_version)
+        self.encode_uint(1, plugin_minor_version)
+        self.encode_uint(1, plugin_patch_version)
+        self.encode_uint(1, plugin_instance)
+        self.encode_uint(2, plugin_run_id)
         self.encode_bytes(body)
-        self.encode_int(1, body_crc)
-        self.encode_int(1, END_FLAG)
+        self.encode_uint(1, body_crc)
+        self.encode_uint(1, END_FLAG)
 
     def encode_waggle_packet_header(self, value):
-        protocol_major_version = value.get('protocol_major_version', PROTOCOL_MAJOR_VERSION)
-        protocol_minor_version = value.get('protocol_major_version', PROTOCOL_MINOR_VERSION)
-        protocol_patch_version = value.get('protocol_major_version', PROTOCOL_PATCH_VERSION)
+        protocol_major_version = value.get(
+            'protocol_major_version', PROTOCOL_MAJOR_VERSION)
+        protocol_minor_version = value.get(
+            'protocol_major_version', PROTOCOL_MINOR_VERSION)
+        protocol_patch_version = value.get(
+            'protocol_major_version', PROTOCOL_PATCH_VERSION)
         message_priority = value.get('message_priority', 0)
         body = value['body']
         body_length = len(body)
@@ -138,13 +140,16 @@ class Encoder:
         sender_id = bytes.fromhex(value.get('sender_id', '0000000000000000'))
         assert_length(sender_id, 8)
 
-        sender_sub_id = bytes.fromhex(value.get('sender_sub_id', '0000000000000000'))
+        sender_sub_id = bytes.fromhex(
+            value.get('sender_sub_id', '0000000000000000'))
         assert_length(sender_sub_id, 8)
 
-        receiver_id = bytes.fromhex(value.get('receiver_id', '0000000000000000'))
+        receiver_id = bytes.fromhex(
+            value.get('receiver_id', '0000000000000000'))
         assert_length(receiver_id, 8)
 
-        receiver_sub_id = bytes.fromhex(value.get('receiver_sub_id', '0000000000000000'))
+        receiver_sub_id = bytes.fromhex(
+            value.get('receiver_sub_id', '0000000000000000'))
         assert_length(receiver_sub_id, 8)
 
         sender_seq = value.get('sender_seq', get_sender_sequence_number())
@@ -152,23 +157,23 @@ class Encoder:
         response_seq = value.get('response_seq', 0)
         response_sid = value.get('response_sid', 0)
 
-        self.encode_int(1, protocol_major_version)
-        self.encode_int(1, protocol_minor_version)
-        self.encode_int(1, protocol_patch_version)
-        self.encode_int(1, message_priority)
-        self.encode_int(4, body_length)
-        self.encode_int(4, timestamp)
-        self.encode_int(1, message_major_type)
-        self.encode_int(1, message_minor_type)
-        self.encode_int(2, reserved)
+        self.encode_uint(1, protocol_major_version)
+        self.encode_uint(1, protocol_minor_version)
+        self.encode_uint(1, protocol_patch_version)
+        self.encode_uint(1, message_priority)
+        self.encode_uint(4, body_length)
+        self.encode_uint(4, timestamp)
+        self.encode_uint(1, message_major_type)
+        self.encode_uint(1, message_minor_type)
+        self.encode_uint(2, reserved)
         self.encode_bytes(sender_id)
         self.encode_bytes(sender_sub_id)
         self.encode_bytes(receiver_id)
         self.encode_bytes(receiver_sub_id)
-        self.encode_int(3, sender_seq)
-        self.encode_int(2, sender_sid)
-        self.encode_int(3, response_seq)
-        self.encode_int(2, response_sid)
+        self.encode_uint(3, sender_seq)
+        self.encode_uint(2, sender_sid)
+        self.encode_uint(3, response_seq)
+        self.encode_uint(2, response_sid)
 
     def encode_waggle_packet(self, value):
         buf = BytesIO()
@@ -182,10 +187,10 @@ class Encoder:
         body_crc = crc32(value['body'])
 
         self.encode_bytes(header)
-        self.encode_int(2, header_crc)
-        self.encode_int(4, token)
+        self.encode_uint(2, header_crc)
+        self.encode_uint(4, token)
         self.encode_bytes(body)
-        self.encode_int(4, body_crc)
+        self.encode_uint(4, body_crc)
 
 
 class Decoder:
@@ -201,51 +206,71 @@ class Decoder:
 
         return b
 
-    def decode_int(self, length):
+    def decode_string(self, length):
+        return self.decode_bytes(length).decode()
+
+    def decode_uint(self, length):
         return int.from_bytes(self.decode_bytes(length), 'big')
 
+    def decode_int(self, length):
+        return int.from_bytes(self.decode_bytes(length), 'big', signed=True)
+
+    def decode_float(self):
+        return struct.unpack('f', self.decode_bytes(4))[0]
+
+    def decode_bytes_value(self):
+        # add type checks here...
+        return self.reader.read()
+
+    def decode_string_value(self):
+        # add type checks here...
+        return self.reader.read().decode()
+
+    def decode_list_of_floats_value(self):
+        b = self.reader.read()
+        n = len(b) // 4
+        return list(struct.unpack('{}f'.format(n), b))
+
     def decode_sensorgram(self):
-        body_length = self.decode_int(2)
-        sensor_id = self.decode_int(2)
-        sensor_instance = self.decode_int(1)
-        parameter_id = self.decode_int(1)
-        timestamp = self.decode_int(4)
-        body_type = self.decode_int(1)
+        body_length = self.decode_uint(2)
+        sensor_id = self.decode_uint(2)
+        sensor_instance = self.decode_uint(1)
+        parameter_id = self.decode_uint(1)
+        timestamp = self.decode_uint(4)
         body = self.decode_bytes(body_length)
 
-        return decode_value_type({
+        return {
             'sensor_id': sensor_id,
             'sensor_instance': sensor_instance,
             'parameter_id': parameter_id,
             'timestamp': timestamp,
-            'type': body_type,
-            'value': body,
-        })
+            'value': decode_value_type(body),
+        }
 
     def decode_datagram(self):
-        start_flag = self.decode_int(1)
+        start_flag = self.decode_uint(1)
 
         if start_flag != START_FLAG:
             raise ValueError('Invalid start flag.')
 
-        body_length = self.decode_int(3)
-        protocol_version = self.decode_int(1)
-        timestamp = self.decode_int(4)
-        packet_seq = self.decode_int(2)
-        packet_type = self.decode_int(1)
-        plugin_id = self.decode_int(2)
-        plugin_major_version = self.decode_int(1)
-        plugin_minor_version = self.decode_int(1)
-        plugin_patch_version = self.decode_int(1)
-        plugin_instance = self.decode_int(1)
-        plugin_run_id = self.decode_int(2)
+        body_length = self.decode_uint(3)
+        protocol_version = self.decode_uint(1)
+        timestamp = self.decode_uint(4)
+        packet_seq = self.decode_uint(2)
+        packet_type = self.decode_uint(1)
+        plugin_id = self.decode_uint(2)
+        plugin_major_version = self.decode_uint(1)
+        plugin_minor_version = self.decode_uint(1)
+        plugin_patch_version = self.decode_uint(1)
+        plugin_instance = self.decode_uint(1)
+        plugin_run_id = self.decode_uint(2)
         body = self.decode_bytes(body_length)
-        body_crc = self.decode_int(1)
+        body_crc = self.decode_uint(1)
 
         if crc8(body) != body_crc:
             raise ValueError('Invalid body CRC.')
 
-        end_flag = self.decode_int(1)
+        end_flag = self.decode_uint(1)
 
         if end_flag != END_FLAG:
             raise ValueError('Invalid end flag.')
@@ -265,33 +290,33 @@ class Decoder:
 
     def decode_waggle_packet(self):
         header = self.decode_bytes(58)
-        header_crc = self.decode_int(2)
+        header_crc = self.decode_uint(2)
 
         if crc16(header) != header_crc:
             raise ValueError('Invalid header CRC.')
 
         dec = Decoder(BytesIO(header))
-        protocol_major_version = dec.decode_int(1)
-        protocol_minor_version = dec.decode_int(1)
-        protocol_patch_version = dec.decode_int(1)
-        message_priority = dec.decode_int(1)
-        body_length = dec.decode_int(4)
-        timestamp = dec.decode_int(4)
-        message_major_type = dec.decode_int(1)
-        message_minor_type = dec.decode_int(1)
-        reserved = dec.decode_int(2)
+        protocol_major_version = dec.decode_uint(1)
+        protocol_minor_version = dec.decode_uint(1)
+        protocol_patch_version = dec.decode_uint(1)
+        message_priority = dec.decode_uint(1)
+        body_length = dec.decode_uint(4)
+        timestamp = dec.decode_uint(4)
+        message_major_type = dec.decode_uint(1)
+        message_minor_type = dec.decode_uint(1)
+        reserved = dec.decode_uint(2)
         sender_id = dec.decode_bytes(8).hex()
         sender_sub_id = dec.decode_bytes(8).hex()
         receiver_id = dec.decode_bytes(8).hex()
         receiver_sub_id = dec.decode_bytes(8).hex()
-        sender_seq = dec.decode_int(3)
-        sender_sid = dec.decode_int(2)
-        response_seq = dec.decode_int(3)
-        response_sid = dec.decode_int(2)
+        sender_seq = dec.decode_uint(3)
+        sender_sid = dec.decode_uint(2)
+        response_seq = dec.decode_uint(3)
+        response_sid = dec.decode_uint(2)
 
-        token = self.decode_int(4)
+        token = self.decode_uint(4)
         body = self.decode_bytes(body_length)
-        body_crc = self.decode_int(4)
+        body_crc = self.decode_uint(4)
 
         if crc32(body) != body_crc:
             raise ValueError('Invalid body CRC.')
@@ -317,31 +342,21 @@ class Decoder:
         }
 
 
-TYPE_BYTES = 0
-TYPE_STRING = 1
-
-TYPE_NULL = 2
-TYPE_FALSE = 3
-TYPE_TRUE = 4
-
-# int types
-TYPE_INT8 = 10
-TYPE_INT16 = 11
-TYPE_INT24 = 12
-TYPE_INT32 = 13
-TYPE_INT64 = 14
-
-# uint types
-TYPE_UINT8 = 20
-TYPE_UINT16 = 21
-TYPE_UINT24 = 22
-TYPE_UINT32 = 23
-TYPE_UINT64 = 24
-
-TYPE_FLOAT32 = 30
-
-# TODO make sure type table IDs are organized
-TYPE_LIST_OF_FLOAT32 = 130
+TYPE_NULL = 0x00
+TYPE_BYTES = 0x01
+TYPE_STRING = 0x02
+TYPE_INT8 = 0x03
+TYPE_UINT8 = 0x04
+TYPE_INT16 = 0x05
+TYPE_UINT16 = 0x06
+TYPE_INT24 = 0x07
+TYPE_UINT24 = 0x08
+TYPE_INT32 = 0x09
+TYPE_UINT32 = 0x0a
+TYPE_FLOAT16 = 0x0b
+TYPE_FLOAT32 = 0x0c
+TYPE_FLOAT64 = 0x0d
+TYPE_LIST_OF_FLOAT32 = 0x8c
 
 
 def pack_typed_value(value):
@@ -350,15 +365,6 @@ def pack_typed_value(value):
 
     if isinstance(value, str):
         return TYPE_STRING, value.encode()
-
-    if value is None:
-        return TYPE_NULL, b''
-
-    if value is False:
-        return TYPE_FALSE, b''
-
-    if value is True:
-        return TYPE_TRUE, b''
 
     if isinstance(value, int):
         if value < 0:
@@ -373,6 +379,21 @@ def pack_typed_value(value):
         return TYPE_LIST_OF_FLOAT32, struct.pack('{}f'.format(len(value)), *value)
 
     raise ValueError('Unsupported value type.')
+
+
+def pack_typed_values(value):
+    # lift single to tuple
+    if not isinstance(value, tuple):
+        value = (value,)
+
+    chunks = []
+
+    for v in value:
+        t, b = pack_typed_value(v)
+        chunks.append(bytes([t]))
+        chunks.append(b)
+
+    return b''.join(chunks)
 
 
 def packed_type_int_value(value):
@@ -393,11 +414,6 @@ def packed_type_int_value(value):
 
     try:
         return TYPE_INT32, value.to_bytes(4, byteorder='big', signed=True)
-    except OverflowError:
-        pass
-
-    try:
-        return TYPE_INT64, value.to_bytes(8, byteorder='big', signed=True)
     except OverflowError:
         pass
 
@@ -425,75 +441,44 @@ def packed_type_uint_value(value):
     except OverflowError:
         pass
 
-    try:
-        return TYPE_UINT64, value.to_bytes(8, byteorder='big', signed=False)
-    except OverflowError:
-        pass
-
     raise ValueError('Unsupported unsigned int size.')
 
 
-def unpack_signed_int(x):
-    return int.from_bytes(x, 'big', signed=True)
+decode_value_table = {
+    TYPE_BYTES: lambda d: d.decode_bytes_value(),
+    TYPE_STRING: lambda d: d.decode_string_value(),
 
+    TYPE_UINT8: lambda d: d.decode_uint(1),
+    TYPE_UINT16: lambda d: d.decode_uint(2),
+    TYPE_UINT24: lambda d: d.decode_uint(3),
+    TYPE_UINT32: lambda d: d.decode_uint(4),
 
-def unpack_unsigned_int(x):
-    return int.from_bytes(x, 'big', signed=False)
+    TYPE_INT8: lambda d: d.decode_int(1),
+    TYPE_INT16: lambda d: d.decode_int(2),
+    TYPE_INT24: lambda d: d.decode_int(3),
+    TYPE_INT32: lambda d: d.decode_int(4),
 
-
-def unpack_float32(x):
-    return struct.unpack('f', x)[0]
-
-
-def unpack_list_of_float32(x):
-    n = len(x) // 4
-    return list(struct.unpack('{}f'.format(n), x))
-
-
-unpack_type_table = {
-    TYPE_BYTES: lambda x: x,
-    TYPE_STRING: bytes.decode,
-    TYPE_NULL: lambda x: None,
-    TYPE_FALSE: lambda x: False,
-    TYPE_TRUE: lambda x: True,
-
-    TYPE_INT8: unpack_signed_int,
-    TYPE_INT16: unpack_signed_int,
-    TYPE_INT24: unpack_signed_int,
-    TYPE_INT32: unpack_signed_int,
-    TYPE_INT64: unpack_signed_int,
-
-    TYPE_UINT8: unpack_unsigned_int,
-    TYPE_UINT16: unpack_unsigned_int,
-    TYPE_UINT24: unpack_unsigned_int,
-    TYPE_UINT32: unpack_unsigned_int,
-    TYPE_UINT64: unpack_unsigned_int,
-
-    TYPE_FLOAT32: unpack_float32,
-
-    TYPE_LIST_OF_FLOAT32: unpack_list_of_float32,
+    TYPE_FLOAT32: lambda d: d.decode_float(),
+    TYPE_LIST_OF_FLOAT32: lambda d: d.decode_list_of_floats_value(),
 }
 
 
-def unpack_typed_value(type, value):
-    return unpack_type_table[type](value)
+def decode_value_type(body):
+    results = []
 
+    d = Decoder(BytesIO(body))
 
-def encode_value_type(sensorgram):
-    if 'type' in sensorgram:
-        return sensorgram
+    while True:
+        try:
+            t = d.decode_uint(1)
+            results.append(decode_value_table[t](d))
+        except EOFError:
+            break
 
-    sensorgram = sensorgram.copy()
-    type, value = pack_typed_value(sensorgram['value'])
-    sensorgram['type'] = type
-    sensorgram['value'] = value
-    return sensorgram
-
-
-def decode_value_type(sensorgram):
-    sensorgram = sensorgram.copy()
-    sensorgram['value'] = unpack_typed_value(sensorgram['type'], sensorgram['value'])
-    return sensorgram
+    if len(results) == 1:
+        return results[0]
+    else:
+        return tuple(results)
 
 
 def make_pack_function(func):
@@ -576,3 +561,41 @@ def pack_sensor_data_message(sensorgrams):
             'body': data
         })
     })
+
+
+if __name__ == '__main__':
+    print(unpack_sensorgram(pack_sensorgram({
+        'sensor_id': 1,
+        'parameter_id': 1,
+        'value': (1, 10.2, 'hello'),
+    })))
+
+    print(unpack_sensorgram(pack_sensorgram({
+        'sensor_id': 1,
+        'parameter_id': 1,
+        'value': (1, 2, 3, 4, 5, b'more bytes'),
+    })))
+
+    print(unpack_sensorgram(pack_sensorgram({
+        'sensor_id': 1,
+        'parameter_id': 1,
+        'value': 32.1,
+    })))
+
+    print(unpack_sensorgram(pack_sensorgram({
+        'sensor_id': 1,
+        'parameter_id': 1,
+        'value': -23,
+    })))
+
+    print(unpack_sensorgram(pack_sensorgram({
+        'sensor_id': 1,
+        'parameter_id': 1,
+        'value': [1., 2., 3.],
+    })))
+
+    print(unpack_sensorgram(pack_sensorgram({
+        'sensor_id': 1,
+        'parameter_id': 1,
+        'value': (1, [1., 2., 3.]),
+    })))

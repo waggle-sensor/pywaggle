@@ -5,11 +5,8 @@
 #          http://www.wa8.gl
 # ANL:waggle-license
 import logging
-# import math
 import re
 import os
-# from waggle.protocol.v5.res import chemsense_calib_data as chemsense_res
-# from waggle.protocol.v5.res import chemsense_empty_data as chemsense_res
 import csv
 import numpy as np
 
@@ -49,7 +46,8 @@ def read_calib_data(path):
     return results
 
 
-calib = read_calib_data(os.path.join(os.path.dirname(__file__), 'chemsense_calibration.csv'))
+calib = read_calib_data(os.path.join(
+    os.path.dirname(__file__), 'chemsense_calibration.csv'))
 
 
 def advanced_filter(a, b):
@@ -74,126 +72,17 @@ def apply_corrections_to_sample(sample):
     S, Izero, n, M = calib[sample['BAD']]
 
     Tboard = slice_array(sample, ['AT0', 'AT1', 'AT2', 'AT3']).mean() / 100.0
-    CurZero = Izero * np.exp((Tboard - 40.0) / n) * 1e3
-    Cur = slice_array(sample, basis)
-    uncorrectedPPB = (Cur - CurZero) / S
+    ZeroCurAmps = Izero * np.exp((Tboard - 40.0) / n) * 1e3
+    CurAmps = slice_array(sample, basis)
+    uncorrectedPPB = (CurAmps - ZeroCurAmps) / S
     correctedPPM = np.dot(M, uncorrectedPPB) / 1000.0
 
     i = basis_by_name['OZO']
     j = basis_by_name['NO2']
-    correctedPPM[i], correctedPPM[j] = advanced_filter(correctedPPM[i], correctedPPM[j])
+    correctedPPM[i], correctedPPM[j] = advanced_filter(
+        correctedPPM[i], correctedPPM[j])
 
     return dict(zip(basis, correctedPPM))
-
-
-# def import_data():
-#     xl_data = {}
-#
-#     rows = chemsense_res.calib_data.strip().splitlines()
-#
-#     for row in rows:
-#         fields = row.strip().split(';')
-#         chem_id = fields[1].lower()
-#
-#         xl_data[chem_id] = {
-#             # IRR = RESP, baseline = Izero@25C
-#             'IRR': {'sensitivity': fields[-42], 'baseline40': fields[-21], 'Mvalue': fields[-7]},
-#             'IAQ': {'sensitivity': fields[-41], 'baseline40': fields[-20], 'Mvalue': fields[-6]},
-#             'SO2': {'sensitivity': fields[-40], 'baseline40': fields[-19], 'Mvalue': fields[-5]},
-#             'H2S': {'sensitivity': fields[-39], 'baseline40': fields[-18], 'Mvalue': fields[-4]},
-#             'OZO': {'sensitivity': fields[-38], 'baseline40': fields[-17], 'Mvalue': fields[-3]},
-#             'NO2': {'sensitivity': fields[-37], 'baseline40': fields[-16], 'Mvalue': fields[-2]},
-#             'CMO': {'sensitivity': fields[-36], 'baseline40': fields[-15], 'Mvalue': fields[-1]},
-#         }
-#
-#     return xl_data
-#
-#
-# imported_data = None
-#
-#
-# def get_imported_data():
-#     global imported_data
-#
-#     if imported_data is None:
-#         imported_data = import_data()
-#
-#     return imported_data
-#
-#
-# def get_instance_data(instance_id):
-#     imported_data = get_imported_data()
-#
-#     try:
-#         return imported_data[instance_id]
-#     except KeyError:
-#         logger.warning('No instance_id %s in calibration data.')
-#         raise
-#
-#
-# def key_unit(k):
-#     if 'T' in k:
-#         return 'C'
-#     if 'P' in k:
-#         return 'hPa'
-#
-#     return '%RH'
-#
-#
-# def chemical_sensor(ky, IpA, mid_dict):
-#     instance_id = mid_dict['BAD'].lower()
-#
-#     try:
-#         instance_data = get_instance_data(instance_id)
-#     except KeyError:
-#         return [(IpA, 'raw')]
-#
-#     coeffs = instance_data[ky]
-#
-#     AT = [
-#         float(mid_dict['AT0']),
-#         float(mid_dict['AT1']),
-#         float(mid_dict['AT2']),
-#         float(mid_dict['AT3']),
-#     ]
-#
-#     Tavg = sum(AT) / 400.0
-#     Tzero = 40.0
-#
-#     sensitivity = float(coeffs['sensitivity'])
-#     baseline = float(coeffs['baseline40'])
-#     Minv = float(coeffs['Mvalue'])
-#
-#     InA = float(IpA)/1000.0 - baseline*math.exp((Tavg - Tzero) / Minv)
-#     converted = InA / sensitivity
-#
-#     return [
-#         (IpA, 'raw'),
-#         (round(converted, 6), 'ppm'),
-#     ]
-#
-#
-# def convert_pair(key, val, mid_dict):
-#     if key == 'SQN':
-#         return 'sqn', []
-#
-#     if key == 'BAD':
-#         return 'id', (val.lower(), '')
-#
-#     if 'SH' in key or 'HD' in key or 'LP' in key or 'AT' in key or 'LT' in key:
-#         v = float(val)
-#         return key, [
-#             (v, 'raw'),
-#             (v/100.0, key_unit(key)),
-#         ]
-#
-#     if 'SVL' in key or 'SIR' in key or 'SUV' in key:
-#         return key, (int(val), 'raw')
-#
-#     if 'AC' in key or 'GY' in key or 'VIX' in key or 'OIX' in key:
-#         return key, (int(val), 'raw')
-#
-#     return key, chemical_sensor(key, val, mid_dict)
 
 
 chemsense_pattern = re.compile(r'(\S+)=(\S+)')
@@ -246,14 +135,6 @@ def convert(value):
 
     return results
 
-    # chem_dict = {}
-    #
-    # for key, value in sample.items():
-    #     newkey, results = convert_pair(key, value, sample)
-    #     chem_dict['chemsense_' + newkey.lower()] = results
-    #
-    # return chem_dict
-
 
 if __name__ == '__main__':
     test_data = [
@@ -264,4 +145,5 @@ if __name__ == '__main__':
     ]
 
     for v in test_data:
-        convert(v)
+        print(v)
+        print(convert(v))
