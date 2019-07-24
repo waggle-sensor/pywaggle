@@ -53,214 +53,263 @@ def nows():
     return int(datetime.utcnow().timestamp())
 
 
-def encode_bytes(b):
-    return b
-
-
-def encode_uint(size, x):
-    return x.to_bytes(size, 'big')
-
-
-def encode_int(size, x):
-    return x.to_bytes(size, 'big', signed=True)
-
-
-def encode_sensorgram(sg):
-    body = sg['value']
-
-    return b''.join([
-        encode_uint(2, len(body)),
-        encode_uint(4, sg.get('timestamp') or nows()),
-        encode_uint(2, sg['id']),
-        encode_uint(1, sg.get('inst', 0)),
-        encode_uint(1, sg['subid']),
-        encode_uint(2, sg.get('sourceid', 0)),
-        encode_uint(1, sg.get('sourceinst', 0)),
-        encode_bytes(body),
-    ])
-
-
 DATAGRAM_HEADER = bytes([0xaa])
 DATAGRAM_FOOTER = bytes([0x55])
 DATAGRAM_PROTOCOL_VERSION = 1
 
 
-def encode_datagram(dg):
-    body = dg['body']
+class Encoder:
 
-    return b''.join([
-        encode_bytes(DATAGRAM_HEADER),
-        encode_uint(3, len(body)),
-        encode_uint(1, DATAGRAM_PROTOCOL_VERSION),
-        encode_uint(4, dg.get('timestamp') or nows()),
-        encode_uint(2, dg.get('packet_seq') or 0),
-        encode_uint(1, dg.get('packet_type') or 0),
-        encode_uint(2, dg['plugin_id']),
-        encode_uint(1, dg['plugin_version'][0]),
-        encode_uint(1, dg['plugin_version'][1]),
-        encode_uint(1, dg['plugin_version'][2]),
-        encode_uint(1, dg.get('plugin_instance') or 0),
-        encode_uint(2, dg.get('plugin_run_id') or 0),
-        encode_bytes(body),
-        encode_uint(1, calccrc8(body)),
-        encode_bytes(DATAGRAM_FOOTER),
-    ])
+    def __init__(self):
+        self.blocks = []
 
+    def encoded_bytes(self):
+        return b''.join(self.blocks)
 
-def encode_waggle_packet(p):
-    header = b''.join([
-        encode_uint(1, p.get('protocol_major_version') or 0),
-        encode_uint(1, p.get('protocol_minor_version') or 0),
-        encode_uint(1, p.get('protocol_patch_version') or 0),
-        encode_uint(1, p.get('message_priority') or 0),
-        encode_uint(4, p.get('body_length') or 0),
-        encode_uint(4, p.get('timestamp') or nows()),
-        encode_uint(1, p.get('message_major_type') or 0),
-        encode_uint(1, p.get('message_minor_type') or 0),
-        encode_uint(2, p.get('reserved') or 0),
-        encode_bytes(p.get('sender_id') or b'0000000000000000'),
-        encode_bytes(p.get('sender_sub_id') or b'0000000000000000'),
-        encode_bytes(p.get('receiver_id') or b'0000000000000000'),
-        encode_bytes(p.get('receiver_sub_id') or b'0000000000000000'),
-        encode_uint(3, p.get('sender_seq') or 0),
-        encode_uint(2, p.get('sender_sid') or 0),
-        encode_uint(3, p.get('response_seq') or 0),
-        encode_uint(2, p.get('response_sid') or 0),
-    ])
+    def bytes(self, b):
+        self.blocks.append(b)
 
-    return b''.join([
-        header,
-        encode_uint(2, crc16(header)),
-        encode_uint(4, p.get('token') or 0),
-        encode_bytes(p['body']),
-        encode_uint(4, crc32(p['body'])),
-    ])
+    def uint(self, size, x):
+        self.bytes(x.to_bytes(size, 'big'))
 
+    def int(self, size, x):
+        self.bytes(x.to_bytes(size, 'big', signed=True))
 
-def decode_bytes(size, b):
-    return b[:size], b[size:]
+    def sensorgram(self, sg):
+        body = sg['value']
+        self.uint(2, len(body))
+        self.uint(4, sg.get('timestamp') or nows())
+        self.uint(2, sg['id'])
+        self.uint(1, sg.get('inst', 0))
+        self.uint(1, sg['subid'])
+        self.uint(2, sg.get('sourceid', 0))
+        self.uint(1, sg.get('sourceinst', 0))
+        self.bytes(body)
 
+    def datagram(self, dg):
+        body = dg['body']
+        self.bytes(DATAGRAM_HEADER)
+        self.uint(3, len(body))
+        self.uint(1, DATAGRAM_PROTOCOL_VERSION)
+        self.uint(4, dg.get('timestamp') or nows())
+        self.uint(2, dg.get('packet_seq') or 0)
+        self.uint(1, dg.get('packet_type') or 0)
+        self.uint(2, dg['plugin_id'])
+        self.uint(1, dg['plugin_version'][0])
+        self.uint(1, dg['plugin_version'][1])
+        self.uint(1, dg['plugin_version'][2])
+        self.uint(1, dg.get('plugin_instance') or 0)
+        self.uint(2, dg.get('plugin_run_id') or 0)
+        self.bytes(body)
+        self.uint(1, calccrc8(body))
+        self.bytes(DATAGRAM_FOOTER)
 
-def decode_uint(size, b):
-    chunk, b = decode_bytes(size, b)
-    return int.from_bytes(chunk, 'big'), b
+    def packet(self, p):
+        e = Encoder()
+        e.uint(1, p.get('protocol_major_version') or 0),
+        e.uint(1, p.get('protocol_minor_version') or 0),
+        e.uint(1, p.get('protocol_patch_version') or 0),
+        e.uint(1, p.get('message_priority') or 0),
+        e.uint(4, p.get('body_length') or 0),
+        e.uint(4, p.get('timestamp') or nows()),
+        e.uint(1, p.get('message_major_type') or 0),
+        e.uint(1, p.get('message_minor_type') or 0),
+        e.uint(2, p.get('reserved') or 0),
+        e.bytes(p.get('sender_id') or b'0000000000000000'),
+        e.bytes(p.get('sender_sub_id') or b'0000000000000000'),
+        e.bytes(p.get('receiver_id') or b'0000000000000000'),
+        e.bytes(p.get('receiver_sub_id') or b'0000000000000000'),
+        e.uint(3, p.get('sender_seq') or 0),
+        e.uint(2, p.get('sender_sid') or 0),
+        e.uint(3, p.get('response_seq') or 0),
+        e.uint(2, p.get('response_sid') or 0),
+        header = e.encoded_bytes()
 
-
-def decode_sensorgram(b):
-    bodysize, b = decode_uint(2, b)
-    timestamp, b = decode_uint(4, b)
-    id, b = decode_uint(2, b)
-    inst, b = decode_uint(1, b)
-    subid, b = decode_uint(1, b)
-    sourceid, b = decode_uint(2, b)
-    sourceinst, b = decode_uint(1, b)
-    body, b = decode_bytes(bodysize, b)
-
-    return {
-        'timestamp': timestamp,
-        'id': id,
-        'inst': inst,
-        'subid': subid,
-        'sourceid': sourceid,
-        'sourceinst': sourceinst,
-        'body': body,
-    }, b
+        self.bytes(header)
+        self.uint(2, crc16(header))
+        self.uint(4, p.get('token') or 0)
+        self.bytes(p['body'])
+        self.uint(4, crc32(p['body']))
 
 
-def decode_datagram(b):
-    try:
-        start = b.index(DATAGRAM_HEADER)
-    except ValueError:
-        return None, b''
+class Decoder:
 
-    bstart = b[start:]
-    b = bstart
+    def __init__(self, buf):
+        self.buf = buf
 
-    _, b = decode_bytes(len(DATAGRAM_HEADER), b)
-    bodysize, b = decode_uint(3, b)
-    protocol_version, b = decode_uint(1, b)
-    timestamp, b = decode_uint(4, b)
-    packet_seq, b = decode_uint(2, b)
-    packet_type, b = decode_uint(1, b)
-    plugin_id, b = decode_uint(2, b)
-    plugin_major_version, b = decode_uint(1, b)
-    plugin_minor_version, b = decode_uint(1, b)
-    plugin_patch_version, b = decode_uint(1, b)
-    plugin_instance, b = decode_uint(1, b)
-    plugin_run_id, b = decode_uint(2, b)
-    body, b = decode_bytes(bodysize, b)
-    crc, b = decode_uint(1, b)
-    footer, b = decode_bytes(len(DATAGRAM_FOOTER), b)
+    def bytes(self, size):
+        r = self.buf[:size]
 
-    if footer != DATAGRAM_FOOTER:
-        return None, bstart
+        if len(r) != size:
+            raise EOFError()
 
-    if crc != calccrc8(body):
-        return None, bstart
+        self.buf = self.buf[size:]
+        return r
 
-    return {
-        'protocol_version': protocol_version,
-        'timestamp': timestamp,
-        'plugin_id': plugin_id,
-        'plugin_instance': plugin_instance,
-        'plugin_run_id': plugin_run_id,
-        'packet_seq': packet_seq,
-        'packet_type': packet_type,
-        'plugin_version': (plugin_major_version, plugin_minor_version, plugin_patch_version),
-        'body': body,
-    }, b
+    def uint(self, size):
+        return int.from_bytes(self.bytes(size), 'big')
+
+    def tuple2(self):
+        t0 = self.uint(1)
+        t1 = self.uint(1)
+        return (t0, t1)
+
+    def tuple3(self):
+        t0 = self.uint(1)
+        t1 = self.uint(1)
+        t2 = self.uint(1)
+        return (t0, t1, t2)
+
+    def sensorgram(self):
+        bodysize = self.uint(2)
+
+        return {
+            'timestamp': self.uint(4),
+            'id': self.uint(2),
+            'inst': self.uint(1),
+            'subid': self.uint(1),
+            'sourceid': self.uint(2),
+            'sourceinst': self.uint(1),
+            'value': self.bytes(bodysize),
+        }
+
+    def sensorgrams(self):
+        while self.buf:
+            yield self.sensorgram()
+
+    def datagram(self):
+        r = {}
+
+        try:
+            start = self.buf.index(DATAGRAM_HEADER)
+            self.buf = self.buf[start:]
+        except ValueError:
+            self.buf = b''
+            return None
+
+        self.bytes(len(DATAGRAM_HEADER))
+        bodysize = self.uint(3)
+        r['protocol_version'] = self.uint(1)
+        r['timestamp'] = self.uint(4)
+        r['packet_seq'] = self.uint(2)
+        r['packet_type'] = self.uint(1)
+        r['plugin_id'] = self.uint(2)
+        r['plugin_version'] = self.tuple3()
+        r['plugin_instance'] = self.uint(1)
+        r['plugin_run_id'] = self.uint(2)
+        r['body'] = self.bytes(bodysize)
+        crc = self.uint(1)
+        footer = self.bytes(len(DATAGRAM_FOOTER))
+
+        if footer != DATAGRAM_FOOTER:
+            return None
+
+        if crc != calccrc8(r['body']):
+            return None
+
+        return r
+
+    def datagrams(self):
+        while self.buf:
+            yield self.datagram()
+
+    def packet(self):
+        r = {}
+
+        bufstart = self.buf
+
+        r['protocol_version'] = self.tuple3()
+        r['message_priority'] = self.uint(1)
+        bodysize = self.uint(4)
+        r['timestamp'] = self.uint(4)
+        r['message_type'] = self.tuple2()
+        r['reserved'] = self.uint(2)
+        r['sender_id'] = self.bytes(8)
+        r['sender_sub_id'] = self.bytes(8)
+        r['receiver_id'] = self.bytes(8)
+        r['receiver_sub_id'] = self.bytes(8)
+        r['sender_seq'] = self.uint(3)
+        r['sender_sid'] = self.uint(2)
+        r['response_seq'] = self.uint(3)
+        r['response_sid'] = self.uint(2)
+
+        headersize = len(bufstart) - len(self.buf)
+
+        sentcrc16 = self.uint(2)
+        calccrc16 = crc16(bufstart[:headersize])
+        print(sentcrc16, calccrc16)
+
+        r['token'] = self.uint(2)
+        r['body'] = self.bytes(bodysize)
+
+        print(crc32(r['body']), self.uint(4))
+
+        return r
+
+    def packets(self):
+        while self.buf:
+            yield self.packet()
 
 
-def encode_multiple(xs, f):
-    return b''.join([f(x) for x in xs])
+def encode_sensorgram(x):
+    e = Encoder()
+    e.sensorgram(x)
+    return e.encoded_bytes()
 
 
-def encode_sensorgrams(sensorgrams):
-    return encode_multiple(sensorgrams, encode_sensorgram)
+def encode_datagram(x):
+    e = Encoder()
+    e.datagram(x)
+    return e.encoded_bytes()
 
 
-def encode_datagrams(datagrams):
-    return encode_multiple(datagrams, encode_datagram)
+def encode_packet(x):
+    e = Encoder()
+    e.packet(x)
+    return e.encoded_bytes()
 
 
-def decode_multiple(b, f):
-    while True:
-        if not b:
-            return
-
-        x, b = f(b)
-
-        if x is None:
-            return
-
-        yield x
+def decode_sensorgram(buf):
+    return Decoder(buf).sensorgram()
 
 
-def decode_sensorgrams(b):
-    return decode_multiple(b, decode_sensorgram)
+def decode_sensorgrams(buf):
+    return Decoder(buf).sensorgrams()
 
 
-def decode_datagrams(b):
-    return decode_multiple(b, decode_datagram)
+def decode_datagram(buf):
+    return Decoder(buf).datagram()
+
+
+def decode_datagrams(buf):
+    return Decoder(buf).datagrams()
+
+
+def decode_packet(buf):
+    return Decoder(buf).packet()
+
+
+def test_invert(encode, decode, before):
+    after = decode(encode(before))
+    for k in before.keys():
+        assert before[k] == after[k]
+    print('ok')
 
 
 if __name__ == '__main__':
-    print(encode_waggle_packet({
-        'body': b'testing!'
-    }))
-
-    packed = encode_datagram({
-        'plugin_id': 1000,
-        'plugin_version': (1, 0, 0),
-        'body': encode_sensorgrams([
-            {'id': 1, 'subid': 20, 'value': b'xxx'},
-            {'id': 1, 'subid': 20, 'value': b'abc'},
-            {'id': 1, 'subid': 20, 'value': b'123'},
-        ])
+    test_invert(encode_sensorgram, decode_sensorgram, {
+        'id': 1,
+        'subid': 1,
+        'value': b'testing',
     })
 
-    packed = b''.join([packed] * 2)
+    test_invert(encode_datagram, decode_datagram, {
+        'plugin_id': 1,
+        'plugin_version': (1, 2, 3),
+        'body': b'testing',
+    })
 
-    for dg in decode_datagrams(packed[:-2]):
-        print('datagram')
-        print(dg)
+    test_invert(encode_packet, decode_packet, {
+        'timestamp': 1,
+        'body': b'testing',
+    })
