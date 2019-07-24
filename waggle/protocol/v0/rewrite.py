@@ -123,10 +123,10 @@ class Encoder:
             raise ValueError(b)
         return self.bytes(b)
 
-    def packet_header(self, p):
+    def packet_header(self, p, bodysize):
         self.tuple3(p.get('protocol_version') or (0, 0, 0))
         self.uint(1, p.get('message_priority') or 0)
-        self.uint(4, p.get('body_length') or 0)
+        self.uint(4, bodysize)
         self.uint(4, p.get('timestamp') or nows())
         self.tuple2(p.get('message_type') or (0, 0))
         self.uint(2, p.get('reserved') or 0)
@@ -141,14 +141,17 @@ class Encoder:
         return self
 
     def packet(self, p):
-        header = Encoder().packet_header(p).encoded_bytes()
         body = p['body']
+        bodysize = len(body)
+
+        header = Encoder().packet_header(p, bodysize).encoded_bytes()
+
         self.bytes(header)
         self.uint(2, crc16(header))
         self.uint(4, p.get('token') or 0)
         self.bytes(body)
         bodycrc = crc32(body)
-        print(bodycrc)
+        print('bodycrc', bodycrc)
         self.uint(4, crc32(body))
         return self
 
@@ -232,36 +235,11 @@ class Decoder:
     def ident(self):
         return self.bytes(8)
 
-    # def packet_header(self, p):
-    #     self.tuple3(p.get('protocol_version') or (0, 0, 0))
-    #     self.uint(1, p.get('message_priority') or 0)
-    #     self.uint(4, p.get('body_length') or 0)
-    #     self.uint(4, p.get('timestamp') or nows())
-    #     self.tuple2(p.get('message_type') or (0, 0))
-    #     self.uint(2, p.get('reserved') or 0)
-    #     self.bytes(p.get('sender_id') or b'0000000000000000')
-    #     self.bytes(p.get('sender_sub_id') or b'0000000000000000')
-    #     self.bytes(p.get('receiver_id') or b'0000000000000000')
-    #     self.bytes(p.get('receiver_sub_id') or b'0000000000000000')
-    #     self.uint(3, p.get('sender_seq') or 0)
-    #     self.uint(2, p.get('sender_sid') or 0)
-    #     self.uint(3, p.get('response_seq') or 0)
-    #     self.uint(2, p.get('response_sid') or 0)
-    #     return self
+    def packet_header(self):
+        headersize = 3+1+4+4+2+2+8+8+8+8+3+2+3+2
+        crcCalc = crc16(self.buf[:headersize])
 
-    # def packet(self, p):
-    #     header = Encoder().packet_header(p).encoded_bytes()
-    #     self.bytes(header)
-    #     self.uint(2, crc16(header))
-    #     self.uint(4, p.get('token') or 0)
-    #     self.bytes(p['body'])
-    #     self.uint(4, crc32(p['body']))
-    #     return self
-
-    def packet(self):
         r = {}
-
-        bufstart = self.buf
 
         r['protocol_version'] = self.tuple3()
         r['message_priority'] = self.uint(1)
@@ -277,18 +255,26 @@ class Decoder:
         r['sender_sid'] = self.uint(2)
         r['response_seq'] = self.uint(3)
         r['response_sid'] = self.uint(2)
+        crc = self.uint(2)
 
-        headersize = len(bufstart) - len(self.buf)
+        if crc != crcCalc:
+            raise ValueError(
+                'Packet header CRC invalid. {} != {}'.format(crc, crcCalc))
 
-        sentcrc16 = self.uint(2)
-        calccrc16 = crc16(bufstart[:headersize])
-        print(sentcrc16, calccrc16)
+        return r, bodysize
 
-        # right... *could* actually just compute crc16 / crc32 in correct length and see if zero
+    def packet(self):
+        r, bodysize = self.packet_header()
         r['token'] = self.uint(2)
-        r['body'] = self.bytes(bodysize)
 
-        print(crc32(r['body']), self.uint(4))
+        crcCalc = crc32(self.buf[:bodysize])
+
+        r['body'] = self.bytes(bodysize)
+        crc = self.uint(4)
+
+        if crc != crcCalc:
+            raise ValueError(
+                'Packet body CRC invalid. {} != {}'.format(crc, crcCalc))
 
         return r
 
