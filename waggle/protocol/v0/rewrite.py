@@ -1,3 +1,5 @@
+from binascii import crc_hqx
+from binascii import crc32
 from datetime import datetime
 
 CRC8_TABLE = [
@@ -43,8 +45,16 @@ def calccrc8(data, crc=0):
     return crc
 
 
+def crc16(data):
+    return crc_hqx(data, 0)
+
+
 def nows():
     return int(datetime.utcnow().timestamp())
+
+
+def encode_bytes(b):
+    return b
 
 
 def encode_uint(size, x):
@@ -66,7 +76,7 @@ def encode_sensorgram(sg):
         encode_uint(1, sg['subid']),
         encode_uint(2, sg.get('sourceid', 0)),
         encode_uint(1, sg.get('sourceinst', 0)),
-        body,
+        encode_bytes(body),
     ])
 
 
@@ -79,7 +89,7 @@ def encode_datagram(dg):
     body = dg['body']
 
     return b''.join([
-        DATAGRAM_HEADER,
+        encode_bytes(DATAGRAM_HEADER),
         encode_uint(3, len(body)),
         encode_uint(1, DATAGRAM_PROTOCOL_VERSION),
         encode_uint(4, dg.get('timestamp') or nows()),
@@ -91,9 +101,39 @@ def encode_datagram(dg):
         encode_uint(1, dg['plugin_version'][2]),
         encode_uint(1, dg.get('plugin_instance') or 0),
         encode_uint(2, dg.get('plugin_run_id') or 0),
-        body,
+        encode_bytes(body),
         encode_uint(1, calccrc8(body)),
-        DATAGRAM_FOOTER,
+        encode_bytes(DATAGRAM_FOOTER),
+    ])
+
+
+def encode_waggle_packet(p):
+    header = b''.join([
+        encode_uint(1, p.get('protocol_major_version') or 0),
+        encode_uint(1, p.get('protocol_minor_version') or 0),
+        encode_uint(1, p.get('protocol_patch_version') or 0),
+        encode_uint(1, p.get('message_priority') or 0),
+        encode_uint(4, p.get('body_length') or 0),
+        encode_uint(4, p.get('timestamp') or nows()),
+        encode_uint(1, p.get('message_major_type') or 0),
+        encode_uint(1, p.get('message_minor_type') or 0),
+        encode_uint(2, p.get('reserved') or 0),
+        encode_bytes(p.get('sender_id') or b'0000000000000000'),
+        encode_bytes(p.get('sender_sub_id') or b'0000000000000000'),
+        encode_bytes(p.get('receiver_id') or b'0000000000000000'),
+        encode_bytes(p.get('receiver_sub_id') or b'0000000000000000'),
+        encode_uint(3, p.get('sender_seq') or 0),
+        encode_uint(2, p.get('sender_sid') or 0),
+        encode_uint(3, p.get('response_seq') or 0),
+        encode_uint(2, p.get('response_sid') or 0),
+    ])
+
+    return b''.join([
+        header,
+        encode_uint(2, crc16(header)),
+        encode_uint(4, p.get('token') or 0),
+        encode_bytes(p['body']),
+        encode_uint(4, crc32(p['body'])),
     ])
 
 
@@ -131,15 +171,12 @@ def decode_datagram(b):
     try:
         start = b.index(DATAGRAM_HEADER)
     except ValueError:
-        return None, b'', 'no header found'
+        return None, b''
 
-    b = b[start:]
+    bstart = b[start:]
+    b = bstart
 
-    header, b = decode_bytes(len(DATAGRAM_HEADER), b)
-
-    if header != DATAGRAM_HEADER:
-        return None, b, 'bad header'
-
+    _, b = decode_bytes(len(DATAGRAM_HEADER), b)
     bodysize, b = decode_uint(3, b)
     protocol_version, b = decode_uint(1, b)
     timestamp, b = decode_uint(4, b)
@@ -156,10 +193,10 @@ def decode_datagram(b):
     footer, b = decode_bytes(len(DATAGRAM_FOOTER), b)
 
     if footer != DATAGRAM_FOOTER:
-        return None, b, 'bad footer'
+        return None, bstart
 
     if crc != calccrc8(body):
-        return None, b, 'crc fail'
+        return None, bstart
 
     return {
         'protocol_version': protocol_version,
@@ -174,9 +211,28 @@ def decode_datagram(b):
     }, b
 
 
+def encode_multiple(xs, f):
+    return b''.join([f(x) for x in xs])
+
+
+def encode_sensorgrams(sensorgrams):
+    return encode_multiple(sensorgrams, encode_sensorgram)
+
+
+def encode_datagrams(datagrams):
+    return encode_multiple(datagrams, encode_datagram)
+
+
 def decode_multiple(b, f):
-    while b:
+    while True:
+        if not b:
+            return
+
         x, b = f(b)
+
+        if x is None:
+            return
+
         yield x
 
 
@@ -189,21 +245,22 @@ def decode_datagrams(b):
 
 
 if __name__ == '__main__':
+    print(encode_waggle_packet({
+        'body': b'testing!'
+    }))
+
     packed = encode_datagram({
         'plugin_id': 1000,
         'plugin_version': (1, 0, 0),
-        'body': encode_sensorgram({
-            'id': 1,
-            'subid': 20,
-            'value': b'xxx'
-        })
+        'body': encode_sensorgrams([
+            {'id': 1, 'subid': 20, 'value': b'xxx'},
+            {'id': 1, 'subid': 20, 'value': b'abc'},
+            {'id': 1, 'subid': 20, 'value': b'123'},
+        ])
     })
 
-    packed = b''.join([packed] * 10)
+    packed = b''.join([packed] * 2)
 
-    for dg in decode_datagrams(packed):
+    for dg in decode_datagrams(packed[:-2]):
         print('datagram')
         print(dg)
-        for sg in decode_sensorgrams(dg['body']):
-            print('sensorgram')
-            print(sg)
