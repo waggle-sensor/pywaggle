@@ -290,21 +290,15 @@ class Decoder:
 
 
 def encode_sensorgram(x):
-    e = Encoder()
-    e.sensorgram(x)
-    return e.encoded_bytes()
+    return Encoder().sensorgram(x).encoded_bytes()
 
 
 def encode_datagram(x):
-    e = Encoder()
-    e.datagram(x)
-    return e.encoded_bytes()
+    return Encoder().datagram(x).encoded_bytes()
 
 
 def encode_packet(x):
-    e = Encoder()
-    e.packet(x)
-    return e.encoded_bytes()
+    return Encoder().packet(x).encoded_bytes()
 
 
 def decode_sensorgram(buf):
