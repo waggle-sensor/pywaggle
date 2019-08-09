@@ -208,7 +208,9 @@ class Plugin(PluginBase):
             self.credentials = load_package_plugin_credentials()
 
         self.queue = 'to-{}'.format(self.credentials.username)
+        self._connect()
 
+    def _connect(self):
         connection_parameters = get_connection_parameters(self.credentials)
         self.connection = pika.BlockingConnection(connection_parameters)
         self.channel = self.connection.channel()
@@ -218,13 +220,20 @@ class Plugin(PluginBase):
     def publish(self, body):
         self.logger.debug('Publishing message data %s.', body)
 
-        self.channel.basic_publish(
-            exchange='messages',
-            routing_key='',
-            properties=pika.BasicProperties(
-                delivery_mode=2,
-                user_id=self.credentials.username),
-            body=body)
+        for i in range(2):
+            try:
+                self.channel.basic_publish(
+                    exchange='messages',
+                    routing_key='',
+                    properties=pika.BasicProperties(
+                        delivery_mode=2,
+                        user_id=self.credentials.username),
+                    body=body)
+                break
+            except pika.exceptions.ConnectionClosed:
+                self._connect()
+            except Exception:
+                break
 
     def get_waiting_messages(self):
         self.channel.queue_declare(queue=self.queue, durable=True)
