@@ -10,7 +10,12 @@ from . import waggleprotocol_spec
 
 def get_spec(spec_str):
     spec = {}
-    contents = yaml.load(spec_str)
+    contents = {}
+    try:
+        contents = yaml.load(spec_str, Loader=yaml.FullLoader)
+    except:
+        contents = yaml.load(spec_str)
+
     for packet in contents:
         assert 'conversion' in packet
         spec[packet['id']] = {}
