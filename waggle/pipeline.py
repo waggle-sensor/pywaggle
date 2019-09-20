@@ -143,7 +143,7 @@ class ImagePipelineHandler(object):
             exchange_type='direct',
             durable=True
         )
-        result = self.channel.queue_declare(exclusive=True, arguments={'x-max-length': 1})
+        result = self.channel.queue_declare('', exclusive=True, arguments={'x-max-length': 1})
         self.in_queue = result.method.queue
         self.channel.queue_bind(
             queue=self.in_queue,
