@@ -163,12 +163,12 @@ class ImagePipelineHandler(object):
             pass
 
     def raw_read(self):
-        return self.channel.basic_get(queue=self.in_queue, no_ack=True)
+        return self.channel.basic_get(queue=self.in_queue, auto_ack=True)
 
     def read(self, timeout=5):
         for i in range(timeout):
             try:
-                method, properties, body = self.channel.basic_get(queue=self.in_queue, no_ack=True)
+                method, properties, body = self.channel.basic_get(queue=self.in_queue, auto_ack=True)
                 if method is not None:
                     return True, (properties, body)
             except pika.exceptions.ConnectionClosed:
@@ -359,5 +359,5 @@ class Worker(object):
             param = tuple(headers['key'])
             self.get_message(headers, param, body)
 
-        self.channel.basic_consume(callback, queue=self.queue_name, no_ack=True)
+        self.channel.basic_consume(callback, queue=self.queue_name, auto_ack=True)
         self.channel.start_consuming()
