@@ -11,6 +11,7 @@ from binascii import crc32
 import random
 import struct
 import logging
+import array
 
 
 logger = logging.getLogger('waggle.protocol')
@@ -154,33 +155,41 @@ class Encoder:
     def __init__(self, writer):
         self.writer = writer
 
-    def encode_bytes(self, value):
-        logger.debug('encode_bytes %r', value)
-        length = self.writer.write(value)
+    # def encode_bytes(self, value):
+    #     logger.debug('encode_bytes %r', value)
+    #     length = self.writer.write(value)
 
-        if length != len(value):
-            raise IOError('Failed to encode bytes.')
+    #     if length != len(value):
+    #         raise IOError('Failed to encode bytes.')
 
-    def encode_string(self, s):
-        self.encode_bytes(s.encode())
+    # def encode_string(self, s):
+    #     self.encode_bytes(s.encode())
 
-    def encode_uint(self, length, value):
-        self.encode_bytes(value.to_bytes(length, 'big'))
+    # def encode_uint(self, length, value):
+    #     self.encode_bytes(value.to_bytes(length, 'big'))
 
-    def encode_int(self, length, value):
-        self.encode_bytes(value.to_bytes(length, 'big', signed=True))
+    # def encode_int(self, length, value):
+    #     self.encode_bytes(value.to_bytes(length, 'big', signed=True))
 
-    def encode_float(self, x):
-        self.encode_bytes(struct.pack('f', x))
+    # def encode_float(self, x):
+    #     self.encode_bytes(struct.pack('f', x))
 
     def encode_sensorgram(self, sg):
-        body = pack_typed_values(sg['value'])
-        self.encode_uint(2, len(body))
-        self.encode_uint(2, sg['sensor_id'])
-        self.encode_uint(1, sg.get('sensor_instance', 0))
-        self.encode_uint(1, sg['parameter_id'])
-        self.encode_uint(4, get_timestamp_or_now(sg))
-        self.encode_bytes(body)
+        crcw = CRC8Writer(self.writer)
+        e = BasicEncoder(crcw)
+
+        body = encode_sensorgram_values(sg['value'])
+        e.encode_uint(len(body), 2)
+        e.encode_uint(get_timestamp_or_now(sg), 4)
+        e.encode_uint(sg['id'], 2)
+        e.encode_uint(sg.get('inst', 0), 1)
+        e.encode_uint(sg['sub_id'], 1)
+        e.encode_uint(sg.get('source_id', 0), 2)
+        e.encode_uint(sg.get('source_inst', 0), 1)
+        e.encode_bytes(body)
+
+        # write crc sum
+        self.writer.write(bytes([crcw.sum]))
 
     def encode_datagram(self, value):
         protocol_version = value.get(
@@ -552,10 +561,62 @@ def pack_sensor_data_message(sensorgrams):
         })
     })
 
+# TODO varint would also be interesting for uint array types. it would allows us
+# to handle a "list of integers" in a uniform way.
 
-def decode_uint_array(d, size):
+
+def encode_uint_array(e, intsize, values):
+    e.encode_uint(len(values), 2)
+    for x in values:
+        e.encode_uint(x, intsize)
+
+
+def decode_uint_array(d, intsize):
     count = d.decode_uint(2)
-    return [d.decode_uint(size) for _ in range(count)]
+    return [d.decode_uint(intsize) for _ in range(count)]
+
+
+encode_values_table = {
+    TYPE_UINT8: lambda e, x: e.encode_uint(x, 1),
+    TYPE_UINT16: lambda e, x: e.encode_uint(x, 2),
+    TYPE_UINT24: lambda e, x: e.encode_uint(x, 3),
+    TYPE_UINT32: lambda e, x: e.encode_uint(x, 4),
+
+    TYPE_UINT8_ARRAY: lambda e, xs: encode_uint_array(e, 1, xs),
+    TYPE_UINT16_ARRAY: lambda e, xs: encode_uint_array(e, 2, xs),
+    TYPE_UINT24_ARRAY: lambda e, xs: encode_uint_array(e, 3, xs),
+    TYPE_UINT32_ARRAY: lambda e, xs: encode_uint_array(e, 4, xs),
+}
+
+
+def detect_value_type(x):
+    if isinstance(x, int) and x >= 0:
+        if x <= 0xff:
+            return TYPE_UINT8
+        if x <= 0xffff:
+            return TYPE_UINT16
+        if x <= 0xffffff:
+            return TYPE_UINT24
+        if x <= 0xffffffff:
+            return TYPE_UINT32
+        raise ValueError('uint too large')
+    if isinstance(x, (bytes, bytearray)):
+        return TYPE_BYTE_ARRAY
+    if isinstance(x, (list, tuple)):
+        # should do more uniform checking or have type escalation
+        return max(map(detect_value_type, x)) | 0x80
+
+
+def encode_sensorgram_values(values):
+    w = BytesIO()
+    e = BasicEncoder(w)
+
+    for x in values:
+        value_type = detect_value_type(x)
+        e.encode_uint(value_type, 1)
+        encode_values_table[value_type](e, x)
+
+    return w.getvalue()
 
 
 decode_values_table = {
@@ -603,6 +664,23 @@ if __name__ == '__main__':
             break
         data = b64decode(line.strip())
         print(unpack_sensorgram(data))
+
+    data = pack_sensorgram({
+        'timestamp': 1000000,
+        'id': 1,
+        'inst': 0,
+        'sub_id': 2,
+        'source_id': 2,
+        'source_inst': 2,
+        'value': [13, 17, [1, 2, 3], 99],
+    })
+
+    print(unpack_sensorgram(data))
+
+    # values = [13, 17, 1001, [1, 2, 3], [4, 5, 6], [0x1234, 0x5678]]
+    # print(values)
+    # data = encode_sensorgram_values(values)
+    # print(decode_sensorgram_values(data))
 
     # print(unpack_sensorgram(pack_sensorgram({
     #     'sensor_id': 1,
