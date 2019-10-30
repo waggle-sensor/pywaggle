@@ -644,14 +644,17 @@ def decode_sensorgram_values(data):
 
 
 if __name__ == '__main__':
+    from base64 import b64encode
+
     data = pack_sensorgram({
-        'timestamp': 1000000,
-        'id': 1,
-        'inst': 0,
-        'sub_id': 2,
-        'source_id': 2,
-        'source_inst': 2,
+        'timestamp': 0x11111111,
+        'id': 0x2222,
+        'inst': 0x33,
+        'sub_id': 0x44,
+        'source_id': 0x5555,
+        'source_inst': 0x66,
         'value': [13, 17, [1, 2, 3], 99],
     })
 
+    print(b64encode(data).decode())
     print(unpack_sensorgram(data))
