@@ -355,11 +355,6 @@ class Decoder:
         return r
 
     def decode_datagram(self):
-        start_flag = self.decode_uint(1)
-
-        if start_flag != START_FLAG:
-            raise ValueError('Invalid start flag.')
-
         body_length = self.decode_uint(3)
         protocol_version = self.decode_uint(1)
         timestamp = self.decode_uint(4)
@@ -374,13 +369,9 @@ class Decoder:
         body = self.decode_bytes(body_length)
         body_crc = self.decode_uint(1)
 
+        # TODO change to crc16
         if crc8(body) != body_crc:
             raise ValueError('Invalid body CRC.')
-
-        end_flag = self.decode_uint(1)
-
-        if end_flag != END_FLAG:
-            raise ValueError('Invalid end flag.')
 
         return {
             'timestamp': timestamp,
@@ -653,18 +644,6 @@ def decode_sensorgram_values(data):
 
 
 if __name__ == '__main__':
-    from base64 import b64decode
-
-    source = BytesIO(
-        b'ADERERERIiIzRFVVZgQNBBEGA+mKAAUAAAABAAAAAgAAAAMAAAAEAAAABYoABAAAAAYAAAAHAAAACAAAAAlJ\n')
-
-    while True:
-        line = source.readline()
-        if len(line) == 0:
-            break
-        data = b64decode(line.strip())
-        print(unpack_sensorgram(data))
-
     data = pack_sensorgram({
         'timestamp': 1000000,
         'id': 1,
@@ -676,44 +655,3 @@ if __name__ == '__main__':
     })
 
     print(unpack_sensorgram(data))
-
-    # values = [13, 17, 1001, [1, 2, 3], [4, 5, 6], [0x1234, 0x5678]]
-    # print(values)
-    # data = encode_sensorgram_values(values)
-    # print(decode_sensorgram_values(data))
-
-    # print(unpack_sensorgram(pack_sensorgram({
-    #     'sensor_id': 1,
-    #     'parameter_id': 1,
-    #     'value': (1, 10.2, 'hello'),
-    # })))
-
-    # print(unpack_sensorgram(pack_sensorgram({
-    #     'sensor_id': 1,
-    #     'parameter_id': 1,
-    #     'value': (1, 2, 3, 4, 5, b'more bytes'),
-    # })))
-
-    # print(unpack_sensorgram(pack_sensorgram({
-    #     'sensor_id': 1,
-    #     'parameter_id': 1,
-    #     'value': 32.1,
-    # })))
-
-    # print(unpack_sensorgram(pack_sensorgram({
-    #     'sensor_id': 1,
-    #     'parameter_id': 1,
-    #     'value': -23,
-    # })))
-
-    # print(unpack_sensorgram(pack_sensorgram({
-    #     'sensor_id': 1,
-    #     'parameter_id': 1,
-    #     'value': [1., 2., 3.],
-    # })))
-
-    # print(unpack_sensorgram(pack_sensorgram({
-    #     'sensor_id': 1,
-    #     'parameter_id': 1,
-    #     'value': (1, [1., 2., 3.]),
-    # })))
