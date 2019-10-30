@@ -108,8 +108,8 @@ class BasicDecoder:
             raise EOFError()
         return data
 
-    def decode_uint(self, n):
-        return int.from_bytes(self.decode_bytes(n), byteorder='big')
+    def decode_uint(self, size):
+        return int.from_bytes(self.decode_bytes(size), byteorder='big')
 
 
 RUN_ID = random.randint(0, 0xffff - 1)
@@ -117,9 +117,6 @@ RUN_ID = random.randint(0, 0xffff - 1)
 PROTOCOL_MAJOR_VERSION = 2
 PROTOCOL_MINOR_VERSION = 1
 PROTOCOL_PATCH_VERSION = 0
-
-START_FLAG = 0xaa
-END_FLAG = 0x55
 
 sender_sequence = 0
 packet_sequence = 0
@@ -201,7 +198,6 @@ class Encoder:
         body_length = len(body)
         body_crc = crc8(body)
 
-        self.encode_uint(1, START_FLAG)
         self.encode_uint(3, body_length)
         self.encode_uint(1, protocol_version)
         self.encode_uint(4, timestamp)
@@ -215,7 +211,6 @@ class Encoder:
         self.encode_uint(2, plugin_run_id)
         self.encode_bytes(body)
         self.encode_uint(1, body_crc)
-        self.encode_uint(1, END_FLAG)
 
     def encode_waggle_packet_header(self, value):
         protocol_major_version = value.get(
@@ -340,11 +335,10 @@ class Decoder:
         r['sub_id'] = d.decode_uint(1)
         r['source_id'] = d.decode_uint(2)
         r['source_inst'] = d.decode_uint(1)
+        r['value'] = decode_sensorgram_values(d.decode_bytes(body_length))
 
-        # TODO do value unpack here
-        r['body'] = d.decode_bytes(body_length)
-
-        r['crc'] = d.decode_uint(1)
+        # read crc byte to update crc reader sum
+        _ = d.decode_uint(1)
 
         if crcr.sum != 0:
             raise ValueError('incorrect sensorgram crc')
@@ -447,8 +441,8 @@ class Decoder:
 
 
 TYPE_NULL = 0x00
-TYPE_BYTES = 0x01
-TYPE_STRING = 0x02
+TYPE_BYTE = 0x01
+TYPE_CHAR = 0x02
 TYPE_INT8 = 0x03
 TYPE_UINT8 = 0x04
 TYPE_INT16 = 0x05
@@ -460,135 +454,21 @@ TYPE_UINT32 = 0x0a
 TYPE_FLOAT16 = 0x0b
 TYPE_FLOAT32 = 0x0c
 TYPE_FLOAT64 = 0x0d
-TYPE_LIST_OF_FLOAT32 = 0x8c
 
-
-def pack_typed_value(value):
-    if isinstance(value, (bytes, bytearray)):
-        return TYPE_BYTES, value
-
-    if isinstance(value, str):
-        return TYPE_STRING, value.encode()
-
-    if isinstance(value, int):
-        if value < 0:
-            return packed_type_int_value(value)
-        else:
-            return packed_type_uint_value(value)
-
-    if isinstance(value, float):
-        return TYPE_FLOAT32, struct.pack('f', value)
-
-    if isinstance(value, list) and isinstance(value[0], float):
-        return TYPE_LIST_OF_FLOAT32, struct.pack('{}f'.format(len(value)), *value)
-
-    raise ValueError('Unsupported value type.')
-
-
-def pack_typed_values(value):
-    # lift single to tuple
-    if not isinstance(value, tuple):
-        value = (value,)
-
-    # ensure "expanding" values are the last argument
-    for v in value[:-1]:
-        if isinstance(v, (bytes, bytearray, str, list)):
-            raise TypeError(
-                'Value {} of type {} must be last argument'.format(v, type(v)))
-
-    chunks = []
-
-    for v in value:
-        t, b = pack_typed_value(v)
-        chunks.append(bytes([t]))
-        chunks.append(b)
-
-    return b''.join(chunks)
-
-
-def packed_type_int_value(value):
-    try:
-        return TYPE_INT8, value.to_bytes(1, byteorder='big', signed=True)
-    except OverflowError:
-        pass
-
-    try:
-        return TYPE_INT16, value.to_bytes(2, byteorder='big', signed=True)
-    except OverflowError:
-        pass
-
-    try:
-        return TYPE_INT24, value.to_bytes(3, byteorder='big', signed=True)
-    except OverflowError:
-        pass
-
-    try:
-        return TYPE_INT32, value.to_bytes(4, byteorder='big', signed=True)
-    except OverflowError:
-        pass
-
-    raise ValueError('Unsupported int size.')
-
-
-def packed_type_uint_value(value):
-    try:
-        return TYPE_UINT8, value.to_bytes(1, byteorder='big', signed=False)
-    except OverflowError:
-        pass
-
-    try:
-        return TYPE_UINT16, value.to_bytes(2, byteorder='big', signed=False)
-    except OverflowError:
-        pass
-
-    try:
-        return TYPE_UINT24, value.to_bytes(3, byteorder='big', signed=False)
-    except OverflowError:
-        pass
-
-    try:
-        return TYPE_UINT32, value.to_bytes(4, byteorder='big', signed=False)
-    except OverflowError:
-        pass
-
-    raise ValueError('Unsupported unsigned int size.')
-
-
-decode_value_table = {
-    TYPE_BYTES: lambda d: d.decode_bytes_value(),
-    TYPE_STRING: lambda d: d.decode_string_value(),
-
-    TYPE_UINT8: lambda d: d.decode_uint(1),
-    TYPE_UINT16: lambda d: d.decode_uint(2),
-    TYPE_UINT24: lambda d: d.decode_uint(3),
-    TYPE_UINT32: lambda d: d.decode_uint(4),
-
-    TYPE_INT8: lambda d: d.decode_int(1),
-    TYPE_INT16: lambda d: d.decode_int(2),
-    TYPE_INT24: lambda d: d.decode_int(3),
-    TYPE_INT32: lambda d: d.decode_int(4),
-
-    TYPE_FLOAT32: lambda d: d.decode_float(),
-    TYPE_LIST_OF_FLOAT32: lambda d: d.decode_list_of_floats_value(),
-}
-
-
-def decode_value_type(body):
-    results = []
-
-    d = Decoder(BytesIO(body))
-
-    while True:
-        try:
-            t = d.decode_uint(1)
-            results.append(decode_value_table[t](d))
-        except EOFError:
-            break
-
-    if len(results) == 1:
-        return results[0]
-    else:
-        return tuple(results)
+# same as scalar types but with high bit set
+TYPE_BYTE_ARRAY = 0x81
+TYPE_STRING = 0x82
+TYPE_INT8_ARRAY = 0x83
+TYPE_UINT8_ARRAY = 0x84
+TYPE_INT16_ARRAY = 0x85
+TYPE_UINT16_ARRAY = 0x86
+TYPE_INT24_ARRAY = 0x87
+TYPE_UINT24_ARRAY = 0x88
+TYPE_INT32_ARRAY = 0x89
+TYPE_UINT32_ARRAY = 0x8a
+TYPE_FLOAT16_ARRAY = 0x8b
+TYPE_FLOAT32_ARRAY = 0x8c
+TYPE_FLOAT64_ARRAY = 0x8d
 
 
 def make_pack_function(func):
@@ -673,10 +553,49 @@ def pack_sensor_data_message(sensorgrams):
     })
 
 
+def decode_uint_array(d, size):
+    count = d.decode_uint(2)
+    return [d.decode_uint(size) for _ in range(count)]
+
+
+decode_values_table = {
+    TYPE_UINT8: lambda d: d.decode_uint(1),
+    TYPE_UINT16: lambda d: d.decode_uint(2),
+    TYPE_UINT24: lambda d: d.decode_uint(3),
+    TYPE_UINT32: lambda d: d.decode_uint(4),
+
+    TYPE_UINT8_ARRAY: lambda d: decode_uint_array(d, 1),
+    TYPE_UINT16_ARRAY: lambda d: decode_uint_array(d, 2),
+    TYPE_UINT24_ARRAY: lambda d: decode_uint_array(d, 3),
+    TYPE_UINT32_ARRAY: lambda d: decode_uint_array(d, 4),
+}
+
+
+def decode_next_sensorgram_value(r):
+    d = BasicDecoder(r)
+    value_type = d.decode_uint(1)
+    return decode_values_table[value_type](d)
+
+
+def decode_sensorgram_values(data):
+    results = []
+
+    reader = BytesIO(data)
+
+    while True:
+        try:
+            results.append(decode_next_sensorgram_value(reader))
+        except EOFError:
+            break
+
+    return tuple(results)
+
+
 if __name__ == '__main__':
     from base64 import b64decode
 
-    source = BytesIO(b'AAIRERERIiIzRFVVZgR3uw==\n')
+    source = BytesIO(
+        b'ADERERERIiIzRFVVZgQNBBEGA+mKAAUAAAABAAAAAgAAAAMAAAAEAAAABYoABAAAAAYAAAAHAAAACAAAAAlJ\n')
 
     while True:
         line = source.readline()
