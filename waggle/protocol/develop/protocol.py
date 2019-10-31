@@ -173,10 +173,10 @@ class Encoder:
     #     self.encode_bytes(struct.pack('f', x))
 
     def encode_sensorgram(self, sg):
+        body = encode_values(sg['value'])
+
         crcw = CRCWriter(self.writer, crc8)
         e = BasicEncoder(crcw)
-
-        body = encode_values(sg['value'])
         e.encode_uint(len(body), 2)
         e.encode_uint(get_timestamp_or_now(sg), 4)
         e.encode_uint(sg['id'], 2)
@@ -281,16 +281,14 @@ class Decoder:
 
         crcr = CRCReader(self.reader, crc8)
         d = BasicDecoder(crcr)
-
-        # should we make this the whole length instead?
-        body_length = d.decode_uint(2)
+        r['length'] = d.decode_uint(2)
         r['timestamp'] = d.decode_uint(4)
         r['id'] = d.decode_uint(2)
         r['inst'] = d.decode_uint(1)
         r['sub_id'] = d.decode_uint(1)
         r['source_id'] = d.decode_uint(2)
         r['source_inst'] = d.decode_uint(1)
-        r['value'] = decode_values(d.decode_bytes(body_length))
+        r['value'] = decode_values(d.decode_bytes(r['length']))
         r['crc'] = d.decode_uint(1)
 
         if crcr.sum != 0:
@@ -301,7 +299,7 @@ class Decoder:
     def decode_datagram(self):
         r = {}
 
-        crcr = CRCReader(self.reader, crrc16)
+        crcr = CRCReader(self.reader, crc16)
         d = BasicDecoder(crcr)
 
         body_length = d.decode_uint(3)
