@@ -557,10 +557,20 @@ def pack_sensor_data_message(sensorgrams):
 # to handle a "list of integers" in a uniform way.
 
 
+def encode_byte_array(e, x):
+    e.encode_uint(len(x), 2)
+    e.encode_bytes(x)
+
+
 def encode_uint_array(e, intsize, values):
     e.encode_uint(len(values), 2)
     for x in values:
         e.encode_uint(x, intsize)
+
+
+def decode_byte_array(d):
+    count = d.decode_uint(2)
+    return d.decode_bytes(count)
 
 
 def decode_uint_array(d, intsize):
@@ -574,14 +584,17 @@ encode_values_table = {
     TYPE_UINT24: lambda e, x: e.encode_uint(x, 3),
     TYPE_UINT32: lambda e, x: e.encode_uint(x, 4),
 
-    TYPE_UINT8_ARRAY: lambda e, xs: encode_uint_array(e, 1, xs),
-    TYPE_UINT16_ARRAY: lambda e, xs: encode_uint_array(e, 2, xs),
-    TYPE_UINT24_ARRAY: lambda e, xs: encode_uint_array(e, 3, xs),
-    TYPE_UINT32_ARRAY: lambda e, xs: encode_uint_array(e, 4, xs),
+    TYPE_BYTE_ARRAY: lambda e, x: encode_byte_array(e, x),
+    TYPE_UINT8_ARRAY: lambda e, x: encode_uint_array(e, 1, x),
+    TYPE_UINT16_ARRAY: lambda e, x: encode_uint_array(e, 2, x),
+    TYPE_UINT24_ARRAY: lambda e, x: encode_uint_array(e, 3, x),
+    TYPE_UINT32_ARRAY: lambda e, x: encode_uint_array(e, 4, x),
 }
 
 
 def detect_value_type(x):
+    if isinstance(x, (bytes, bytearray)):
+        return TYPE_BYTE_ARRAY
     if isinstance(x, int) and x >= 0:
         if x <= 0xff:
             return TYPE_UINT8
@@ -592,8 +605,6 @@ def detect_value_type(x):
         if x <= 0xffffffff:
             return TYPE_UINT32
         raise ValueError('uint too large')
-    if isinstance(x, (bytes, bytearray)):
-        return TYPE_BYTE_ARRAY
     if isinstance(x, (list, tuple)):
         # should do more uniform checking or have type escalation
         return max(map(detect_value_type, x)) | 0x80
@@ -620,6 +631,7 @@ decode_values_table = {
     TYPE_UINT24: lambda d: d.decode_uint(3),
     TYPE_UINT32: lambda d: d.decode_uint(4),
 
+    TYPE_BYTE_ARRAY: lambda d: decode_byte_array(d),
     TYPE_UINT8_ARRAY: lambda d: decode_uint_array(d, 1),
     TYPE_UINT16_ARRAY: lambda d: decode_uint_array(d, 2),
     TYPE_UINT24_ARRAY: lambda d: decode_uint_array(d, 3),
@@ -644,7 +656,11 @@ def decode_values(data):
         except EOFError:
             break
 
-    return tuple(results)
+    # ugly... we probably shouldn't do this
+    if len(results) == 1:
+        return results[0]
+    else:
+        return tuple(results)
 
 
 if __name__ == '__main__':

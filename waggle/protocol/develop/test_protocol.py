@@ -9,6 +9,13 @@ from io import BytesIO
 from protocol import encode_values, decode_values
 from protocol import pack_sensorgram, unpack_sensorgram
 
+value_test_cases = [
+    b'hello',
+    0,
+    100,
+    200,
+]
+
 sensorgram_test_cases = [
     {'id': 1, 'sub_id': 2, 'value': b''},
     {'id': 1, 'sub_id': 2, 'value': b'123'},
@@ -20,7 +27,8 @@ sensorgram_test_cases = [
 class TestProtocol(unittest.TestCase):
 
     def test_values(self):
-        encode
+        for c in value_test_cases:
+            self.assertAlmostEqual(c, decode_values(encode_values(c)))
 
     def test_pack_unpack_sensorgrams(self):
         for c in sensorgram_test_cases:
