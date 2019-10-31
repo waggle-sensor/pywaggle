@@ -178,7 +178,7 @@ class Encoder:
         crcw = CRC8Writer(self.writer)
         e = BasicEncoder(crcw)
 
-        body = encode_sensorgram_values(sg['value'])
+        body = encode_values(sg['value'])
         e.encode_uint(len(body), 2)
         e.encode_uint(get_timestamp_or_now(sg), 4)
         e.encode_uint(sg['id'], 2)
@@ -205,21 +205,22 @@ class Encoder:
         plugin_run_id = value.get('plugin_run_id', RUN_ID)
         body = value['body']
         body_length = len(body)
-        body_crc = crc8(body)
+        body_crc = crc16(body)
 
-        self.encode_uint(3, body_length)
-        self.encode_uint(1, protocol_version)
-        self.encode_uint(4, timestamp)
-        self.encode_uint(2, packet_seq)
-        self.encode_uint(1, packet_type)
-        self.encode_uint(2, plugin_id)
-        self.encode_uint(1, plugin_major_version)
-        self.encode_uint(1, plugin_minor_version)
-        self.encode_uint(1, plugin_patch_version)
-        self.encode_uint(1, plugin_instance)
-        self.encode_uint(2, plugin_run_id)
-        self.encode_bytes(body)
-        self.encode_uint(1, body_crc)
+        e = BasicEncoder(self.writer)
+        e.encode_uint(3, body_length)
+        e.encode_uint(1, protocol_version)
+        e.encode_uint(4, timestamp)
+        e.encode_uint(2, packet_seq)
+        e.encode_uint(1, packet_type)
+        e.encode_uint(2, plugin_id)
+        e.encode_uint(1, plugin_major_version)
+        e.encode_uint(1, plugin_minor_version)
+        e.encode_uint(1, plugin_patch_version)
+        e.encode_uint(1, plugin_instance)
+        e.encode_uint(2, plugin_run_id)
+        e.encode_bytes(body)
+        e.encode_uint(2, body_crc)
 
     def encode_waggle_packet_header(self, value):
         protocol_major_version = value.get(
@@ -344,7 +345,7 @@ class Decoder:
         r['sub_id'] = d.decode_uint(1)
         r['source_id'] = d.decode_uint(2)
         r['source_inst'] = d.decode_uint(1)
-        r['value'] = decode_sensorgram_values(d.decode_bytes(body_length))
+        r['value'] = decode_values(d.decode_bytes(body_length))
 
         # read crc byte to update crc reader sum
         _ = d.decode_uint(1)
@@ -598,9 +599,12 @@ def detect_value_type(x):
         return max(map(detect_value_type, x)) | 0x80
 
 
-def encode_sensorgram_values(values):
+def encode_values(values):
     w = BytesIO()
     e = BasicEncoder(w)
+
+    if not isinstance(values, (list, tuple)):
+        values = [values]
 
     for x in values:
         value_type = detect_value_type(x)
@@ -623,20 +627,20 @@ decode_values_table = {
 }
 
 
-def decode_next_sensorgram_value(r):
+def decode_next_value(r):
     d = BasicDecoder(r)
     value_type = d.decode_uint(1)
     return decode_values_table[value_type](d)
 
 
-def decode_sensorgram_values(data):
+def decode_values(data):
     results = []
 
     reader = BytesIO(data)
 
     while True:
         try:
-            results.append(decode_next_sensorgram_value(reader))
+            results.append(decode_next_value(reader))
         except EOFError:
             break
 
@@ -660,10 +664,12 @@ if __name__ == '__main__':
                 'source_inst': 66,
                 'value': [7, 88, 9999],
             }
+            encoded = b64encode(pack_sensorgram(sg))
 
             print('>>> sending test sensorgram')
             print(sg)
-            ser.write(b64encode(pack_sensorgram(sg)))
+            print(encoded.decode())
+            ser.write(encoded)
             ser.write(b'\n')
             print()
 
