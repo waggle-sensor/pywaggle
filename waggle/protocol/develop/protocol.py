@@ -193,11 +193,10 @@ class Encoder:
         e.encode_uint(value.get('token', 0), 4)
 
     def encode_message_content(self, value):
-        crcw = CRCWriter(self.writer, crc32)
-        e = BasicEncoder(crcw)
+        # crc32 seems to break streaming setup
+        e = BasicEncoder(self.writer)
         e.encode_bytes(value['body'])
-        e.encode_uint(crcw.sum, 4)
-        assert crcw.sum == 0
+        e.encode_uint(crc32(value['body']), 4)
 
     def encode_waggle_packet(self, value):
         self.encode_message_header(value)
@@ -284,12 +283,12 @@ class Decoder:
         r['token'] = d.decode_uint(4)
 
     def decode_message_content(self, r):
-        crcr = CRCReader(self.reader, crc32)
-        d = BasicDecoder(crcr)
+        # crc32 seems to break streaming setup
+        d = BasicDecoder(self.reader)
         r['body'] = d.decode_bytes(r['body_length'])
         r['body_crc'] = d.decode_uint(4)
 
-        if crcr.sum != 0:
+        if r['body_crc'] != crc32(r['body']):
             raise ValueError('invalid message body crc')
 
     def decode_waggle_packet(self):
