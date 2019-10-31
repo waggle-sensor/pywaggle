@@ -644,17 +644,43 @@ def decode_sensorgram_values(data):
 
 
 if __name__ == '__main__':
-    from base64 import b64encode
+    from serial import Serial
+    from base64 import b64encode, b64decode
+    import binascii
+    import sys
 
-    data = pack_sensorgram({
-        'timestamp': 0x11111111,
-        'id': 0x2222,
-        'inst': 0x33,
-        'sub_id': 0x44,
-        'source_id': 0x5555,
-        'source_inst': 0x66,
-        'value': [13, 17, [1, 2, 3], 99],
-    })
+    with Serial(sys.argv[1], 9600, timeout=3) as ser:
+        while True:
+            sg = {
+                'timestamp': int(time.time()),
+                'id': 2222,
+                'inst': 33,
+                'sub_id': 44,
+                'source_id': 5555,
+                'source_inst': 66,
+                'value': [7, 88, 9999],
+            }
 
-    print(b64encode(data).decode())
-    print(unpack_sensorgram(data))
+            print('>>> sending test sensorgram')
+            print(sg)
+            ser.write(b64encode(pack_sensorgram(sg)))
+            ser.write(b'\n')
+            print()
+
+            print('>>> printing output')
+
+            while True:
+                line = ser.readline()
+                if len(line) == 0:
+                    break
+                print(line.strip().decode())
+
+                try:
+                    data = b64decode(line.strip())
+                    sg = unpack_sensorgram(data)
+                    print('sensorgram from device')
+                    print(sg)
+                except (binascii.Error, IndexError):
+                    pass
+
+            print()
