@@ -281,14 +281,14 @@ class Decoder:
 
         crcr = CRCReader(self.reader, crc8)
         d = BasicDecoder(crcr)
-        r['length'] = d.decode_uint(2)
+        r['body_length'] = d.decode_uint(2)
         r['timestamp'] = d.decode_uint(4)
         r['id'] = d.decode_uint(2)
         r['inst'] = d.decode_uint(1)
         r['sub_id'] = d.decode_uint(1)
         r['source_id'] = d.decode_uint(2)
         r['source_inst'] = d.decode_uint(1)
-        r['value'] = decode_values(d.decode_bytes(r['length']))
+        r['value'] = decode_values(d.decode_bytes(r['body_length']))
         r['crc'] = d.decode_uint(1)
 
         if crcr.sum != 0:
@@ -301,8 +301,7 @@ class Decoder:
 
         crcr = CRCReader(self.reader, crc16)
         d = BasicDecoder(crcr)
-
-        body_length = d.decode_uint(3)
+        r['body_length'] = d.decode_uint(3)
         r['protocol_version'] = d.decode_uint(1)
         r['timestamp'] = d.decode_uint(4)
         r['packet_seq'] = d.decode_uint(2)
@@ -313,7 +312,7 @@ class Decoder:
         r['plugin_patch_version'] = d.decode_uint(1)
         r['plugin_instance'] = d.decode_uint(1)
         r['plugin_run_id'] = d.decode_uint(2)
-        r['body'] = d.decode_bytes(body_length)
+        r['body'] = d.decode_bytes(r['body_length'])
         r['crc'] = d.decode_uint(2)
 
         if crcr.sum != 0:
@@ -326,12 +325,11 @@ class Decoder:
 
         crcr = CRCReader(self.reader, crc16)
         d = BasicDecoder(crcr)
-
         r['protocol_major_version'] = d.decode_uint(1)
         r['protocol_minor_version'] = d.decode_uint(1)
         r['protocol_patch_version'] = d.decode_uint(1)
         r['message_priority'] = d.decode_uint(1)
-        body_length = d.decode_uint(4)
+        r['body_length'] = d.decode_uint(4)
         r['timestamp'] = d.decode_uint(4)
         r['message_major_type'] = d.decode_uint(1)
         r['message_minor_type'] = d.decode_uint(1)
@@ -350,31 +348,16 @@ class Decoder:
             raise ValueError('invalid message header crc')
 
         r['token'] = d.decode_uint(4)
-        r['body'] = d.decode_bytes(body_length)
-        body_crc = d.decode_uint(4)
 
-        if crc32(body) != body_crc:
-            raise ValueError('Invalid body CRC.')
+        crcr = CRCReader(self.reader, crc32)
+        d = BasicDecoder(crcr)
+        r['body'] = d.decode_bytes(r['body_length'])
+        r['body_crc'] = d.decode_uint(4)
 
-        return {
-            'timestamp': timestamp,
-            'protocol_major_version': protocol_major_version,
-            'protocol_minor_version': protocol_minor_version,
-            'protocol_patch_version': protocol_patch_version,
-            'message_priority': message_priority,
-            'message_major_type': message_major_type,
-            'message_minor_type': message_minor_type,
-            'sender_id': sender_id,
-            'sender_sub_id': sender_sub_id,
-            'sender_seq': sender_seq,
-            'sender_sid': sender_sid,
-            'receiver_id': receiver_id,
-            'receiver_sub_id': receiver_sub_id,
-            'response_seq': response_seq,
-            'response_sid': response_sid,
-            'token': token,
-            'body': body,
-        }
+        if crcr.sum != 0:
+            raise ValueError('invalid message body crc')
+
+        return r
 
 
 TYPE_NULL = 0x00

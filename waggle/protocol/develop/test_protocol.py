@@ -8,6 +8,7 @@ import unittest
 from io import BytesIO
 from protocol import encode_values, decode_values
 from protocol import pack_sensorgram, unpack_sensorgram
+from protocol import pack_datagram, unpack_datagram
 
 value_test_cases = [
     b'hello',
@@ -31,6 +32,31 @@ sensorgram_test_cases = [
     {'id': 1, 'sub_id': 2, 'value': b'x' * 4096},
 ]
 
+datagram_test_cases = [
+    {
+        'plugin_id': 1,
+        'body': b'',
+    },
+    {
+        'plugin_id': 1,
+        'body': b'123',
+    },
+    {
+        'timestamp': 1234567,
+        'plugin_id': 9090,
+        'plugin_major_version': 1,
+        'plugin_minor_version': 3,
+        'plugin_patch_version': 7,
+        'plugin_instance': 9,
+        'plugin_run_id': 12345,
+        'body': b'123',
+    },
+    {
+        'plugin_id': 1,
+        'body': b'x' * 4096,
+    },
+]
+
 
 class TestProtocol(unittest.TestCase):
 
@@ -44,48 +70,11 @@ class TestProtocol(unittest.TestCase):
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
-    # datagram_test_cases = [
-    #     {
-    #         'plugin_id': 1,
-    #         'body': b'',
-    #     },
-    #     {
-    #         'plugin_id': 1,
-    #         'body': b'123',
-    #     },
-    #     {
-    #         'timestamp': 1234567,
-    #         'plugin_id': 9090,
-    #         'plugin_major_version': 1,
-    #         'plugin_minor_version': 3,
-    #         'plugin_patch_version': 7,
-    #         'plugin_instance': 9,
-    #         'plugin_run_id': 12345,
-    #         'body': b'123',
-    #     },
-    #     {
-    #         'plugin_id': 1,
-    #         'body': b'x' * 4096,
-    #     },
-    # ]
-
-    # def test_encode_decode_datagram(self):
-    #     for c in self.datagram_test_cases:
-    #         buf = BytesIO()
-    #         enc = Encoder(buf)
-    #         enc.encode_datagram(c)
-    #         dec = Decoder(BytesIO(buf.getvalue()))
-    #         r = dec.decode_datagram()
-
-    #         for k in c.keys():
-    #             self.assertEqual(c[k], r[k])
-
-    # def test_pack_unpack_datagrams(self):
-    #     results = unpack_datagrams(pack_datagrams(self.datagram_test_cases))
-
-    #     for c, r in zip(self.datagram_test_cases, results):
-    #         for k in c.keys():
-    #             self.assertEqual(c[k], r[k])
+    def test_pack_unpack_datagrams(self):
+        for c in datagram_test_cases:
+            r = unpack_datagram(pack_datagram(c))
+            for k in c.keys():
+                self.assertEqual(c[k], r[k])
 
     # waggle_packet_test_cases = [
     #     {
