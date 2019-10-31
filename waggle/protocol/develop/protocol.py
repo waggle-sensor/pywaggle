@@ -53,56 +53,35 @@ crc8_table = [
 ]
 
 
-def update_crc(sum, table, data):
-    for value in data:
-        sum = table[sum ^ value]
-    return sum
+def crc8(data, value):
+    for x in data:
+        value = crc8_table[value ^ x]
+    return value
 
 
-class CRC8Writer:
+class CRCReader:
 
-    def __init__(self, w):
-        self.w = w
-        self.sum = 0
-
-    def write(self, s):
-        self.w.write(s)
-        self.sum = update_crc(self.sum, crc8_table, s)
-
-
-class CRC8Reader:
-
-    def __init__(self, r):
-        self.r = r
+    def __init__(self, reader, func):
+        self.reader = reader
+        self.func = func
         self.sum = 0
 
     def read(self, n):
-        s = self.r.read(n)
-        self.sum = update_crc(self.sum, crc8_table, s)
+        s = self.reader.read(n)
+        self.sum = self.func(s, self.sum)
         return s
 
 
-class CRC16Writer:
+class CRCWriter:
 
-    def __init__(self, w):
-        self.w = w
+    def __init__(self, writer, func):
+        self.writer = writer
+        self.func = func
         self.sum = 0
 
     def write(self, s):
-        self.w.write(s)
-        self.sum = crc_hqx(s, self.sum)
-
-
-class CRC16Reader:
-
-    def __init__(self, r):
-        self.r = r
-        self.sum = 0
-
-    def read(self, n):
-        s = self.r.read(n)
-        self.sum = crc_hqx(s, self.sum)
-        return s
+        self.writer.write(s)
+        self.sum = self.func(s, self.sum)
 
 
 class BasicEncoder:
@@ -194,7 +173,7 @@ class Encoder:
     #     self.encode_bytes(struct.pack('f', x))
 
     def encode_sensorgram(self, sg):
-        crcw = CRC8Writer(self.writer)
+        crcw = CRCWriter(self.writer, crc8)
         e = BasicEncoder(crcw)
 
         body = encode_values(sg['value'])
@@ -223,7 +202,7 @@ class Encoder:
         body = value['body']
         body_length = len(body)
 
-        crcw = CRC16Writer(self.writer)
+        crcw = CRCWriter(self.writer, crc16)
         e = BasicEncoder(crcw)
         e.encode_uint(3, body_length)
         e.encode_uint(1, protocol_version)
@@ -317,43 +296,10 @@ class Decoder:
     def __init__(self, reader):
         self.reader = reader
 
-    # def decode_bytes(self, length):
-    #     b = self.reader.read(length)
-
-    #     if len(b) != length:
-    #         raise EOFError()
-
-    #     return b
-
-    # def decode_string(self, length):
-    #     return self.decode_bytes(length).decode()
-
-    # def decode_uint(self, length):
-    #     return int.from_bytes(self.decode_bytes(length), 'big')
-
-    # def decode_int(self, length):
-    #     return int.from_bytes(self.decode_bytes(length), 'big', signed=True)
-
-    # def decode_float(self):
-    #     return struct.unpack('f', self.decode_bytes(4))[0]
-
-    # def decode_bytes_value(self):
-    #     # add type checks here...
-    #     return self.reader.read()
-
-    # def decode_string_value(self):
-    #     # add type checks here...
-    #     return self.reader.read().decode()
-
-    # def decode_list_of_floats_value(self):
-    #     b = self.reader.read()
-    #     n = len(b) // 4
-    #     return list(struct.unpack('{}f'.format(n), b))
-
     def decode_sensorgram(self):
         r = {}
 
-        crcr = CRC8Reader(self.reader)
+        crcr = CRCReader(self.reader, crc8)
         d = BasicDecoder(crcr)
 
         # should we make this the whole length instead?
@@ -373,68 +319,61 @@ class Decoder:
         return r
 
     def decode_datagram(self):
-        d = BasicDecoder(self.reader)
+        r = {}
+
+        crcr = CRCReader(self.reader, crrc16)
+        d = BasicDecoder(crcr)
+
         body_length = d.decode_uint(3)
-        protocol_version = d.decode_uint(1)
-        timestamp = d.decode_uint(4)
-        packet_seq = d.decode_uint(2)
-        packet_type = d.decode_uint(1)
-        plugin_id = d.decode_uint(2)
-        plugin_major_version = d.decode_uint(1)
-        plugin_minor_version = d.decode_uint(1)
-        plugin_patch_version = d.decode_uint(1)
-        plugin_instance = d.decode_uint(1)
-        plugin_run_id = d.decode_uint(2)
-        body = d.decode_bytes(body_length)
-        body_crc = d.decode_uint(1)
+        r['protocol_version'] = d.decode_uint(1)
+        r['timestamp'] = d.decode_uint(4)
+        r['packet_seq'] = d.decode_uint(2)
+        r['packet_type'] = d.decode_uint(1)
+        r['plugin_id'] = d.decode_uint(2)
+        r['plugin_major_version'] = d.decode_uint(1)
+        r['plugin_minor_version'] = d.decode_uint(1)
+        r['plugin_patch_version'] = d.decode_uint(1)
+        r['plugin_instance'] = d.decode_uint(1)
+        r['plugin_run_id'] = d.decode_uint(2)
+        r['body'] = d.decode_bytes(body_length)
+        r['crc'] = d.decode_uint(2)
 
-        # todo this needs to be against entire datagram
-        if crc16(body) != body_crc:
-            raise ValueError('Invalid body CRC.')
+        if crcr.sum != 0:
+            raise ValueError('invalid datagram crc')
 
-        return {
-            'timestamp': timestamp,
-            'protocol_version': protocol_version,
-            'packet_seq': packet_seq,
-            'packet_type': packet_type,
-            'plugin_id': plugin_id,
-            'plugin_major_version': plugin_major_version,
-            'plugin_minor_version': plugin_minor_version,
-            'plugin_patch_version': plugin_patch_version,
-            'plugin_instance': plugin_instance,
-            'plugin_run_id': plugin_run_id,
-            'body': body,
-        }
+        return r
 
     def decode_waggle_packet(self):
-        header = self.decode_bytes(58)
-        header_crc = self.decode_uint(2)
+        r = {}
 
-        if crc16(header) != header_crc:
-            raise ValueError('Invalid header CRC.')
+        crcr = CRCReader(self.reader, crc16)
+        d = BasicDecoder(crcr)
 
-        dec = Decoder(BytesIO(header))
-        protocol_major_version = dec.decode_uint(1)
-        protocol_minor_version = dec.decode_uint(1)
-        protocol_patch_version = dec.decode_uint(1)
-        message_priority = dec.decode_uint(1)
-        body_length = dec.decode_uint(4)
-        timestamp = dec.decode_uint(4)
-        message_major_type = dec.decode_uint(1)
-        message_minor_type = dec.decode_uint(1)
-        reserved = dec.decode_uint(2)
-        sender_id = dec.decode_bytes(8).hex()
-        sender_sub_id = dec.decode_bytes(8).hex()
-        receiver_id = dec.decode_bytes(8).hex()
-        receiver_sub_id = dec.decode_bytes(8).hex()
-        sender_seq = dec.decode_uint(3)
-        sender_sid = dec.decode_uint(2)
-        response_seq = dec.decode_uint(3)
-        response_sid = dec.decode_uint(2)
+        r['protocol_major_version'] = d.decode_uint(1)
+        r['protocol_minor_version'] = d.decode_uint(1)
+        r['protocol_patch_version'] = d.decode_uint(1)
+        r['message_priority'] = d.decode_uint(1)
+        body_length = d.decode_uint(4)
+        r['timestamp'] = d.decode_uint(4)
+        r['message_major_type'] = d.decode_uint(1)
+        r['message_minor_type'] = d.decode_uint(1)
+        r['reserved'] = d.decode_uint(2)
+        r['sender_id'] = d.decode_bytes(8).hex()
+        r['sender_sub_id'] = d.decode_bytes(8).hex()
+        r['receiver_id'] = d.decode_bytes(8).hex()
+        r['receiver_sub_id'] = d.decode_bytes(8).hex()
+        r['sender_seq'] = d.decode_uint(3)
+        r['sender_sid'] = d.decode_uint(2)
+        r['response_seq'] = d.decode_uint(3)
+        r['response_sid'] = d.decode_uint(2)
+        r['header_crc'] = d.decode_uint(2)
 
-        token = self.decode_uint(4)
-        body = self.decode_bytes(body_length)
-        body_crc = self.decode_uint(4)
+        if crcr.sum != 0:
+            raise ValueError('invalid message header crc')
+
+        r['token'] = d.decode_uint(4)
+        r['body'] = d.decode_bytes(body_length)
+        body_crc = d.decode_uint(4)
 
         if crc32(body) != body_crc:
             raise ValueError('Invalid body CRC.')
