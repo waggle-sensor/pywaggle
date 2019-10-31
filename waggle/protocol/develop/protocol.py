@@ -188,37 +188,23 @@ class Encoder:
         e.encode_uint(crcw.sum, 1)
 
     def encode_datagram(self, value):
-        protocol_version = value.get(
-            'protocol_version', PROTOCOL_MAJOR_VERSION)
-        timestamp = get_timestamp_or_now(value)
-        packet_seq = value.get('packet_seq', get_packet_sequence_number())
-        packet_type = value.get('packet_type', 0)
-        plugin_id = value.get('plugin_id', 0)
-        plugin_major_version = value.get('plugin_major_version', 0)
-        plugin_minor_version = value.get('plugin_minor_version', 0)
-        plugin_patch_version = value.get('plugin_patch_version', 0)
-        plugin_instance = value.get('plugin_instance', 0)
-        plugin_run_id = value.get('plugin_run_id', RUN_ID)
-        body = value['body']
-        body_length = len(body)
-
         crcw = CRCWriter(self.writer, crc16)
         e = BasicEncoder(crcw)
-        e.encode_uint(3, body_length)
-        e.encode_uint(1, protocol_version)
-        e.encode_uint(4, timestamp)
-        e.encode_uint(2, packet_seq)
-        e.encode_uint(1, packet_type)
-        e.encode_uint(2, plugin_id)
-        e.encode_uint(1, plugin_major_version)
-        e.encode_uint(1, plugin_minor_version)
-        e.encode_uint(1, plugin_patch_version)
-        e.encode_uint(1, plugin_instance)
-        e.encode_uint(2, plugin_run_id)
-        e.encode_bytes(body)
-        e.encode_uint(2, crcw.sum)
+        e.encode_uint(len(value['body']), 3)
+        e.encode_uint(value.get('protocol_version', PROTOCOL_MAJOR_VERSION), 1)
+        e.encode_uint(get_timestamp_or_now(value), 4)
+        e.encode_uint(value.get('packet_seq', get_packet_sequence_number()), 2)
+        e.encode_uint(value.get('packet_type', 0), 1)
+        e.encode_uint(value.get('plugin_id', 0), 2)
+        e.encode_uint(value.get('plugin_major_version', 0), 1)
+        e.encode_uint(value.get('plugin_minor_version', 0), 1)
+        e.encode_uint(value.get('plugin_patch_version', 0), 1)
+        e.encode_uint(value.get('plugin_instance', 0), 1)
+        e.encode_uint(value.get('plugin_run_id', RUN_ID), 2)
+        e.encode_bytes(value['body'])
+        e.encode_uint(crcw.sum, 2)
 
-    def encode_waggle_packet_header(self, value):
+    def encode_waggle_packet(self, value):
         protocol_major_version = value.get(
             'protocol_major_version', PROTOCOL_MAJOR_VERSION)
         protocol_minor_version = value.get(
@@ -253,42 +239,36 @@ class Encoder:
         response_seq = value.get('response_seq', 0)
         response_sid = value.get('response_sid', 0)
 
-        e = BasicEncoder(self.writer)
-        e.encode_uint(1, protocol_major_version)
-        e.encode_uint(1, protocol_minor_version)
-        e.encode_uint(1, protocol_patch_version)
-        e.encode_uint(1, message_priority)
-        e.encode_uint(4, body_length)
-        e.encode_uint(4, timestamp)
-        e.encode_uint(1, message_major_type)
-        e.encode_uint(1, message_minor_type)
-        e.encode_uint(2, reserved)
+        # encode header
+        crcw = CRCWriter(self.writer, crc16)
+        e = BasicEncoder(crcw)
+        e.encode_uint(protocol_major_version, 1)
+        e.encode_uint(protocol_minor_version, 1)
+        e.encode_uint(protocol_patch_version, 1)
+        e.encode_uint(message_priority, 1)
+        e.encode_uint(body_length, 4)
+        e.encode_uint(timestamp, 4)
+        e.encode_uint(message_major_type, 1)
+        e.encode_uint(message_minor_type, 1)
+        e.encode_uint(reserved, 2)
         e.encode_bytes(sender_id)
         e.encode_bytes(sender_sub_id)
         e.encode_bytes(receiver_id)
         e.encode_bytes(receiver_sub_id)
-        e.encode_uint(3, sender_seq)
-        e.encode_uint(2, sender_sid)
-        e.encode_uint(3, response_seq)
-        e.encode_uint(2, response_sid)
+        e.encode_uint(sender_seq, 3)
+        e.encode_uint(sender_sid, 2)
+        e.encode_uint(response_seq, 3)
+        e.encode_uint(response_sid, 2)
+        e.encode_uint(crcw.sum, 2)
 
-    def encode_waggle_packet(self, value):
-        buf = BytesIO()
-        enc = Encoder(buf)
-        enc.encode_waggle_packet_header(value)
-        header = buf.getvalue()
+        # write token (keep after header crc!)
+        e.encode_uint(4, value.get('token', 0))
 
-        header_crc = crc16(header)
-        token = value.get('token', 0)
-        body = value['body']
-        body_crc = crc32(value['body'])
-
-        e = BasicEncoder(self.writer)
-        e.encode_bytes(header)
-        e.encode_uint(2, header_crc)
-        e.encode_uint(4, token)
+        # encode body
+        crcw = CRCWriter(self.writer, crc32)
+        e = BasicEncoder(crcw)
         e.encode_bytes(body)
-        e.encode_uint(4, body_crc)
+        e.encode_uint(crcw.sum, 4)
 
 
 class Decoder:
