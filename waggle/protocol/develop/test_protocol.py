@@ -37,7 +37,7 @@ class TestProtocol(unittest.TestCase):
         for c in value_test_cases:
             self.assertAlmostEqual(c, decode_values(encode_values(c)))
 
-    def test_pack_unpack_sensorgrams(self):
+    def test_sensorgrams(self):
         for c in sensorgram_test_cases:
             r = unpack_sensorgram(pack_sensorgram(c))
             for k in c.keys():
