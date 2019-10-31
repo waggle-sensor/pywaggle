@@ -11,6 +11,7 @@ from protocol import pack_sensorgram, unpack_sensorgram
 
 value_test_cases = [
     b'hello',
+    'hello as a string',
     0,
     100,
     200,

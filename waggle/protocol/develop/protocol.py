@@ -562,6 +562,10 @@ def encode_byte_array(e, x):
     e.encode_bytes(x)
 
 
+def encode_string(e, x):
+    encode_byte_array(e, x.encode())
+
+
 def encode_uint_array(e, intsize, values):
     e.encode_uint(len(values), 2)
     for x in values:
@@ -571,6 +575,10 @@ def encode_uint_array(e, intsize, values):
 def decode_byte_array(d):
     count = d.decode_uint(2)
     return d.decode_bytes(count)
+
+
+def decode_string(d):
+    return decode_byte_array(d).decode()
 
 
 def decode_uint_array(d, intsize):
@@ -585,6 +593,7 @@ encode_values_table = {
     TYPE_UINT32: lambda e, x: e.encode_uint(x, 4),
 
     TYPE_BYTE_ARRAY: lambda e, x: encode_byte_array(e, x),
+    TYPE_STRING: lambda e, x: encode_string(e, x),
     TYPE_UINT8_ARRAY: lambda e, x: encode_uint_array(e, 1, x),
     TYPE_UINT16_ARRAY: lambda e, x: encode_uint_array(e, 2, x),
     TYPE_UINT24_ARRAY: lambda e, x: encode_uint_array(e, 3, x),
@@ -595,6 +604,8 @@ encode_values_table = {
 def detect_value_type(x):
     if isinstance(x, (bytes, bytearray)):
         return TYPE_BYTE_ARRAY
+    if isinstance(x, str):
+        return TYPE_STRING
     if isinstance(x, int) and x >= 0:
         if x <= 0xff:
             return TYPE_UINT8
@@ -632,6 +643,7 @@ decode_values_table = {
     TYPE_UINT32: lambda d: d.decode_uint(4),
 
     TYPE_BYTE_ARRAY: lambda d: decode_byte_array(d),
+    TYPE_STRING: lambda d: decode_string(d),
     TYPE_UINT8_ARRAY: lambda d: decode_uint_array(d, 1),
     TYPE_UINT16_ARRAY: lambda d: decode_uint_array(d, 2),
     TYPE_UINT24_ARRAY: lambda d: decode_uint_array(d, 3),
