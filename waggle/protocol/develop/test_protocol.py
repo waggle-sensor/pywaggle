@@ -13,8 +13,14 @@ value_test_cases = [
     b'hello',
     'hello as a string',
     0,
-    100,
-    200,
+    0x12,
+    0xff,
+    0x1234,
+    0xffff,
+    0x123456,
+    0xffffff,
+    0x12345678,
+    0xffffffff,
 ]
 
 sensorgram_test_cases = [
