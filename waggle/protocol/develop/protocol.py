@@ -59,10 +59,6 @@ def update_crc(sum, table, data):
     return sum
 
 
-def crc8(data):
-    return update_crc(0, crc8_table, data)
-
-
 class CRC8Writer:
 
     def __init__(self, w):
@@ -83,6 +79,29 @@ class CRC8Reader:
     def read(self, n):
         s = self.r.read(n)
         self.sum = update_crc(self.sum, crc8_table, s)
+        return s
+
+
+class CRC16Writer:
+
+    def __init__(self, w):
+        self.w = w
+        self.sum = 0
+
+    def write(self, s):
+        self.w.write(s)
+        self.sum = crc_hqx(s, self.sum)
+
+
+class CRC16Reader:
+
+    def __init__(self, r):
+        self.r = r
+        self.sum = 0
+
+    def read(self, n):
+        s = self.r.read(n)
+        self.sum = crc_hqx(s, self.sum)
         return s
 
 
@@ -187,9 +206,7 @@ class Encoder:
         e.encode_uint(sg.get('source_id', 0), 2)
         e.encode_uint(sg.get('source_inst', 0), 1)
         e.encode_bytes(body)
-
-        # write crc sum
-        self.writer.write(bytes([crcw.sum]))
+        e.encode_uint(crcw.sum, 1)
 
     def encode_datagram(self, value):
         protocol_version = value.get(
@@ -205,9 +222,9 @@ class Encoder:
         plugin_run_id = value.get('plugin_run_id', RUN_ID)
         body = value['body']
         body_length = len(body)
-        body_crc = crc16(body)
 
-        e = BasicEncoder(self.writer)
+        crcw = CRC16Writer(self.writer)
+        e = BasicEncoder(crcw)
         e.encode_uint(3, body_length)
         e.encode_uint(1, protocol_version)
         e.encode_uint(4, timestamp)
@@ -220,7 +237,7 @@ class Encoder:
         e.encode_uint(1, plugin_instance)
         e.encode_uint(2, plugin_run_id)
         e.encode_bytes(body)
-        e.encode_uint(2, body_crc)
+        e.encode_uint(2, crcw.sum)
 
     def encode_waggle_packet_header(self, value):
         protocol_major_version = value.get(
@@ -257,23 +274,24 @@ class Encoder:
         response_seq = value.get('response_seq', 0)
         response_sid = value.get('response_sid', 0)
 
-        self.encode_uint(1, protocol_major_version)
-        self.encode_uint(1, protocol_minor_version)
-        self.encode_uint(1, protocol_patch_version)
-        self.encode_uint(1, message_priority)
-        self.encode_uint(4, body_length)
-        self.encode_uint(4, timestamp)
-        self.encode_uint(1, message_major_type)
-        self.encode_uint(1, message_minor_type)
-        self.encode_uint(2, reserved)
-        self.encode_bytes(sender_id)
-        self.encode_bytes(sender_sub_id)
-        self.encode_bytes(receiver_id)
-        self.encode_bytes(receiver_sub_id)
-        self.encode_uint(3, sender_seq)
-        self.encode_uint(2, sender_sid)
-        self.encode_uint(3, response_seq)
-        self.encode_uint(2, response_sid)
+        e = BasicEncoder(self.writer)
+        e.encode_uint(1, protocol_major_version)
+        e.encode_uint(1, protocol_minor_version)
+        e.encode_uint(1, protocol_patch_version)
+        e.encode_uint(1, message_priority)
+        e.encode_uint(4, body_length)
+        e.encode_uint(4, timestamp)
+        e.encode_uint(1, message_major_type)
+        e.encode_uint(1, message_minor_type)
+        e.encode_uint(2, reserved)
+        e.encode_bytes(sender_id)
+        e.encode_bytes(sender_sub_id)
+        e.encode_bytes(receiver_id)
+        e.encode_bytes(receiver_sub_id)
+        e.encode_uint(3, sender_seq)
+        e.encode_uint(2, sender_sid)
+        e.encode_uint(3, response_seq)
+        e.encode_uint(2, response_sid)
 
     def encode_waggle_packet(self, value):
         buf = BytesIO()
@@ -286,11 +304,12 @@ class Encoder:
         body = value['body']
         body_crc = crc32(value['body'])
 
-        self.encode_bytes(header)
-        self.encode_uint(2, header_crc)
-        self.encode_uint(4, token)
-        self.encode_bytes(body)
-        self.encode_uint(4, body_crc)
+        e = BasicEncoder(self.writer)
+        e.encode_bytes(header)
+        e.encode_uint(2, header_crc)
+        e.encode_uint(4, token)
+        e.encode_bytes(body)
+        e.encode_uint(4, body_crc)
 
 
 class Decoder:
@@ -298,38 +317,38 @@ class Decoder:
     def __init__(self, reader):
         self.reader = reader
 
-    def decode_bytes(self, length):
-        b = self.reader.read(length)
+    # def decode_bytes(self, length):
+    #     b = self.reader.read(length)
 
-        if len(b) != length:
-            raise EOFError()
+    #     if len(b) != length:
+    #         raise EOFError()
 
-        return b
+    #     return b
 
-    def decode_string(self, length):
-        return self.decode_bytes(length).decode()
+    # def decode_string(self, length):
+    #     return self.decode_bytes(length).decode()
 
-    def decode_uint(self, length):
-        return int.from_bytes(self.decode_bytes(length), 'big')
+    # def decode_uint(self, length):
+    #     return int.from_bytes(self.decode_bytes(length), 'big')
 
-    def decode_int(self, length):
-        return int.from_bytes(self.decode_bytes(length), 'big', signed=True)
+    # def decode_int(self, length):
+    #     return int.from_bytes(self.decode_bytes(length), 'big', signed=True)
 
-    def decode_float(self):
-        return struct.unpack('f', self.decode_bytes(4))[0]
+    # def decode_float(self):
+    #     return struct.unpack('f', self.decode_bytes(4))[0]
 
-    def decode_bytes_value(self):
-        # add type checks here...
-        return self.reader.read()
+    # def decode_bytes_value(self):
+    #     # add type checks here...
+    #     return self.reader.read()
 
-    def decode_string_value(self):
-        # add type checks here...
-        return self.reader.read().decode()
+    # def decode_string_value(self):
+    #     # add type checks here...
+    #     return self.reader.read().decode()
 
-    def decode_list_of_floats_value(self):
-        b = self.reader.read()
-        n = len(b) // 4
-        return list(struct.unpack('{}f'.format(n), b))
+    # def decode_list_of_floats_value(self):
+    #     b = self.reader.read()
+    #     n = len(b) // 4
+    #     return list(struct.unpack('{}f'.format(n), b))
 
     def decode_sensorgram(self):
         r = {}
@@ -346,9 +365,7 @@ class Decoder:
         r['source_id'] = d.decode_uint(2)
         r['source_inst'] = d.decode_uint(1)
         r['value'] = decode_values(d.decode_bytes(body_length))
-
-        # read crc byte to update crc reader sum
-        _ = d.decode_uint(1)
+        r['crc'] = d.decode_uint(1)
 
         if crcr.sum != 0:
             raise ValueError('incorrect sensorgram crc')
@@ -356,26 +373,28 @@ class Decoder:
         return r
 
     def decode_datagram(self):
-        body_length = self.decode_uint(3)
-        protocol_version = self.decode_uint(1)
-        timestamp = self.decode_uint(4)
-        packet_seq = self.decode_uint(2)
-        packet_type = self.decode_uint(1)
-        plugin_id = self.decode_uint(2)
-        plugin_major_version = self.decode_uint(1)
-        plugin_minor_version = self.decode_uint(1)
-        plugin_patch_version = self.decode_uint(1)
-        plugin_instance = self.decode_uint(1)
-        plugin_run_id = self.decode_uint(2)
-        body = self.decode_bytes(body_length)
-        body_crc = self.decode_uint(1)
+        d = BasicDecoder(self.reader)
+        body_length = d.decode_uint(3)
+        protocol_version = d.decode_uint(1)
+        timestamp = d.decode_uint(4)
+        packet_seq = d.decode_uint(2)
+        packet_type = d.decode_uint(1)
+        plugin_id = d.decode_uint(2)
+        plugin_major_version = d.decode_uint(1)
+        plugin_minor_version = d.decode_uint(1)
+        plugin_patch_version = d.decode_uint(1)
+        plugin_instance = d.decode_uint(1)
+        plugin_run_id = d.decode_uint(2)
+        body = d.decode_bytes(body_length)
+        body_crc = d.decode_uint(1)
 
-        # TODO change to crc16
-        if crc8(body) != body_crc:
+        # todo this needs to be against entire datagram
+        if crc16(body) != body_crc:
             raise ValueError('Invalid body CRC.')
 
         return {
             'timestamp': timestamp,
+            'protocol_version': protocol_version,
             'packet_seq': packet_seq,
             'packet_type': packet_type,
             'plugin_id': plugin_id,

@@ -21,6 +21,7 @@ value_test_cases = [
     0xffffff,
     0x12345678,
     0xffffffff,
+    b'x' * 10000,
 ]
 
 sensorgram_test_cases = [
