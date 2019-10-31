@@ -153,25 +153,6 @@ class Encoder:
     def __init__(self, writer):
         self.writer = writer
 
-    # def encode_bytes(self, value):
-    #     logger.debug('encode_bytes %r', value)
-    #     length = self.writer.write(value)
-
-    #     if length != len(value):
-    #         raise IOError('Failed to encode bytes.')
-
-    # def encode_string(self, s):
-    #     self.encode_bytes(s.encode())
-
-    # def encode_uint(self, length, value):
-    #     self.encode_bytes(value.to_bytes(length, 'big'))
-
-    # def encode_int(self, length, value):
-    #     self.encode_bytes(value.to_bytes(length, 'big', signed=True))
-
-    # def encode_float(self, x):
-    #     self.encode_bytes(struct.pack('f', x))
-
     def encode_sensorgram(self, sg):
         body = encode_values(sg['value'])
 
@@ -186,6 +167,7 @@ class Encoder:
         e.encode_uint(sg.get('source_inst', 0), 1)
         e.encode_bytes(body)
         e.encode_uint(crcw.sum, 1)
+        assert crcw.sum == 0
 
     def encode_datagram(self, value):
         crcw = CRCWriter(self.writer, crc16)
@@ -203,8 +185,9 @@ class Encoder:
         e.encode_uint(value.get('plugin_run_id', RUN_ID), 2)
         e.encode_bytes(value['body'])
         e.encode_uint(crcw.sum, 2)
+        assert crcw.sum == 0
 
-    def encode_waggle_packet(self, value):
+    def encode_message_header(self, value):
         protocol_major_version = value.get(
             'protocol_major_version', PROTOCOL_MAJOR_VERSION)
         protocol_minor_version = value.get(
@@ -214,10 +197,6 @@ class Encoder:
         message_priority = value.get('message_priority', 0)
         body = value['body']
         body_length = len(body)
-        timestamp = get_timestamp_or_now(value)
-        message_major_type = value.get('message_major_type', 0)
-        message_minor_type = value.get('message_minor_type', 0)
-        reserved = 0
 
         sender_id = bytes.fromhex(value.get('sender_id', '0000000000000000'))
         assert_length(sender_id, 8)
@@ -234,12 +213,6 @@ class Encoder:
             value.get('receiver_sub_id', '0000000000000000'))
         assert_length(receiver_sub_id, 8)
 
-        sender_seq = value.get('sender_seq', get_sender_sequence_number())
-        sender_sid = value.get('sender_sid', 0)
-        response_seq = value.get('response_seq', 0)
-        response_sid = value.get('response_sid', 0)
-
-        # encode header
         crcw = CRCWriter(self.writer, crc16)
         e = BasicEncoder(crcw)
         e.encode_uint(protocol_major_version, 1)
@@ -247,28 +220,36 @@ class Encoder:
         e.encode_uint(protocol_patch_version, 1)
         e.encode_uint(message_priority, 1)
         e.encode_uint(body_length, 4)
-        e.encode_uint(timestamp, 4)
-        e.encode_uint(message_major_type, 1)
-        e.encode_uint(message_minor_type, 1)
-        e.encode_uint(reserved, 2)
+        e.encode_uint(get_timestamp_or_now(value), 4)
+        e.encode_uint(value.get('message_major_type', 0), 1)
+        e.encode_uint(value.get('message_minor_type', 0), 1)
+        e.encode_uint(0, 2)  # reserved
         e.encode_bytes(sender_id)
         e.encode_bytes(sender_sub_id)
         e.encode_bytes(receiver_id)
         e.encode_bytes(receiver_sub_id)
-        e.encode_uint(sender_seq, 3)
-        e.encode_uint(sender_sid, 2)
-        e.encode_uint(response_seq, 3)
-        e.encode_uint(response_sid, 2)
+        e.encode_uint(value.get('sender_seq', get_sender_sequence_number()), 3)
+        e.encode_uint(value.get('sender_sid', 0), 2)
+        e.encode_uint(value.get('response_seq', 0), 3)
+        e.encode_uint(value.get('response_sid', 0), 2)
         e.encode_uint(crcw.sum, 2)
+        assert crcw.sum == 0
 
-        # write token (keep after header crc!)
-        e.encode_uint(4, value.get('token', 0))
+    def encode_message_token(self, value):
+        e = BasicEncoder(self.writer)
+        e.encode_uint(value.get('token', 0), 4)
 
-        # encode body
+    def encode_message_content(self, value):
         crcw = CRCWriter(self.writer, crc32)
         e = BasicEncoder(crcw)
-        e.encode_bytes(body)
+        e.encode_bytes(value['body'])
         e.encode_uint(crcw.sum, 4)
+        assert crcw.sum == 0
+
+    def encode_waggle_packet(self, value):
+        self.encode_message_header(value)
+        self.encode_message_token(value)
+        self.encode_message_content(value)
 
 
 class Decoder:
@@ -320,9 +301,7 @@ class Decoder:
 
         return r
 
-    def decode_waggle_packet(self):
-        r = {}
-
+    def decode_message_header(self, r):
         crcr = CRCReader(self.reader, crc16)
         d = BasicDecoder(crcr)
         r['protocol_major_version'] = d.decode_uint(1)
@@ -347,8 +326,11 @@ class Decoder:
         if crcr.sum != 0:
             raise ValueError('invalid message header crc')
 
+    def decode_message_token(self, r):
+        d = BasicDecoder(self.reader)
         r['token'] = d.decode_uint(4)
 
+    def decode_message_content(self, r):
         crcr = CRCReader(self.reader, crc32)
         d = BasicDecoder(crcr)
         r['body'] = d.decode_bytes(r['body_length'])
@@ -357,6 +339,11 @@ class Decoder:
         if crcr.sum != 0:
             raise ValueError('invalid message body crc')
 
+    def decode_waggle_packet(self):
+        r = {}
+        self.decode_message_header(r)
+        self.decode_message_token(r)
+        self.decode_message_content(r)
         return r
 
 
