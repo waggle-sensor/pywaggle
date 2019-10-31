@@ -195,8 +195,6 @@ class Encoder:
         protocol_patch_version = value.get(
             'protocol_major_version', PROTOCOL_PATCH_VERSION)
         message_priority = value.get('message_priority', 0)
-        body = value['body']
-        body_length = len(body)
 
         sender_id = bytes.fromhex(value.get('sender_id', '0000000000000000'))
         assert_length(sender_id, 8)
@@ -219,7 +217,7 @@ class Encoder:
         e.encode_uint(protocol_minor_version, 1)
         e.encode_uint(protocol_patch_version, 1)
         e.encode_uint(message_priority, 1)
-        e.encode_uint(body_length, 4)
+        e.encode_uint(len(value['body']), 4)
         e.encode_uint(get_timestamp_or_now(value), 4)
         e.encode_uint(value.get('message_major_type', 0), 1)
         e.encode_uint(value.get('message_minor_type', 0), 1)
