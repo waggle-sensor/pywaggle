@@ -64,6 +64,11 @@ async def simple_rpc(reader, writer, id, sub_id=None, value=None):
     return r['value']
 
 
+async def gather_rpc(reader, writer, id, sub_ids):
+    await asyncio.gather(*[writer.put({'id': id, 'sub_id': sub_id, 'value': 0}) for sub_id in sub_ids])
+    return await wait_for_messages(reader, [{'id': id, 'sub_id': sub_id} for sub_id in sub_ids])
+
+
 async def wait_for_messages(reader, matches):
     results = {}
 
@@ -82,7 +87,7 @@ async def command_id(reader, writer, *args):
 
 
 async def command_cu(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=2)
+    return await gather_rpc(reader, writer, 0xff06, [1, 2, 3, 4, 5, 6])
 
 
 async def command_hb(reader, writer, *args):
@@ -98,21 +103,7 @@ async def command_uptime(reader, writer, *args):
 
 
 async def command_fc(reader, writer, *args):
-    await asyncio.gather(
-        writer.put({'id': 0xff05, 'sub_id': 1, 'value': 0}),
-        writer.put({'id': 0xff05, 'sub_id': 2, 'value': 0}),
-        writer.put({'id': 0xff05, 'sub_id': 3, 'value': 0}),
-        writer.put({'id': 0xff05, 'sub_id': 4, 'value': 0}),
-        writer.put({'id': 0xff05, 'sub_id': 5, 'value': 0}),
-    )
-
-    return await wait_for_messages(reader, [
-        {'id': 0xff05, 'sub_id': 1},
-        {'id': 0xff05, 'sub_id': 2},
-        {'id': 0xff05, 'sub_id': 3},
-        {'id': 0xff05, 'sub_id': 4},
-        {'id': 0xff05, 'sub_id': 5},
-    ])
+    return await gather_rpc(reader, writer, 0xff05, [1, 2, 3, 4, 5])
 
 
 async def command_th(reader, writer, *args):
