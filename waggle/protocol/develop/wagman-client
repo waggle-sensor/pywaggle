@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+import argparse
+import asyncio
+import sys
+import binascii
+from protocol import pack_sensorgram, unpack_sensorgram
+
+
+async def put_message(writer, msg):
+    # already includes newline character
+    writer.write(binascii.b2a_base64(pack_sensorgram(msg)))
+    await writer.drain()
+
+
+def match_message(fields, msg):
+    for k in fields.keys():
+        if k not in msg or msg[k] != fields[k]:
+            return False
+    return True
+
+
+async def get_message(reader, fields):
+    while True:
+        data = await reader.readline()
+        msg = unpack_sensorgram(binascii.a2b_base64(data))
+        if match_message(fields, msg):
+            return msg
+
+
+'''
+      case 5: {
+        int port = d.decode_uint();
+
+        if (!d.err) {
+          commandStart(b64e, port);
+        } else {
+          SerialUSB.println("err command start");
+        }
+      } break;
+      case 6: {
+        int port = d.decode_uint();
+        int after = d.decode_uint();
+
+        if (!d.err) {
+          commandStop(b64e, port, after);
+        } else {
+          SerialUSB.println("err command stop");
+        }
+      } break;
+      case 7: {
+        commandUptime(b64e);
+      } break;
+    }
+'''
+
+
+async def simple_rpc(reader, writer, id, sub_id=0, value=0):
+    await put_message(writer, {'id': id, 'sub_id': sub_id, 'value': value})
+    r = await get_message(reader, {'id': id})
+    return r['value']
+
+
+async def command_id(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=1)
+
+
+async def command_cu(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=2)
+
+
+async def command_hb(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=3)
+
+
+async def command_boots(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=4)
+
+
+async def command_uptime(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=7)
+
+
+async def command_fc(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=10)
+
+
+async def command_start(reader, writer, *args):
+    port = int(args[0])
+    await put_message(writer, {'id': 5, 'sub_id': 0, 'value': port})
+    return 'ok...need to fix'
+
+
+async def command_stop(reader, writer, *args):
+    port = int(args[0])
+    dur = int(args[1])
+    await put_message(writer, {'id': 6, 'sub_id': 0, 'value': (port, dur)})
+    return 'ok...need to fix'
+
+commands = {
+    'id': command_id,
+    'cu': command_cu,
+    'hb': command_hb,
+    'fc': command_fc,
+    'up': command_uptime,
+    'uptime': command_uptime,
+    'boots': command_boots,
+    'start': command_start,
+    'stop': command_stop,
+}
+
+
+def stringify(x):
+    if isinstance(x, (list, tuple)):
+        return ' '.join(stringify(xi) for xi in x)
+    if isinstance(x, (bytes, bytearray)):
+        return x.hex()
+    return str(x)
+
+
+async def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--server', default='/tmp/serial_server')
+    parser.add_argument('command', choices=commands.keys())
+    parser.add_argument('args', nargs='*')
+    args = parser.parse_args()
+
+    reader, writer = await asyncio.open_unix_connection(args.server)
+
+    command = commands[args.command]
+
+    try:
+        results = await asyncio.wait_for(command(reader, writer, *args.args), timeout=10)
+        print(stringify(results))
+    except asyncio.TimeoutError:
+        print('command timed out')
+        sys.exit(1)
+
+    writer.close()
+    await writer.wait_closed()
+
+asyncio.run(main())
