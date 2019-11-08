@@ -66,13 +66,13 @@ async def command_th(reader, writer, *args):
 
 async def command_start(reader, writer, *args):
     port = int(args[0])
-    return await simple_rpc(reader, writer, id=5, value=(port,))
+    assert await simple_rpc(reader, writer, id=5, value=(port,)) == 0
 
 
 async def command_stop(reader, writer, *args):
     port = int(args[0])
     dur = int(args[1])
-    return await simple_rpc(reader, writer, id=6, value=(port, dur))
+    assert await simple_rpc(reader, writer, id=6, value=(port, dur)) == 0
 
 
 async def command_eereset(reader, writer, *args):
@@ -123,6 +123,9 @@ async def main():
         print(stringify(results))
     except asyncio.TimeoutError:
         print('command timed out')
+        sys.exit(1)
+    except AssertionError:
+        print('command error')
         sys.exit(1)
 
     writer.close()
