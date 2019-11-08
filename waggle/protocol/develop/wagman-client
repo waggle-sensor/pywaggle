@@ -60,6 +60,10 @@ async def command_fc(reader, writer, *args):
     return await simple_rpc(reader, writer, id=10)
 
 
+async def command_th(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=34)
+
+
 async def command_start(reader, writer, *args):
     port = int(args[0])
     return await simple_rpc(reader, writer, id=5, value=(port,))
@@ -85,6 +89,7 @@ commands = {
     'hb': command_hb,
     'fc': command_fc,
     'up': command_uptime,
+    'th': command_th,
     'uptime': command_uptime,
     'boots': command_boots,
     'start': command_start,
