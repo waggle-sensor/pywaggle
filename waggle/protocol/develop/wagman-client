@@ -16,7 +16,6 @@ async def read_queue_task(reader, queue):
             continue
 
         for message in messages:
-            # print('read', message)
             await queue.put(message)
 
 
@@ -29,7 +28,6 @@ def create_read_queue(reader):
 async def write_queue_task(writer, queue):
     while True:
         message = await queue.get()
-        # print('write', message)
         writer.write(binascii.b2a_base64(pack_sensorgram(message)))
         await writer.drain()
 
@@ -66,6 +64,19 @@ async def simple_rpc(reader, writer, id, sub_id=None, value=None):
     return r['value']
 
 
+async def wait_for_messages(reader, matches):
+    results = {}
+
+    while len(results) < len(matches):
+        message = await reader.get()
+
+        for i, match in enumerate(matches):
+            if match_message(match, message):
+                results[i] = message['value']
+
+    return tuple(results[i] for i in range(len(results)))
+
+
 async def command_id(reader, writer, *args):
     return await simple_rpc(reader, writer, id=1)
 
@@ -87,13 +98,21 @@ async def command_uptime(reader, writer, *args):
 
 
 async def command_fc(reader, writer, *args):
-    return await asyncio.gather(
-        simple_rpc(reader, writer, id=0xff05, sub_id=1),
-        simple_rpc(reader, writer, id=0xff05, sub_id=2),
-        simple_rpc(reader, writer, id=0xff05, sub_id=3),
-        simple_rpc(reader, writer, id=0xff05, sub_id=4),
-        simple_rpc(reader, writer, id=0xff05, sub_id=5),
+    await asyncio.gather(
+        writer.put({'id': 0xff05, 'sub_id': 1, 'value': 0}),
+        writer.put({'id': 0xff05, 'sub_id': 2, 'value': 0}),
+        writer.put({'id': 0xff05, 'sub_id': 3, 'value': 0}),
+        writer.put({'id': 0xff05, 'sub_id': 4, 'value': 0}),
+        writer.put({'id': 0xff05, 'sub_id': 5, 'value': 0}),
     )
+
+    return await wait_for_messages(reader, [
+        {'id': 0xff05, 'sub_id': 1},
+        {'id': 0xff05, 'sub_id': 2},
+        {'id': 0xff05, 'sub_id': 3},
+        {'id': 0xff05, 'sub_id': 4},
+        {'id': 0xff05, 'sub_id': 5},
+    ])
 
 
 async def command_th(reader, writer, *args):
