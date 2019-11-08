@@ -3,13 +3,41 @@ import argparse
 import asyncio
 import sys
 import binascii
-from protocol import pack_sensorgram, unpack_sensorgram
+from protocol import pack_sensorgram, unpack_sensorgram, unpack_sensorgrams
 
 
-async def put_message(writer, msg):
-    # already includes newline character
-    writer.write(binascii.b2a_base64(pack_sensorgram(msg)))
-    await writer.drain()
+async def read_queue_task(reader, queue):
+    while True:
+        data = await reader.readline()
+
+        try:
+            messages = unpack_sensorgrams(binascii.a2b_base64(data))
+        except (binascii.Error, IndexError):
+            continue
+
+        for message in messages:
+            print('read', message)
+            await queue.put(message)
+
+
+def create_read_queue(reader):
+    queue = asyncio.Queue()
+    asyncio.create_task(read_queue_task(reader, queue))
+    return queue
+
+
+async def write_queue_task(writer, queue):
+    while True:
+        message = await queue.get()
+        print('write', message)
+        writer.write(binascii.b2a_base64(pack_sensorgram(message)))
+        await writer.drain()
+
+
+def create_write_queue(writer):
+    queue = asyncio.Queue()
+    asyncio.create_task(write_queue_task(writer, queue))
+    return queue
 
 
 def match_message(fields, msg):
@@ -21,18 +49,20 @@ def match_message(fields, msg):
 
 async def get_message(reader, fields):
     while True:
-        data = await reader.readline()
-        try:
-            msg = unpack_sensorgram(binascii.a2b_base64(data))
-        except (binascii.Error, IndexError):
-            continue
-        if match_message(fields, msg):
-            return msg
+        message = await reader.get()
+        if match_message(fields, message):
+            return message
 
 
-async def simple_rpc(reader, writer, id, sub_id=0, value=0):
-    await put_message(writer, {'id': id, 'sub_id': sub_id, 'value': value})
-    r = await get_message(reader, {'id': id})
+async def simple_rpc(reader, writer, id, sub_id=None, value=None):
+    await writer.put({'id': id, 'sub_id': sub_id or 0, 'value': value or 0})
+
+    match = {'id': id}
+
+    if sub_id is not None:
+        match['sub_id'] = sub_id
+
+    r = await get_message(reader, match)
     return r['value']
 
 
@@ -57,7 +87,13 @@ async def command_uptime(reader, writer, *args):
 
 
 async def command_fc(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=10)
+    return await asyncio.gather(
+        simple_rpc(reader, writer, id=0xff05, sub_id=1),
+        simple_rpc(reader, writer, id=0xff05, sub_id=2),
+        simple_rpc(reader, writer, id=0xff05, sub_id=3),
+        simple_rpc(reader, writer, id=0xff05, sub_id=4),
+        simple_rpc(reader, writer, id=0xff05, sub_id=5),
+    )
 
 
 async def command_th(reader, writer, *args):
@@ -115,11 +151,13 @@ async def main():
     args = parser.parse_args()
 
     reader, writer = await asyncio.open_unix_connection(args.server)
+    read_queue = create_read_queue(reader)
+    write_queue = create_write_queue(writer)
 
     command = commands[args.command]
 
     try:
-        results = await asyncio.wait_for(command(reader, writer, *args.args), timeout=10)
+        results = await asyncio.wait_for(command(read_queue, write_queue, *args.args), timeout=10)
         print(stringify(results))
     except asyncio.TimeoutError:
         print('command timed out')
@@ -129,6 +167,5 @@ async def main():
         sys.exit(1)
 
     writer.close()
-    await writer.wait_closed()
 
 asyncio.run(main())
