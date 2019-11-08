@@ -22,36 +22,12 @@ def match_message(fields, msg):
 async def get_message(reader, fields):
     while True:
         data = await reader.readline()
-        msg = unpack_sensorgram(binascii.a2b_base64(data))
+        try:
+            msg = unpack_sensorgram(binascii.a2b_base64(data))
+        except (binascii.Error, IndexError):
+            continue
         if match_message(fields, msg):
             return msg
-
-
-'''
-      case 5: {
-        int port = d.decode_uint();
-
-        if (!d.err) {
-          commandStart(b64e, port);
-        } else {
-          SerialUSB.println("err command start");
-        }
-      } break;
-      case 6: {
-        int port = d.decode_uint();
-        int after = d.decode_uint();
-
-        if (!d.err) {
-          commandStop(b64e, port, after);
-        } else {
-          SerialUSB.println("err command stop");
-        }
-      } break;
-      case 7: {
-        commandUptime(b64e);
-      } break;
-    }
-'''
 
 
 async def simple_rpc(reader, writer, id, sub_id=0, value=0):
@@ -86,15 +62,22 @@ async def command_fc(reader, writer, *args):
 
 async def command_start(reader, writer, *args):
     port = int(args[0])
-    await put_message(writer, {'id': 5, 'sub_id': 0, 'value': port})
-    return 'ok...need to fix'
+    return await simple_rpc(reader, writer, id=5, value=(port,))
 
 
 async def command_stop(reader, writer, *args):
     port = int(args[0])
     dur = int(args[1])
-    await put_message(writer, {'id': 6, 'sub_id': 0, 'value': (port, dur)})
-    return 'ok...need to fix'
+    return await simple_rpc(reader, writer, id=6, value=(port, dur))
+
+
+async def command_eereset(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=30)
+
+
+async def command_reset(reader, writer, *args):
+    return await simple_rpc(reader, writer, id=31)
+
 
 commands = {
     'id': command_id,
@@ -106,6 +89,8 @@ commands = {
     'boots': command_boots,
     'start': command_start,
     'stop': command_stop,
+    'eereset': command_eereset,
+    'reset': command_reset,
 }
 
 
