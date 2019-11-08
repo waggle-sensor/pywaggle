@@ -16,7 +16,7 @@ async def read_queue_task(reader, queue):
             continue
 
         for message in messages:
-            print('read', message)
+            # print('read', message)
             await queue.put(message)
 
 
@@ -29,7 +29,7 @@ def create_read_queue(reader):
 async def write_queue_task(writer, queue):
     while True:
         message = await queue.get()
-        print('write', message)
+        # print('write', message)
         writer.write(binascii.b2a_base64(pack_sensorgram(message)))
         await writer.drain()
 
