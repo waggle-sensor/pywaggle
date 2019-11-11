@@ -141,14 +141,14 @@ async def command_th(reader, writer, *args):
 async def command_start(reader, writer, *args):
     port = int(args[0])
     await writer.put({'id': REQ_WAGMAN_START, 'sub_id': port, 'value': 0})
-    return await get_responses(reader, PUB_WAGMAN_START, [1])
+    return await get_responses(reader, PUB_WAGMAN_START, [port])
 
 
 async def command_stop(reader, writer, *args):
     port = int(args[0])
     after = int(args[1])
     await writer.put({'id': REQ_WAGMAN_STOP, 'sub_id': port, 'value': after})
-    return await get_responses(reader, PUB_WAGMAN_STOP, [1])
+    return await get_responses(reader, PUB_WAGMAN_STOP, [port])
 
 
 async def command_eereset(reader, writer, *args):
