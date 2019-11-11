@@ -133,8 +133,8 @@ async def command_boots(reader, writer, *args):
 
 
 async def command_uptime(reader, writer, *args):
-    await put_request(writer, REQ_WAGMAN_BOOTS, [1])
-    return await get_responses(reader, PUB_WAGMAN_BOOTS, [1])
+    await put_request(writer, REQ_WAGMAN_UPTIME, [1])
+    return await get_responses(reader, PUB_WAGMAN_UPTIME, [1])
 
 
 async def command_fc(reader, writer, *args):
