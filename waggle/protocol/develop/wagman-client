@@ -97,7 +97,6 @@ PUB_WAGMAN_DEVICE_ENABLE = 0xff20
 
 
 def ints(args):
-    # the + 1 is to map between the 0-indexing interface of wagman-client and the 1-indexing of the sdf
     return [int(x) for x in args]
 
 
@@ -110,51 +109,71 @@ async def put_request(writer, id, sub_ids):
                                   for sub_id in sub_ids])
 
 
+commands = {}
+
+
+def defcommand(table, *names):
+    def decorator(func):
+        for name in names:
+            table[name] = func
+        return func
+    return decorator
+
+
+@defcommand(commands, 'id')
 async def command_id(reader, writer, *args):
     await put_request(writer, REQ_WAGMAN_ID, [1])
     return await get_responses(reader, PUB_WAGMAN_ID, [1])
 
 
+@defcommand(commands, 'cu')
 async def command_cu(reader, writer, *args):
     sub_ids = ports_to_sub_ids(ints(args) or [0, 1, 2, 3, 4, 5])
     await put_request(writer, REQ_WAGMAN_CU, sub_ids)
     return await get_responses(reader, PUB_WAGMAN_CU, sub_ids)
 
 
+@defcommand(commands, 'hb')
 async def command_hb(reader, writer, *args):
     sub_ids = ports_to_sub_ids(ints(args) or [0, 1, 2, 3, 4])
     await put_request(writer, REQ_WAGMAN_HB, sub_ids)
     return await get_responses(reader, PUB_WAGMAN_HB, sub_ids)
 
 
+@defcommand(commands, 'boots')
 async def command_boots(reader, writer, *args):
     await put_request(writer, REQ_WAGMAN_BOOTS, [1])
     return await get_responses(reader, PUB_WAGMAN_BOOTS, [1])
 
 
+@defcommand(commands, 'up', 'uptime')
 async def command_uptime(reader, writer, *args):
     await put_request(writer, REQ_WAGMAN_UPTIME, [1])
     return await get_responses(reader, PUB_WAGMAN_UPTIME, [1])
 
 
+@defcommand(commands, 'fc')
 async def command_fc(reader, writer, *args):
     sub_ids = ports_to_sub_ids(ints(args) or [0, 1, 2, 3, 4])
     await put_request(writer, REQ_WAGMAN_FC, sub_ids)
     return await get_responses(reader, PUB_WAGMAN_FC, sub_ids)
 
 
+@defcommand(commands, 'th')
 async def command_th(reader, writer, *args):
     sub_ids = ports_to_sub_ids(ints(args) or [0, 1, 2, 3, 4])
     await put_request(writer, REQ_WAGMAN_TH, sub_ids)
     return await get_responses(reader, PUB_WAGMAN_TH, sub_ids)
 
 
+@defcommand(commands, 'start')
 async def command_start(reader, writer, *args):
     sub_id = int(args[0]) + 1
     await writer.put({'id': REQ_WAGMAN_START, 'sub_id': sub_id, 'value': 0})
     return await get_responses(reader, PUB_WAGMAN_START, [sub_id])
 
 
+@defcommand(commands, 'stop')
 async def command_stop(reader, writer, *args):
     sub_id = int(args[0]) + 1
     after = int(args[1])
@@ -162,30 +181,16 @@ async def command_stop(reader, writer, *args):
     return await get_responses(reader, PUB_WAGMAN_STOP, [sub_id])
 
 
+@defcommand(commands, 'eereset')
 async def command_eereset(reader, writer, *args):
     await writer.put({'id': REQ_WAGMAN_EERESET, 'sub_id': 1, 'value': 0})
     return await get_responses(reader, PUB_WAGMAN_EERESET, [1])
 
 
+@defcommand(commands, 'reset')
 async def command_reset(reader, writer, *args):
     await writer.put({'id': REQ_WAGMAN_RESET, 'sub_id': 1, 'value': 0})
     return await get_responses(reader, PUB_WAGMAN_RESET, [1])
-
-
-commands = {
-    'id': command_id,
-    'cu': command_cu,
-    'hb': command_hb,
-    'fc': command_fc,
-    'up': command_uptime,
-    'th': command_th,
-    'uptime': command_uptime,
-    'boots': command_boots,
-    'start': command_start,
-    'stop': command_stop,
-    'eereset': command_eereset,
-    'reset': command_reset,
-}
 
 
 def stringify(x):
