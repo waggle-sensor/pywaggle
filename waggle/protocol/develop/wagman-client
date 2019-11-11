@@ -120,6 +120,10 @@ def defcommand(table, *names):
     return decorator
 
 
+# TODO Try to unify some of the structure. Right now, it looks close...
+# but there's small corner cases to prevent easy refactoring across all
+# commands.
+
 @defcommand(commands, 'id')
 async def command_id(reader, writer, *args):
     await put_request(writer, REQ_WAGMAN_ID, [1])
