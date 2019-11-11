@@ -90,6 +90,10 @@ PUB_WAGMAN_DEVICE_STATE = 0xff1f
 PUB_WAGMAN_DEVICE_ENABLE = 0xff20
 
 
+def ints(args):
+    return [int(x) for x in args]
+
+
 async def put_request(writer, id, sub_ids):
     return await asyncio.gather(*[writer.put({'id': id, 'sub_id': sub_id, 'value': 0})
                                   for sub_id in sub_ids])
@@ -101,13 +105,15 @@ async def command_id(reader, writer, *args):
 
 
 async def command_cu(reader, writer, *args):
-    await put_request(writer, REQ_WAGMAN_CU, [1, 2, 3, 4, 5, 6])
-    return await get_responses(reader, PUB_WAGMAN_CU, [1, 2, 3, 4, 5, 6])
+    ports = ints(args) or [1, 2, 3, 4, 5, 6]
+    await put_request(writer, REQ_WAGMAN_CU, ports)
+    return await get_responses(reader, PUB_WAGMAN_CU, ports)
 
 
 async def command_hb(reader, writer, *args):
-    await put_request(writer, REQ_WAGMAN_HB, [1, 2, 3, 4, 5])
-    return await get_responses(reader, PUB_WAGMAN_HB, [1, 2, 3, 4, 5])
+    ports = ints(args) or [1, 2, 3, 4, 5]
+    await put_request(writer, REQ_WAGMAN_HB, ports)
+    return await get_responses(reader, PUB_WAGMAN_HB, ports)
 
 
 async def command_boots(reader, writer, *args):
@@ -121,25 +127,27 @@ async def command_uptime(reader, writer, *args):
 
 
 async def command_fc(reader, writer, *args):
-    await put_request(writer, REQ_WAGMAN_FC, [1, 2, 3, 4, 5])
-    return await get_responses(reader, PUB_WAGMAN_FC, [1, 2, 3, 4, 5])
+    ports = ints(args) or [1, 2, 3, 4, 5]
+    await put_request(writer, REQ_WAGMAN_FC, ports)
+    return await get_responses(reader, PUB_WAGMAN_FC, ports)
 
 
 async def command_th(reader, writer, *args):
-    await put_request(writer, REQ_WAGMAN_TH, [1, 2, 3, 4, 5])
-    return await get_responses(reader, PUB_WAGMAN_TH, [1, 2, 3, 4, 5])
+    ports = ints(args) or [1, 2, 3, 4, 5]
+    await put_request(writer, REQ_WAGMAN_TH, ports)
+    return await get_responses(reader, PUB_WAGMAN_TH, ports)
 
 
 async def command_start(reader, writer, *args):
     port = int(args[0])
-    await writer.put({'id': REQ_WAGMAN_START, 'sub_id': 1, 'value': port})
+    await writer.put({'id': REQ_WAGMAN_START, 'sub_id': port, 'value': 0})
     return await get_responses(reader, PUB_WAGMAN_START, [1])
 
 
 async def command_stop(reader, writer, *args):
     port = int(args[0])
     after = int(args[1])
-    await writer.put({'id': REQ_WAGMAN_STOP, 'sub_id': 1, 'value': (port, after)})
+    await writer.put({'id': REQ_WAGMAN_STOP, 'sub_id': port, 'value': after})
     return await get_responses(reader, PUB_WAGMAN_STOP, [1])
 
 
