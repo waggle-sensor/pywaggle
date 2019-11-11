@@ -111,38 +111,46 @@ async def command_hb(reader, writer, *args):
 
 
 async def command_boots(reader, writer, *args):
-    return await gather_rpc(reader, writer, 4, [1])
+    await put_request(writer, REQ_WAGMAN_BOOTS, [1])
+    return await get_responses(reader, PUB_WAGMAN_BOOTS, [1])
 
 
 async def command_uptime(reader, writer, *args):
-    return await gather_rpc(reader, writer, 7, [1])
+    await put_request(writer, REQ_WAGMAN_BOOTS, [1])
+    return await get_responses(reader, PUB_WAGMAN_BOOTS, [1])
 
 
 async def command_fc(reader, writer, *args):
-    return await gather_rpc(reader, writer, 0xff05, [1, 2, 3, 4, 5])
+    await put_request(writer, REQ_WAGMAN_FC, [1, 2, 3, 4, 5])
+    return await get_responses(reader, PUB_WAGMAN_FC, [1, 2, 3, 4, 5])
 
 
 async def command_th(reader, writer, *args):
-    return await gather_rpc(reader, writer, 34, [1])
+    await put_request(writer, REQ_WAGMAN_TH, [1, 2, 3, 4, 5])
+    return await get_responses(reader, PUB_WAGMAN_TH, [1, 2, 3, 4, 5])
 
 
 async def command_start(reader, writer, *args):
     port = int(args[0])
-    return await gather_rpc(reader, writer, 5, [1], (port,))
+    await writer.put({'id': REQ_WAGMAN_START, 'sub_id': 1, 'value': port})
+    return await get_responses(reader, PUB_WAGMAN_START, [1])
 
 
 async def command_stop(reader, writer, *args):
     port = int(args[0])
-    dur = int(args[1])
-    return await gather_rpc(reader, writer, 6, [1], (port, dur))
+    after = int(args[1])
+    await writer.put({'id': REQ_WAGMAN_STOP, 'sub_id': 1, 'value': (port, after)})
+    return await get_responses(reader, PUB_WAGMAN_STOP, [1])
 
 
 async def command_eereset(reader, writer, *args):
-    return await gather_rpc(reader, writer, 30, [1])
+    await writer.put({'id': REQ_WAGMAN_EERESET, 'sub_id': 1, 'value': 0})
+    return await get_responses(reader, PUB_WAGMAN_EERESET, [1])
 
 
 async def command_reset(reader, writer, *args):
-    return await gather_rpc(reader, writer, 31, [1])
+    await writer.put({'id': REQ_WAGMAN_RESET, 'sub_id': 1, 'value': 0})
+    return await get_responses(reader, PUB_WAGMAN_RESET, [1])
 
 
 commands = {
