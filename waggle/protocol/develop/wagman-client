@@ -38,39 +38,9 @@ def create_write_queue(writer):
     return queue
 
 
-def match_message(fields, msg):
-    for k in fields.keys():
-        if k not in msg or msg[k] != fields[k]:
-            return False
-    return True
-
-
-async def get_message(reader, fields):
-    while True:
-        message = await reader.get()
-        if match_message(fields, message):
-            return message
-
-
-async def simple_rpc(reader, writer, id, sub_id=None, value=None):
-    await writer.put({'id': id, 'sub_id': sub_id or 0, 'value': value or 0})
-
-    match = {'id': id}
-
-    if sub_id is not None:
-        match['sub_id'] = sub_id
-
-    r = await get_message(reader, match)
-    return r['value']
-
-
-async def gather_rpc(reader, writer, id, sub_ids):
-    await asyncio.gather(*[writer.put({'id': id, 'sub_id': sub_id, 'value': 0}) for sub_id in sub_ids])
-    return await wait_for_messages(reader, [{'id': id, 'sub_id': sub_id} for sub_id in sub_ids])
-
-
-async def wait_for_messages(reader, matches):
+async def get_responses(reader, id, sub_ids):
     results = {}
+    matches = [{'id': id, 'sub_id': sub_id} for sub_id in sub_ids]
 
     while len(results) < len(matches):
         message = await reader.get()
@@ -82,24 +52,70 @@ async def wait_for_messages(reader, matches):
     return tuple(results[i] for i in range(len(results)))
 
 
+def match_message(fields, msg):
+    for k in fields.keys():
+        if k not in msg or msg[k] != fields[k]:
+            return False
+    return True
+
+
+REQ_WAGMAN_ID = 0xc000
+REQ_WAGMAN_CU = 0xc001
+REQ_WAGMAN_HB = 0xc002
+REQ_WAGMAN_TH = 0xc003
+REQ_WAGMAN_UPTIME = 0xc004
+REQ_WAGMAN_BOOTS = 0xc005
+REQ_WAGMAN_FC = 0xc006
+REQ_WAGMAN_START = 0xc007
+REQ_WAGMAN_STOP = 0xc008
+REQ_WAGMAN_RESET = 0xc009
+REQ_WAGMAN_EERESET = 0xc00a
+REQ_WAGMAN_DEVICE_STATE = 0xc00b
+
+PUB_WAGMAN_ID = 0xff1a
+PUB_WAGMAN_CU = 0xff06
+PUB_WAGMAN_HB = 0xff09
+PUB_WAGMAN_BOOTS = 0xff1a
+PUB_WAGMAN_UPTIME = 0xff14
+PUB_WAGMAN_FC = 0xff05
+PUB_WAGMAN_START = 0xff0b
+PUB_WAGMAN_STOP = 0xff0a
+PUB_WAGMAN_ENABLE = 40
+PUB_WAGMAN_EERESET = 0xc00a
+PUB_WAGMAN_RESET = 0xc009
+PUB_WAGMAN_PING = 0xff1e
+PUB_WAGMAN_VOLTAGE = 0xff08
+PUB_WAGMAN_TH = 0xff10
+PUB_WAGMAN_DEVICE_STATE = 0xff1f
+PUB_WAGMAN_DEVICE_ENABLE = 0xff20
+
+
+async def put_request(writer, id, sub_ids):
+    return await asyncio.gather(*[writer.put({'id': id, 'sub_id': sub_id, 'value': 0})
+                                  for sub_id in sub_ids])
+
+
 async def command_id(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=1)
+    await put_request(writer, REQ_WAGMAN_ID, [1])
+    return await get_responses(reader, PUB_WAGMAN_ID, [1])
 
 
 async def command_cu(reader, writer, *args):
-    return await gather_rpc(reader, writer, 0xff06, [1, 2, 3, 4, 5, 6])
+    await put_request(writer, REQ_WAGMAN_CU, [1, 2, 3, 4, 5, 6])
+    return await get_responses(reader, PUB_WAGMAN_CU, [1, 2, 3, 4, 5, 6])
 
 
 async def command_hb(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=3)
+    await put_request(writer, REQ_WAGMAN_HB, [1, 2, 3, 4, 5])
+    return await get_responses(reader, PUB_WAGMAN_HB, [1, 2, 3, 4, 5])
 
 
 async def command_boots(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=4)
+    return await gather_rpc(reader, writer, 4, [1])
 
 
 async def command_uptime(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=7)
+    return await gather_rpc(reader, writer, 7, [1])
 
 
 async def command_fc(reader, writer, *args):
@@ -107,26 +123,26 @@ async def command_fc(reader, writer, *args):
 
 
 async def command_th(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=34)
+    return await gather_rpc(reader, writer, 34, [1])
 
 
 async def command_start(reader, writer, *args):
     port = int(args[0])
-    assert await simple_rpc(reader, writer, id=5, value=(port,)) == 0
+    return await gather_rpc(reader, writer, 5, [1], (port,))
 
 
 async def command_stop(reader, writer, *args):
     port = int(args[0])
     dur = int(args[1])
-    assert await simple_rpc(reader, writer, id=6, value=(port, dur)) == 0
+    return await gather_rpc(reader, writer, 6, [1], (port, dur))
 
 
 async def command_eereset(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=30)
+    return await gather_rpc(reader, writer, 30, [1])
 
 
 async def command_reset(reader, writer, *args):
-    return await simple_rpc(reader, writer, id=31)
+    return await gather_rpc(reader, writer, 31, [1])
 
 
 commands = {
