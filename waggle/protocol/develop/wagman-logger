@@ -9,7 +9,8 @@ from protocol import unpack_sensorgrams
 async def read_message(reader):
     while True:
         data = await reader.readline()
-        print(data)
+        if len(data) == 0:
+            raise ConnectionError('connection closed')
         try:
             return unpack_sensorgrams(binascii.a2b_base64(data))
         except binascii.Error:

@@ -15,6 +15,10 @@ def fatal(*args):
 async def read_queue_task(reader, queue):
     while True:
         data = await reader.readline()
+
+        if len(data) == 0:
+            raise ConnectionError('connection closed')
+
         logging.debug('read data - %s', data)
 
         try:
@@ -290,6 +294,8 @@ async def main():
         print(stringify(results))
     except asyncio.TimeoutError:
         fatal('command timed out')
+    except ConnectionError:
+        fatal('connection closed')
 
     writer.close()
 
