@@ -7,6 +7,11 @@ import logging
 from protocol import pack_sensorgram, unpack_sensorgram, unpack_sensorgrams
 
 
+def fatal(*args):
+    print(*args)
+    sys.exit(1)
+
+
 async def read_queue_task(reader, queue):
     while True:
         data = await reader.readline()
@@ -178,7 +183,10 @@ async def command_th(reader, writer, *args):
 async def command_start(reader, writer, *args):
     sub_id = int(args[0]) + 1
     await writer.put({'id': REQ_WAGMAN_START, 'sub_id': sub_id, 'value': 0})
-    return await get_responses(reader, PUB_WAGMAN_START, [sub_id])
+    value = await get_responses(reader, PUB_WAGMAN_START, [sub_id])
+    if value != (1,):
+        fatal('error')
+    return 'ok'
 
 
 @defcommand(commands, 'stop')
@@ -186,7 +194,10 @@ async def command_stop(reader, writer, *args):
     sub_id = int(args[0]) + 1
     after = int(args[1])
     await writer.put({'id': REQ_WAGMAN_STOP, 'sub_id': sub_id, 'value': after})
-    return await get_responses(reader, PUB_WAGMAN_STOP, [sub_id])
+    value = await get_responses(reader, PUB_WAGMAN_STOP, [sub_id])
+    if value != (1,):
+        fatal('error')
+    return 'ok'
 
 
 @defcommand(commands, 'eereset')
@@ -205,7 +216,10 @@ async def command_reset(reader, writer, *args):
 async def command_enable(reader, writer, *args):
     sub_id = int(args[0]) + 1
     await writer.put({'id': REQ_WAGMAN_DEVICE_ENABLE, 'sub_id': sub_id, 'value': 0})
-    return await get_responses(reader, PUB_WAGMAN_DEVICE_ENABLE, [sub_id])
+    value = await get_responses(reader, PUB_WAGMAN_DEVICE_ENABLE, [sub_id])
+    if value != (1,):
+        fatal('error')
+    return 'ok'
 
 
 @defcommand(commands, 'state')
@@ -233,11 +247,16 @@ async def command_enable(reader, writer, *args):
         elif value == (1,):
             return 'emmc'
         else:
-            return 'invalid'
-    else:
-        media = media_table[args[1]]
+            fatal('error')
+    elif len(args) == 2:
+        try:
+            media = media_table[args[1]]
+        except KeyError:
+            fatal('error - invalid media')
         await writer.put({'id': REQ_WAGMAN_SET_MEDIA_SELECT, 'sub_id': sub_id, 'value': (media,)})
         return await get_responses(reader, PUB_WAGMAN_SET_MEDIA_SELECT, [sub_id])
+    else:
+        fatal('invalid number of arguments')
 
 
 def stringify(x):
@@ -270,11 +289,7 @@ async def main():
         results = await asyncio.wait_for(command(read_queue, write_queue, *args.args), timeout=args.timeout)
         print(stringify(results))
     except asyncio.TimeoutError:
-        print('command timed out')
-        sys.exit(1)
-    except AssertionError:
-        print('command error')
-        sys.exit(1)
+        fatal('command timed out')
 
     writer.close()
 
