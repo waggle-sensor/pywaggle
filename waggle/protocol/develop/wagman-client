@@ -77,6 +77,9 @@ REQ_WAGMAN_STOP = 0xc008
 REQ_WAGMAN_RESET = 0xc009
 REQ_WAGMAN_EERESET = 0xc00a
 REQ_WAGMAN_DEVICE_STATE = 0xc00b
+REQ_WAGMAN_DEVICE_ENABLE = 0xc00c
+REQ_WAGMAN_GET_MEDIA_SELECT = 0xc00d
+REQ_WAGMAN_SET_MEDIA_SELECT = 0xc00e
 
 PUB_WAGMAN_ID = 0xff1a
 PUB_WAGMAN_CU = 0xff06
@@ -86,7 +89,6 @@ PUB_WAGMAN_UPTIME = 0xff14
 PUB_WAGMAN_FC = 0xff05
 PUB_WAGMAN_START = 0xff0b
 PUB_WAGMAN_STOP = 0xff0a
-PUB_WAGMAN_ENABLE = 40
 PUB_WAGMAN_EERESET = 0xc00a
 PUB_WAGMAN_RESET = 0xc009
 PUB_WAGMAN_PING = 0xff1e
@@ -94,6 +96,8 @@ PUB_WAGMAN_VOLTAGE = 0xff08
 PUB_WAGMAN_TH = 0xff10
 PUB_WAGMAN_DEVICE_STATE = 0xff1f
 PUB_WAGMAN_DEVICE_ENABLE = 0xff20
+PUB_WAGMAN_GET_MEDIA_SELECT = 0xff21
+PUB_WAGMAN_SET_MEDIA_SELECT = 0xff22
 
 
 def ints(args):
@@ -195,6 +199,45 @@ async def command_eereset(reader, writer, *args):
 async def command_reset(reader, writer, *args):
     await writer.put({'id': REQ_WAGMAN_RESET, 'sub_id': 1, 'value': 0})
     return await get_responses(reader, PUB_WAGMAN_RESET, [1])
+
+
+@defcommand(commands, 'enable')
+async def command_enable(reader, writer, *args):
+    sub_id = int(args[0]) + 1
+    await writer.put({'id': REQ_WAGMAN_DEVICE_ENABLE, 'sub_id': sub_id, 'value': 0})
+    return await get_responses(reader, PUB_WAGMAN_DEVICE_ENABLE, [sub_id])
+
+
+@defcommand(commands, 'state')
+async def command_enable(reader, writer, *args):
+    sub_id = int(args[0]) + 1
+    await writer.put({'id': REQ_WAGMAN_DEVICE_STATE, 'sub_id': sub_id, 'value': 0})
+    return await get_responses(reader, PUB_WAGMAN_DEVICE_STATE, [sub_id])
+
+
+media_table = {
+    'sd': 0,
+    'emmc': 1,
+}
+
+
+@defcommand(commands, 'bs')
+async def command_enable(reader, writer, *args):
+    sub_id = int(args[0]) + 1
+
+    if len(args) == 1:
+        await writer.put({'id': REQ_WAGMAN_GET_MEDIA_SELECT, 'sub_id': sub_id, 'value': 0})
+        value = await get_responses(reader, PUB_WAGMAN_GET_MEDIA_SELECT, [sub_id])
+        if value == (0,):
+            return 'sd'
+        elif value == (1,):
+            return 'emmc'
+        else:
+            return 'invalid'
+    else:
+        media = media_table[args[1]]
+        await writer.put({'id': REQ_WAGMAN_SET_MEDIA_SELECT, 'sub_id': sub_id, 'value': (media,)})
+        return await get_responses(reader, PUB_WAGMAN_SET_MEDIA_SELECT, [sub_id])
 
 
 def stringify(x):
