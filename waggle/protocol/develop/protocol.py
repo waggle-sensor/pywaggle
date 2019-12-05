@@ -6,7 +6,7 @@
 # ANL:waggle-license
 import time
 from io import BytesIO
-from crc8 import crc8
+from .crc8 import crc8
 from binascii import crc_hqx as crc16
 from binascii import crc32
 import random
