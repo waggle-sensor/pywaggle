@@ -23,6 +23,9 @@ async def read_queue_task(reader, queue):
 
         try:
             messages = unpack_sensorgrams(binascii.a2b_base64(data))
+        except ValueError as e:
+            print('error', e)
+            continue
         except (binascii.Error, IndexError):
             continue
 

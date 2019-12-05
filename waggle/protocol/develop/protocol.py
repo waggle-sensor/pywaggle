@@ -225,7 +225,7 @@ class Decoder:
         r['crc'] = d.decode_uint(1)
 
         if crcr.sum != 0:
-            raise ValueError('incorrect sensorgram crc')
+            raise ValueError('incorrect sensorgram crc {}'.format(r))
 
         return r
 
