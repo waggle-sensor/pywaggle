@@ -48,18 +48,6 @@ import waggle.protocol
 from base64 import b64encode
 
 
-def load_package_configs(*filenames):
-    program_path = os.path.abspath(sys.argv[0])
-    plugin_dir = os.path.dirname(os.path.dirname(program_path))
-
-    config = configparser.ConfigParser()
-
-    for filename in filenames:
-        config.read(os.path.join(plugin_dir, filename))
-
-    return config
-
-
 def parse_version_string(s):
     if isinstance(s, tuple):
         assert len(s) == 3
@@ -67,158 +55,43 @@ def parse_version_string(s):
     return tuple(int(x) for x in s.split('.', 2))
 
 
-def load_package_plugin_config():
-    config = load_package_configs('plugin.ver', 'plugin.instance')
-    section = config['plugin']
-
-    return {
-        'name': section.get('name'),
-        'description': section.get('description'),
-        'reference': section.get('reference'),
-        'id': section.getint('id'),
-        'version': parse_version_string(section.get('version')),
-        'instance': section.getint('instance'),
-    }
-
-
-# probably can just turn Credentials into dictionary too... That would be
-# more consistent.
-def load_package_plugin_credentials():
-    config = load_package_configs('plugin.credentials')
-    section = config['credentials']
-
-    return Credentials(
-        host=section.get('host'),
-        port=section.getint('port'),
-        username=section.get('username'),
-        password=section.get('password'),
-        cacertfile=section.get('cacert'),
-        certfile=section.get('cert'),
-        keyfile=section.get('key'),
-        node_id=section.get('node_id'),
-        sub_id=section.get('sub_id'),
-    )
-
-
-def load_plugin_config(**kwargs):
-    plugin_config = {
-        'instance': 0,
-    }
-
-    # attempt to load plugin config files
-    try:
-        plugin_config.update(load_package_plugin_config())
-    except KeyError:
-        pass
-
-    plugin_config.update(kwargs)
-
-    return plugin_config
-
-
-def get_connection_parameters(c):
-    if c.cacertfile:
-        return get_ssl_connection_parameters(c)
-    return get_plain_connection_parameters(c)
-
-
-def get_plain_connection_parameters(c):
-    credentials = pika.credentials.PlainCredentials(
-        username=c.username,
-        password=c.password)
-
-    return pika.ConnectionParameters(
-        host=c.host or 'localhost',
-        port=c.port or 5672,
-        credentials=credentials)
-
-
-def get_ssl_connection_parameters(c):
-    host = c.host or 'localhost'
-    port = c.port or 23181
-
-    context = ssl.create_default_context(
-        cafile=os.path.abspath(c.cacertfile))
-
-    context.load_cert_chain(
-        os.path.abspath(c.certfile),
-        os.path.abspath(c.keyfile))
-
-    context.check_hostname = False
-
-    ssl_options = pika.SSLOptions(context, host)
-
-    return pika.ConnectionParameters(
-        host=host,
-        port=port,
-        credentials=pika.credentials.ExternalCredentials(),
-        ssl_options=ssl_options)
-
-
-def format_device_id(s):
-    return s.rjust(16, '0')
-
-
-class Credentials:
-
-    def __init__(self, **kwargs):
-        # we'll leave these out for now. in all cases, our system will validate
-        # them.
-        self.node_id = format_device_id(
-            kwargs.get('node_id') or '0000000000000000')
-        self.sub_id = format_device_id(
-            kwargs.get('sub_id') or '0000000000000000')
-
-        self.host = kwargs.get('host')
-        self.port = kwargs.get('port')
-
-        # TODO Main use of derived use case is getting username from cert
-        # Could later just directly extract from cert.
-        # Then, even better, we can just use these credentials universally and
-        # only have one connection system for RabbitMQ.
-        self.username = kwargs.get(
-            'username') or 'node-{}'.format(self.node_id)
-        self.password = kwargs.get('password')
-
-        self.cacertfile = kwargs.get('cacert')
-        self.certfile = kwargs.get('cert')
-        self.keyfile = kwargs.get('key')
-
-
-class PluginBase:
-
-    def load_config(self, **kwargs):
-        plugin_config = load_plugin_config(**kwargs)
-        self.plugin_id = int(plugin_config['id'])
-        self.plugin_version = parse_version_string(plugin_config['version'])
-        self.plugin_instance = int(plugin_config['instance'])
-
-
-class Plugin(PluginBase):
+class Plugin:
     """
     Implements the plugin interface using a local RabbitMQ broker for the messaging layer.
     """
 
     def __init__(self, **kwargs):
         self.logger = logging.getLogger('pipeline.Plugin')
-        self.load_config(**kwargs)
-        self.credentials = kwargs.get('credentials')
 
-        if self.credentials is None:
-            self.credentials = load_package_plugin_credentials()
+        self.id = int(os.environ['WAGGLE_PLUGIN_ID'])
+        self.version = parse_version_string(
+            os.environ['WAGGLE_PLUGIN_VERSION'])
+        self.instance = int(os.environ['WAGGLE_PLUGIN_INSTANCE'])
+
+        self.node_id = os.environ['WAGGLE_NODE_ID']
+        self.sub_id = os.environ['WAGGLE_SUB_ID']
+
+        self.credentials = pika.credentials.PlainCredentials(
+            username=os.environ['WAGGLE_PLUGIN_USERNAME'],
+            password=os.environ['WAGGLE_PLUGIN_PASSWORD'],
+        )
+
+        self.connection_parameters = pika.ConnectionParameters(
+            host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
+            port=int(os.environ.get('WAGGLE_PLUGIN_PORT', '5672')),
+            credentials=self.credentials,
+        )
 
         self.queue = 'to-{}'.format(self.credentials.username)
-        self._connect()
+        self.connect()
 
-    def _connect(self):
-        connection_parameters = get_connection_parameters(self.credentials)
-        self.connection = pika.BlockingConnection(connection_parameters)
+    def connect(self):
+        self.connection = pika.BlockingConnection(self.connection_parameters)
         self.channel = self.connection.channel()
-
         self.measurements = []
 
     def publish(self, body):
-        self.logger.debug('Publishing message data %s.', body)
+        self.logger.debug('publish data %s', body)
 
         for i in range(2):
             try:
@@ -231,7 +104,7 @@ class Plugin(PluginBase):
                     body=body)
                 break
             except pika.exceptions.ConnectionClosed:
-                self._connect()
+                self.connect()
             except Exception:
                 break
 
@@ -244,28 +117,30 @@ class Plugin(PluginBase):
             if body is None:
                 break
 
-            self.logger.debug('Yielding message data %s.', body)
+            self.logger.debug('yield message %s', method.delivery_tag)
             yield body
 
-            self.logger.debug('Acking message data.')
+            self.logger.debug('ack message %s', method.delivery_tag)
             self.channel.basic_ack(delivery_tag=method.delivery_tag)
 
     def add_measurement(self, sensorgram):
+        self.logger.debug('add measurement %s', sensorgram)
         self.measurements.append(pack_measurement(sensorgram))
 
     def clear_measurements(self):
+        self.logger.debug('clear measurements')
         self.measurements.clear()
 
     def publish_measurements(self):
         message = waggle.protocol.pack_message({
-            'sender_id': self.credentials.node_id,
-            'sender_sub_id': self.credentials.sub_id,
+            'sender_id': self.node_id,
+            'sender_sub_id': self.sub_id,
             'body': waggle.protocol.pack_datagram({
-                'plugin_id': self.plugin_id,
-                'plugin_major_version': self.plugin_version[0],
-                'plugin_minor_version': self.plugin_version[1],
-                'plugin_patch_version': self.plugin_version[2],
-                'plugin_instance': self.plugin_instance,
+                'plugin_id': self.id,
+                'plugin_major_version': self.version[0],
+                'plugin_minor_version': self.version[1],
+                'plugin_patch_version': self.version[2],
+                'plugin_instance': self.instance,
                 'body': b''.join(self.measurements)
             })
         })
@@ -275,16 +150,16 @@ class Plugin(PluginBase):
 
     def publish_message(self, receiver_id, receiver_sub_id, body):
         message = waggle.protocol.pack_message({
-            'sender_id': self.credentials.node_id,
-            'sender_sub_id': self.credentials.sub_id,
+            'sender_id': self.id,
+            'sender_sub_id': self.sub_id,
             'receiver_id': receiver_id,
             'receiver_sub_id': receiver_sub_id,
             'body': waggle.protocol.pack_datagram({
-                'plugin_id': self.plugin_id,
-                'plugin_major_version': self.plugin_version[0],
-                'plugin_minor_version': self.plugin_version[1],
-                'plugin_patch_version': self.plugin_version[2],
-                'plugin_instance': self.plugin_instance,
+                'plugin_id': self.id,
+                'plugin_major_version': self.version[0],
+                'plugin_minor_version': self.version[1],
+                'plugin_patch_version': self.version[2],
+                'plugin_instance': self.instance,
                 'body': body,
             })
         })
@@ -293,115 +168,6 @@ class Plugin(PluginBase):
 
     def publish_heartbeat(self):
         pass
-
-
-class PrintPlugin(PluginBase):
-    """
-    Implements the plugin interface and prints resutls to console. This class
-    is intended for development and testing of plugin code.
-    """
-
-    def __init__(self, **kwargs):
-        self.load_config(**kwargs)
-        self.measurements = []
-        self.process_callback = default_test_callback
-
-    def publish(self, body):
-        print('publish:')
-        print(body)
-
-    def get_waiting_messages(self):
-        return
-
-    def add_measurement(self, sensorgram):
-        self.measurements.append(pack_measurement(sensorgram))
-
-    def clear_measurements(self):
-        """Clear measurement queue without publishing."""
-        self.measurements.clear()
-
-    def publish_measurements(self):
-        """Publish and clear the measurement queue."""
-        message = waggle.protocol.unpack_message(waggle.protocol.pack_message({
-            'body': waggle.protocol.pack_datagram({
-                'plugin_id': self.plugin_id,
-                'plugin_major_version': self.plugin_version[0],
-                'plugin_minor_version': self.plugin_version[1],
-                'plugin_patch_version': self.plugin_version[2],
-                'plugin_instance': self.plugin_instance,
-                'body': b''.join(self.measurements)
-            })
-        }))
-
-        datagram = waggle.protocol.unpack_datagram(message['body'])
-        sensorgrams = waggle.protocol.unpack_sensorgrams(datagram['body'])
-
-        self.process_callback(message, sensorgrams)
-        self.clear_measurements()
-
-    def publish_heartbeat(self):
-        print('publish heartbeat')
-
-    def process_measurements(self, process_callback):
-        # NOTE Eventually wrap callback and make compatible
-        # with a raw process_messages version.
-        self.process_callback = process_callback
-
-    def start_processing(self):
-        pass
-
-
-class PipePlugin(PluginBase):
-
-    def __init__(self, **kwargs):
-        self.load_config(**kwargs)
-        self.measurements = []
-        self.process_callback = default_test_callback
-
-    def publish(self, body):
-        sys.stdout.buffer.write(body)
-        sys.stdout.buffer.flush()
-
-    def get_waiting_messages(self):
-        return
-
-    def add_measurement(self, sensorgram):
-        self.measurements.append(pack_measurement(sensorgram))
-
-    def clear_measurements(self):
-        """Clear measurement queue without publishing."""
-        self.measurements.clear()
-
-    def publish_measurements(self):
-        """Publish and clear the measurement queue."""
-        self.publish(waggle.protocol.pack_message({
-            'body': waggle.protocol.pack_datagram({
-                'plugin_id': self.plugin_id,
-                'plugin_major_version': self.plugin_version[0],
-                'plugin_minor_version': self.plugin_version[1],
-                'plugin_patch_version': self.plugin_version[2],
-                'plugin_instance': self.plugin_instance,
-                'body': b''.join(self.measurements)
-            })
-        }))
-
-        self.clear_measurements()
-
-    def publish_heartbeat(self):
-        pass
-
-    def process_measurements(self, process_callback):
-        self.process_callback = process_callback
-
-    def start_processing(self):
-        pass
-
-
-def default_test_callback(message, sensorgrams):
-    print('published measurements:')
-
-    for sensorgram in sensorgrams:
-        print(sensorgram)
 
 
 def pack_measurement(sensorgram):
@@ -444,17 +210,3 @@ def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.s
             results.append(r)
 
     json.dump(results, writer, separators=(',', ':'))
-
-
-if __name__ == '__main__':
-    plugin = PrintPlugin()
-
-    def my_callback(message, sensorgrams):
-        print('---')
-        print(sensorgrams)
-
-    plugin.process_measurements(my_callback)
-
-    plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 23.1})
-    plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 23.3})
-    plugin.publish_measurements()
