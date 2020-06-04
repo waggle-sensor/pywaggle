@@ -66,7 +66,8 @@ class RabbitMQHandler(PluginHandler):
 
         self.channel.queue_declare(self.dest_queue, durable=True)
 
-        self.channel.queue_bind(queue=self.dest_queue, exchange=self.dest_exchange)
+        self.channel.queue_bind(queue=self.dest_queue,
+                                exchange=self.dest_exchange)
 
     def send(self, sensor, data, headers={}, reconnect_attempt=2):
         if isinstance(data, int):
@@ -121,7 +122,7 @@ class RabbitMQHandler(PluginHandler):
 
 
 class ImagePipelineHandler(object):
-    def __init__(self, routing_in, url='amqp://localhost', exchange='image_pipeline'):
+    def __init__(self, routing_in, url='amqp://rabbitmq', exchange='image_pipeline'):
         self.connection = None
         self.channel = None
         self.exchange = exchange
@@ -143,7 +144,8 @@ class ImagePipelineHandler(object):
             exchange_type='direct',
             durable=True
         )
-        result = self.channel.queue_declare('', exclusive=True, arguments={'x-max-length': 1})
+        result = self.channel.queue_declare(
+            '', exclusive=True, arguments={'x-max-length': 1})
         self.in_queue = result.method.queue
         self.channel.queue_bind(
             queue=self.in_queue,
@@ -168,7 +170,8 @@ class ImagePipelineHandler(object):
     def read(self, timeout=5):
         for i in range(timeout):
             try:
-                method, properties, body = self.channel.basic_get(queue=self.in_queue, auto_ack=True)
+                method, properties, body = self.channel.basic_get(
+                    queue=self.in_queue, auto_ack=True)
                 if method is not None:
                     return True, (properties, body)
             except pika.exceptions.ConnectionClosed:
@@ -304,20 +307,21 @@ class Plugin(object):
     @classmethod
     def defaultConfig(cls):
         plugin = cls()
-        plugin.add_handler(RabbitMQHandler('amqp://localhost'))
+        plugin.add_handler(RabbitMQHandler('amqp://rabbitmq'))
         return plugin
 
     @classmethod
     def fileTransferConfig(cls):
         plugin = cls()
-        plugin.add_handler(RabbitMQHandler('amqp://localhost'))
-        plugin.add_file_handler(RabbitMQHandler('amqp://localhost', dest_queue='images'))
+        plugin.add_handler(RabbitMQHandler('amqp://rabbitmq'))
+        plugin.add_file_handler(RabbitMQHandler(
+            'amqp://rabbitmq', dest_queue='images'))
         return plugin
 
 
 class Worker(object):
 
-    def __init__(self, host='localhost'):
+    def __init__(self, host='rabbitmq'):
         if not hasattr(self, 'plugin_name'):
             raise RuntimeError('Plugin name must be specified.')
 
@@ -327,7 +331,8 @@ class Worker(object):
         self.queue_name = '.'.join([self.plugin_name, self.plugin_version])
         self.routing_key = '.'.join([self.plugin_name, self.plugin_version])
 
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host))
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host))
 
         self.channel = self.connection.channel()
 
@@ -359,5 +364,6 @@ class Worker(object):
             param = tuple(headers['key'])
             self.get_message(headers, param, body)
 
-        self.channel.basic_consume(callback, queue=self.queue_name, auto_ack=True)
+        self.channel.basic_consume(
+            callback, queue=self.queue_name, auto_ack=True)
         self.channel.start_consuming()
