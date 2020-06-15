@@ -17,14 +17,6 @@ sensorgram_test_cases = [
     {'id': 1, 'sub_id': 2, 'value': b'x' * 4096},
     {'id': 1, 'sub_id': 2, 'value': 'hello'},
     {'id': 1, 'sub_id': 2, 'value': 0},
-    {'id': 1, 'sub_id': 2, 'value': 0xff},
-    {'id': 1, 'sub_id': 2, 'value': 0xffff},
-    {'id': 1, 'sub_id': 2, 'value': 0xffffff},
-    {'id': 1, 'sub_id': 2, 'value': 0xffffffff},
-    {'id': 1, 'sub_id': 2, 'value': -0xff},
-    {'id': 1, 'sub_id': 2, 'value': -0xffff},
-    {'id': 1, 'sub_id': 2, 'value': -0xffffff},
-    {'id': 1, 'sub_id': 2, 'value': -0xffffffff},
 ]
 
 datagram_test_cases = [
@@ -86,19 +78,35 @@ message_test_cases = [
 
 class TestProtocol(unittest.TestCase):
 
-    def test_sensorgrams(self):
+    def test_pack_bytes(self):
+        for x in [b'', b'hello', b'x' * 1000]:
+            pack_sensorgram({'id': 1, 'sub_id': 2, 'value': x})
+
+    def test_pack_uint(self):
+        for x in [0, 0xff, 0xffff, 0xffffff, 0xffffffff]:
+            pack_sensorgram({'id': 1, 'sub_id': 2, 'value': x})
+
+    def test_pack_int(self):
+        for x in [-0, -0xff, -0xffff, -0xffffff, -0xffffffff]:
+            pack_sensorgram({'id': 1, 'sub_id': 2, 'value': x})
+
+    def test_pack_float(self):
+        for x in [0.0, 1.0, -1.0, 100.0, -100.0]:
+            pack_sensorgram({'id': 1, 'sub_id': 2, 'value': x})
+
+    def test_sensorgram_inverse(self):
         for c in sensorgram_test_cases:
             r = unpack_sensorgram(pack_sensorgram(c))
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
-    def test_datagrams(self):
+    def test_datagrams_inverse(self):
         for c in datagram_test_cases:
             r = unpack_datagram(pack_datagram(c))
             for k in c.keys():
                 self.assertEqual(c[k], r[k])
 
-    def test_messages(self):
+    def test_messages_inverse(self):
         for c in message_test_cases:
             r = unpack_message(pack_message(c))
             for k in c.keys():
