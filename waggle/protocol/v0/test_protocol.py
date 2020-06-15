@@ -34,6 +34,31 @@ class TestProtocol(unittest.TestCase):
             'parameter_id': 2,
             'value': b'x' * 4096,
         },
+        {
+            'sensor_id': 1,
+            'parameter_id': 2,
+            'value': 0,
+        },
+        {
+            'sensor_id': 1,
+            'parameter_id': 2,
+            'value': 2**8-1,
+        },
+        {
+            'sensor_id': 1,
+            'parameter_id': 2,
+            'value': 2**16-1,
+        },
+        {
+            'sensor_id': 1,
+            'parameter_id': 2,
+            'value': 2**24-1,
+        },
+        {
+            'sensor_id': 1,
+            'parameter_id': 2,
+            'value': 2**32-1,
+        },
     ]
 
     def test_encode_decode_sensorgram(self):
@@ -48,7 +73,8 @@ class TestProtocol(unittest.TestCase):
                 self.assertEqual(c[k], r[k])
 
     def test_pack_unpack_sensorgrams(self):
-        results = unpack_sensorgrams(pack_sensorgrams(self.sensorgram_test_cases))
+        results = unpack_sensorgrams(
+            pack_sensorgrams(self.sensorgram_test_cases))
 
         for c, r in zip(self.sensorgram_test_cases, results):
             for k in c.keys():
@@ -140,7 +166,8 @@ class TestProtocol(unittest.TestCase):
                 self.assertEqual(c[k], r[k])
 
     def test_pack_unpack_waggle_packets(self):
-        results = unpack_waggle_packets(pack_waggle_packets(self.waggle_packet_test_cases))
+        results = unpack_waggle_packets(
+            pack_waggle_packets(self.waggle_packet_test_cases))
 
         for c, r in zip(self.waggle_packet_test_cases, results):
             for k in c.keys():
