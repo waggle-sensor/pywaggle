@@ -5,7 +5,7 @@
 #          http://www.wa8.gl
 # ANL:waggle-license
 import unittest
-from waggle.checksum import crc8
+from checksum import crc8
 
 
 class ChecksumTestCase(unittest.TestCase):
