@@ -1,5 +1,7 @@
 # Waggle Python Module
 
+![CI/CD](https://github.com/waggle-sensor/pywaggle/workflows/CI/CD/badge.svg)
+
 This module provides abstractions which simplify the design of scripts and
 plugins running on the [Waggle platform](https://github.com/waggle-sensor/waggle).
 
