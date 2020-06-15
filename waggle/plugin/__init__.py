@@ -66,7 +66,7 @@ class Plugin:
         self.id = int(os.environ['WAGGLE_PLUGIN_ID'])
         self.version = parse_version_string(
             os.environ['WAGGLE_PLUGIN_VERSION'])
-        self.instance = int(os.environ['WAGGLE_PLUGIN_INSTANCE'])
+        self.instance = int(os.environ.get('WAGGLE_PLUGIN_INSTANCE', 0))
 
         self.node_id = os.environ['WAGGLE_NODE_ID']
         self.sub_id = os.environ['WAGGLE_SUB_ID']
