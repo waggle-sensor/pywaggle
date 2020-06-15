@@ -15,14 +15,16 @@ sensorgram_test_cases = [
     {'id': 1, 'sub_id': 2, 'value': b'123'},
     {'timestamp': 1234567, 'id': 2, 'inst': 7, 'sub_id': 4, 'value': b'abc'},
     {'id': 1, 'sub_id': 2, 'value': b'x' * 4096},
-    {'id': 1, 'sub_id': 2, 'value': 0},
-    {'id': 1, 'sub_id': 2, 'value': 1},
-    {'id': 1, 'sub_id': 2, 'value': 2**8-1},
-    {'id': 1, 'sub_id': 2, 'value': 2**16-1},
-    {'id': 1, 'sub_id': 2, 'value': 2**24-1},
-    {'id': 1, 'sub_id': 2, 'value': 2**32-1},
     {'id': 1, 'sub_id': 2, 'value': 'hello'},
-    # {'id': 1, 'sub_id': 2, 'value': -1},
+    {'id': 1, 'sub_id': 2, 'value': 0},
+    {'id': 1, 'sub_id': 2, 'value': 0xff},
+    {'id': 1, 'sub_id': 2, 'value': 0xffff},
+    {'id': 1, 'sub_id': 2, 'value': 0xffffff},
+    {'id': 1, 'sub_id': 2, 'value': 0xffffffff},
+    {'id': 1, 'sub_id': 2, 'value': -0xff},
+    {'id': 1, 'sub_id': 2, 'value': -0xffff},
+    {'id': 1, 'sub_id': 2, 'value': -0xffffff},
+    {'id': 1, 'sub_id': 2, 'value': -0xffffffff},
 ]
 
 datagram_test_cases = [
