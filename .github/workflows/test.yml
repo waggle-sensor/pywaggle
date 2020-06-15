@@ -35,3 +35,7 @@ jobs:
       run: |
         cd waggle && python test_checksum.py
         cd waggle && python test_protocol.py
+    - name: Test protocol
+      working-directory: ./waggle
+      run: |
+        python test_protocol.py
