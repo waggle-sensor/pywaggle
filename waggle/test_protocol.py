@@ -76,7 +76,25 @@ message_test_cases = [
 ]
 
 
+unpack_test_cases = [
+    (b'\x00\x08\x11\x11\x11\x11""\x003DDU\x81\x00\x05hello\xd4', {
+        'timestamp': 0x11111111,
+        'id': 0x2222,
+        'sub_id': 0x33,
+        'source_id': 0x4444,
+        'source_inst': 0x55,
+        'value': b'hello',
+    }),
+]
+
+
 class TestProtocol(unittest.TestCase):
+
+    def test_unpack_from_bytes(self):
+        for b, c in unpack_test_cases:
+            r = unpack_sensorgram(b)
+            for k in c.keys():
+                self.assertEqual(c[k], r[k])
 
     def test_pack_bytes(self):
         for x in [b'', b'hello', b'x' * 1000]:
