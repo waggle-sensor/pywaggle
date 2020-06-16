@@ -51,7 +51,7 @@ support for:
   * Value Type
   * Value Body
 
-Technical Note: Validity of sensorgrams is checked using a CRC with polynomial 0x8C.
+Technical Note: Validity of sensorgrams is checked using an 8-bit CRC with polynomial 0x8C.
 
 ### Datagram
 
