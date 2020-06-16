@@ -51,6 +51,8 @@ support for:
   * Value Type
   * Value Body
 
+Technical Note: Validity of sensorgrams is done using a CRC with polynomial 0x8C.
+
 ### Datagram
 
 ### Waggle Message
