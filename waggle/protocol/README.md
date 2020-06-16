@@ -14,25 +14,25 @@ layer of the message pipeline. The typical data flow looks like:
 
 The resulting waggle message, depicted visually, would be organized like:
 
-```
-+-------------------------+
-| waggle message          |
-| sender-info: node123    |
-| receiver-info: beehive  |
-| datagrams:              |
-| +---------------------+ |
-| | datagram 1          | |
-| | plugin-info: sysmon | |
-| | sensorgrams:        | |
-| | +---------------+   | |
-| | | measurement 1 |   | |
-| | | measurement 2 |   | |
-| | | ...           |   | |
-| | | measurement n |   | |
-| | +---------------+   | |
-| +---------------------+ |
-| ...more datagrams...    |
-+-------------------------+
+```txt
+┌─────────────────────────┐
+│ waggle message          │
+│ sender-info: node123    │
+│ receiver-info: beehive  │
+│ datagrams:              │
+│ ┌─────────────────────┐ │
+│ │ datagram 1          │ │
+│ │ plugin─info: sysmon │ │
+│ │ sensorgrams:        │ │
+│ │ ┌───────────────┐   │ │
+│ │ │ measurement 1 │   │ │
+│ │ │ measurement 2 │   │ │
+│ │ │ ...           │   │ │
+│ │ │ measurement n │   │ │
+│ │ └───────────────┘   │ │
+│ └─────────────────────┘ │
+│ ...more datagrams...    │
+└─────────────────────────┘
 ```
 
 ### Sensorgram
@@ -43,9 +43,13 @@ support for:
 * Timestamp
 * Sensor ID
 * Sensor Instance
+* Sub ID
+* Source ID
+* Source Instance
 * Parameter ID
-* Value
-* Value Type
+* Value Body - Single or list of
+  * Value Type
+  * Value Body
 
 ### Datagram
 
@@ -60,11 +64,13 @@ support for:
 Pack a dictionary into a sensorgram. The supported fields are:
 
 * `sensor_id` **required** Sensor ID.
-* `parameter_id` **required** Parameter ID.
+* `sub_id` **required** Sensor sub-ID.
 * `value` **required** Measurement value.
 * `timestamp` **optional** Seconds since epoch. Default is current time.
 * `sensor_instance` **optional** Sensor instance. Default is 0.
-* `type` **optional** Value type. Derived from value's Python type if not specified.
+* `source_id` **optional** Source ID. Default is 0.
+* `source_instance` **optional** Source instance. Default is 0.
+* `value` **requred** Single or list of values.
 
 Supported types are:
 
