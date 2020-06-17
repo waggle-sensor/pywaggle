@@ -40,6 +40,5 @@ jobs:
         ./test_plugin.sh
 
     - name: Test protocol
-      working-directory: ./waggle
       run: |
         python test_protocol.py

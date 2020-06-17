@@ -5,9 +5,9 @@
 #          http://www.wa8.gl
 # ANL:waggle-license
 import unittest
-from protocol import pack_sensorgram, unpack_sensorgram
-from protocol import pack_datagram, unpack_datagram
-from protocol import pack_message, unpack_message
+from waggle.protocol import pack_sensorgram, unpack_sensorgram
+from waggle.protocol import pack_datagram, unpack_datagram
+from waggle.protocol import pack_message, unpack_message
 
 
 sensorgram_test_cases = [
@@ -97,20 +97,29 @@ class TestProtocol(unittest.TestCase):
                 self.assertEqual(c[k], r[k])
 
     def test_pack_bytes(self):
-        for x in [b'', b'hello', b'x' * 1000]:
-            pack_sensorgram({'id': 1, 'sub_id': 2, 'value': x})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': b''})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': b'hello'})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': b'x' * 1024})
 
     def test_pack_uint(self):
-        for x in [0, 0xff, 0xffff, 0xffffff, 0xffffffff]:
-            pack_sensorgram({'id': 1, 'sub_id': 2, 'value': x})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': 0})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': 0xff})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': 0xffff})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': 0xffffff})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': 0xffffffff})
 
     def test_pack_int(self):
-        for x in [-0, -0xff, -0xffff, -0xffffff, -0xffffffff]:
-            pack_sensorgram({'id': 1, 'sub_id': 2, 'value': x})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': -1})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': -0xff})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': -0xffff})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': -0xffffff})
 
     def test_pack_float(self):
-        for x in [0.0, 1.0, -1.0, 100.0, -100.0]:
-            pack_sensorgram({'id': 1, 'sub_id': 2, 'value': x})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': 0.0})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': 1.0})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': -1.0})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': 1e10})
+        pack_sensorgram({'id': 1, 'sub_id': 2, 'value': -1e10})
 
     def test_sensorgram_inverse(self):
         for c in sensorgram_test_cases:

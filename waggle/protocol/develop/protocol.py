@@ -93,7 +93,10 @@ class BasicEncoder:
         self.w.write(b)
 
     def encode_uint(self, x, n):
-        self.encode_bytes(x.to_bytes(n, byteorder='big'))
+        self.encode_bytes(x.to_bytes(n, byteorder='big', signed=False))
+
+    def encode_int(self, x, n):
+        self.encode_bytes(x.to_bytes(n, byteorder='big', signed=True))
 
 
 class BasicDecoder:
@@ -108,7 +111,10 @@ class BasicDecoder:
         return data
 
     def decode_uint(self, size):
-        return int.from_bytes(self.decode_bytes(size), byteorder='big')
+        return int.from_bytes(self.decode_bytes(size), byteorder='big', signed=False)
+
+    def decode_int(self, size):
+        return int.from_bytes(self.decode_bytes(size), byteorder='big', signed=True)
 
 
 RUN_ID = random.randint(0, 0xffff - 1)
@@ -491,6 +497,11 @@ encode_values_table = {
     TYPE_UINT24: lambda e, x: e.encode_uint(x, 3),
     TYPE_UINT32: lambda e, x: e.encode_uint(x, 4),
 
+    TYPE_INT8: lambda e, x: e.encode_int(x, 1),
+    TYPE_INT16: lambda e, x: e.encode_int(x, 2),
+    TYPE_INT24: lambda e, x: e.encode_int(x, 3),
+    TYPE_INT32: lambda e, x: e.encode_int(x, 4),
+
     TYPE_BYTE_ARRAY: lambda e, x: encode_byte_array(e, x),
     TYPE_STRING: lambda e, x: encode_string(e, x),
     TYPE_UINT8_ARRAY: lambda e, x: encode_uint_array(e, 1, x),
@@ -500,21 +511,41 @@ encode_values_table = {
 }
 
 
+def detect_unsigned_int_type(x):
+    if x <= 0xff:
+        return TYPE_UINT8
+    if x <= 0xffff:
+        return TYPE_UINT16
+    if x <= 0xffffff:
+        return TYPE_UINT24
+    if x <= 0xffffffff:
+        return TYPE_UINT32
+    raise ValueError(f'unsigned int too large: {x}')
+
+
+def detect_signed_int_type(x):
+    x = abs(x)
+    if x < 0xff:
+        return TYPE_INT8
+    if x < 0xffff:
+        return TYPE_INT16
+    if x < 0xffffff:
+        return TYPE_INT24
+    if x < 0xffffffff:
+        return TYPE_INT32
+    raise ValueError(f'signed int too large: {x}')
+
+
 def detect_value_type(x):
     if isinstance(x, (bytes, bytearray)):
         return TYPE_BYTE_ARRAY
     if isinstance(x, str):
         return TYPE_STRING
-    if isinstance(x, int) and x >= 0:
-        if x <= 0xff:
-            return TYPE_UINT8
-        if x <= 0xffff:
-            return TYPE_UINT16
-        if x <= 0xffffff:
-            return TYPE_UINT24
-        if x <= 0xffffffff:
-            return TYPE_UINT32
-        raise ValueError('uint too large')
+    if isinstance(x, int):
+        if x >= 0:
+            return detect_unsigned_int_type(x)
+        else:
+            return detect_signed_int_type(x)
     if isinstance(x, (list, tuple)):
         # should do more uniform checking or have type escalation
         return max(map(detect_value_type, x)) | 0x80
@@ -540,6 +571,11 @@ decode_values_table = {
     TYPE_UINT16: lambda d: d.decode_uint(2),
     TYPE_UINT24: lambda d: d.decode_uint(3),
     TYPE_UINT32: lambda d: d.decode_uint(4),
+
+    TYPE_INT8: lambda d: d.decode_int(1),
+    TYPE_INT16: lambda d: d.decode_int(2),
+    TYPE_INT24: lambda d: d.decode_int(3),
+    TYPE_INT32: lambda d: d.decode_int(4),
 
     TYPE_BYTE_ARRAY: lambda d: decode_byte_array(d),
     TYPE_STRING: lambda d: decode_string(d),
