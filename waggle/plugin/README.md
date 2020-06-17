@@ -14,12 +14,17 @@ This class implements a few key groups of functionality:
 
 Each of the functions are documented below.
 
-#### Plugin(id, version, instance, credentials)
+#### Plugin()
 
-* `id` **required** Plugin ID.
-* `version` **required** Plugin major, minor, patch version number tuple.
-* `instance` **required** Plugin instance number.
-* `credentials` **required** Credentials used by underlying connection.
+Plugin will read the following environmental variables:
+
+* `WAGGLE_PLUGIN_ID` **required** Plugin ID.
+* `WAGGLE_PLUGIN_VERSION` **required** Plugin version `x.y.z`.
+* `WAGGLE_PLUGIN_INSTANCE` **optional** Plugin instance. Defaults to 0.
+* `WAGGLE_PLUGIN_HOST` **optional** RabbitMQ host. Defaults to `rabbitmq`.
+* `WAGGLE_PLUGIN_PORT` **optional** RabbitMQ port. Defaults to `5672`.
+* `WAGGLE_PLUGIN_USERNAME` **optional** RabbitMQ username. Defaults to `worker`.
+* `WAGGLE_PLUGIN_PASSWORD` **optional** RabbitMQ password. Defaults to `worker`.
 
 #### add_measurement(measurement)
 
@@ -27,12 +32,13 @@ Adds a measurement to the current batch to be published.
 
 A measurement is either be a dictionary with fields:
 
-* `sensor_id` **required** Sensor ID.
-* `parameter_id` **required** Parameter ID.
-* `value` **required** Measurement value.
+* `id` **required** Sensor ID.
+* `sub_id` **required** Sensor sub ID.
+* `value` **required** Measurement value. Data type is infered from Python type.
+* `inst` **optional** Sensor instance. Default is 0.
+* `source_id` **optional** Hardware source ID. Default is 0.
+* `source_inst` **optional** Hardware source instance. Default is 0.
 * `timestamp` **optional** Seconds since epoch. Default is current time.
-* `sensor_instance` **optional** Sensor instance. Default is 0.
-* `type` **optional** Value type. Derived from value's Python type if not specified.
 
 Or, prepacked sensorgram bytes. See the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol) for more information about sensorgrams and other data types.
 
@@ -70,13 +76,13 @@ import waggle.plugin
 import time
 
 # Initialize our test plugin.
-plugin = waggle.plugin.PrintPlugin(id=123, version=(0, 0, 1))
+plugin = waggle.plugin.Plugin()
 
 while True:
     # Add our three measurements to the batch.
-    plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 100})
-    plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 32.1})
-    plugin.add_measurement({'sensor_id': 2, 'parameter_id': 0, 'value': b'blob of data'})
+    plugin.add_measurement({'sensor_id': 1, 'sub_id': 0, 'value': 100})
+    plugin.add_measurement({'sensor_id': 1, 'sub_id': 1, 'value': 32.1})
+    plugin.add_measurement({'sensor_id': 2, 'sub_id': 0, 'value': b'blob of data'})
 
     # Publish the batch.
     plugin.publish_measurements()
@@ -90,13 +96,13 @@ Running this should produce:
 ```sh
 $ python3 plugin
 publish measurements:
-{'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965991, 'type': 20, 'value': 100}
-{'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 1, 'timestamp': 1532965991, 'type': 30, 'value': 32.099998474121094}
-{'sensor_id': 2, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965991, 'type': 0, 'value': b'blob of data'}
+{'sensor_id': 1, 'sensor_instance': 0, 'sub_id': 0, 'timestamp': 1532965991, 'type': 20, 'value': 100}
+{'sensor_id': 1, 'sensor_instance': 0, 'sub_id': 1, 'timestamp': 1532965991, 'type': 30, 'value': 32.099998474121094}
+{'sensor_id': 2, 'sensor_instance': 0, 'sub_id': 0, 'timestamp': 1532965991, 'type': 0, 'value': b'blob of data'}
 publish measurements:
-{'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965996, 'type': 20, 'value': 100}
-{'sensor_id': 1, 'sensor_instance': 0, 'parameter_id': 1, 'timestamp': 1532965996, 'type': 30, 'value': 32.099998474121094}
-{'sensor_id': 2, 'sensor_instance': 0, 'parameter_id': 0, 'timestamp': 1532965996, 'type': 0, 'value': b'blob of data'}
+{'sensor_id': 1, 'sensor_instance': 0, 'sub_id': 0, 'timestamp': 1532965996, 'type': 20, 'value': 100}
+{'sensor_id': 1, 'sensor_instance': 0, 'sub_id': 1, 'timestamp': 1532965996, 'type': 30, 'value': 32.099998474121094}
+{'sensor_id': 2, 'sensor_instance': 0, 'sub_id': 0, 'timestamp': 1532965996, 'type': 0, 'value': b'blob of data'}
 ...
 ```
 

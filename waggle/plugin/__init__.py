@@ -72,8 +72,8 @@ class Plugin:
         self.sub_id = os.environ['WAGGLE_SUB_ID']
 
         self.credentials = pika.credentials.PlainCredentials(
-            username=os.environ['WAGGLE_PLUGIN_USERNAME'],
-            password=os.environ['WAGGLE_PLUGIN_PASSWORD'],
+            username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'worker'),
+            password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'worker'),
         )
 
         self.connection_parameters = pika.ConnectionParameters(
