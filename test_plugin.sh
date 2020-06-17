@@ -9,8 +9,6 @@ test_plugin_env() {
     # check for ennvironmental dependencies
     WAGGLE_PLUGIN_ID=1 \
     WAGGLE_PLUGIN_VERSION=1.2.3 \
-    WAGGLE_NODE_ID=0000000000000000 \
-    WAGGLE_SUB_ID=0000000000000000 \
     python3 -c '
 from waggle.plugin import Plugin
 import socket

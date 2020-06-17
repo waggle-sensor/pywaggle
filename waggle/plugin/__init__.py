@@ -68,8 +68,8 @@ class Plugin:
             os.environ['WAGGLE_PLUGIN_VERSION'])
         self.instance = int(os.environ.get('WAGGLE_PLUGIN_INSTANCE', 0))
 
-        self.node_id = os.environ['WAGGLE_NODE_ID']
-        self.sub_id = os.environ['WAGGLE_SUB_ID']
+        self.node_id = os.environ.get('WAGGLE_NODE_ID', '0000000000000000')
+        self.sub_id = os.environ.get('WAGGLE_SUB_ID', '0000000000000000')
 
         self.credentials = pika.credentials.PlainCredentials(
             username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'worker'),
