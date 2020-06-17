@@ -4,11 +4,12 @@
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
 # ANL:waggle-license
+import subprocess
+import re
 from datetime import datetime
 import json
 import pika
 import time
-import waggle.platform
 import logging
 import os.path
 
@@ -20,6 +21,38 @@ logger.warning(
     'waggle.plugin docs for the new interface: '
     'https://github.com/waggle-sensor/pywaggle/blob/master/waggle/plugin/README.md'
 )
+
+
+def read_file(path):
+    with open(path) as file:
+        return file.read()
+
+
+def hardware():
+    return scan_hardware(read_file('/proc/cpuinfo'))
+
+
+def scan_hardware(s):
+    match = re.search('ODROID-?(.*)', s)
+    model = match.group(1)
+    if model.startswith('C'):
+        return 'C1+'
+    if model.startswith('XU'):
+        return 'XU4'
+    raise RuntimeError('Unknown hardware.')
+
+
+def macaddr():
+    return scan_macaddr(subprocess.check_output(['ip', 'link']).decode())
+
+
+def scan_macaddr(s):
+    match = re.search(r'link/ether (00:1e:06:\S+)', s)
+    return match.group(1).replace(':', '').rjust(16, '0')
+
+
+def node_id():
+    return macaddr()
 
 
 class PluginHandler(object):
@@ -236,8 +269,8 @@ class Plugin(object):
         self.headers = {}
 
         try:
-            self.headers['node_id'] = waggle.platform.macaddr()
-            self.headers['platform'] = waggle.platform.hardware()
+            self.headers['node_id'] = macaddr()
+            self.headers['platform'] = hardware()
         except Exception:
             pass
 
