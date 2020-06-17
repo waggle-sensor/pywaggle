@@ -17,6 +17,9 @@ sensorgram_test_cases = [
     {'id': 1, 'sub_id': 2, 'value': b'x' * 4096},
     {'id': 1, 'sub_id': 2, 'value': 'hello'},
     {'id': 1, 'sub_id': 2, 'value': 0},
+    {'id': 1, 'sub_id': 2, 'value': 0.0},
+    {'id': 1, 'sub_id': 2, 'value': 1.0},
+    {'id': 1, 'sub_id': 2, 'value': -1.0},
 ]
 
 datagram_test_cases = [

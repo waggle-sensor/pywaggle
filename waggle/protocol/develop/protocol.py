@@ -462,6 +462,14 @@ def pack_sensor_data_message(sensorgrams):
 # to handle a "list of integers" in a uniform way.
 
 
+def encode_float32(e: BasicEncoder, x: float):
+    e.encode_bytes(struct.pack('f', x))
+
+
+def decode_float32(d: BasicDecoder) -> float:
+    return struct.unpack('f', d.decode_bytes(4))[0]
+
+
 def encode_byte_array(e, x):
     e.encode_uint(len(x), 2)
     e.encode_bytes(x)
@@ -501,6 +509,8 @@ encode_values_table = {
     TYPE_INT16: lambda e, x: e.encode_int(x, 2),
     TYPE_INT24: lambda e, x: e.encode_int(x, 3),
     TYPE_INT32: lambda e, x: e.encode_int(x, 4),
+
+    TYPE_FLOAT32: lambda e, x: encode_float32(e, x),
 
     TYPE_BYTE_ARRAY: lambda e, x: encode_byte_array(e, x),
     TYPE_STRING: lambda e, x: encode_string(e, x),
@@ -546,6 +556,8 @@ def detect_value_type(x):
             return detect_unsigned_int_type(x)
         else:
             return detect_signed_int_type(x)
+    if isinstance(x, float):
+        return TYPE_FLOAT32
     if isinstance(x, (list, tuple)):
         # should do more uniform checking or have type escalation
         return max(map(detect_value_type, x)) | 0x80
@@ -576,6 +588,8 @@ decode_values_table = {
     TYPE_INT16: lambda d: d.decode_int(2),
     TYPE_INT24: lambda d: d.decode_int(3),
     TYPE_INT32: lambda d: d.decode_int(4),
+
+    TYPE_FLOAT32: lambda d: decode_float32(d),
 
     TYPE_BYTE_ARRAY: lambda d: decode_byte_array(d),
     TYPE_STRING: lambda d: decode_string(d),
