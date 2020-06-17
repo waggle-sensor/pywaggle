@@ -20,11 +20,11 @@ Plugin will read the following environmental variables:
 
 * `WAGGLE_PLUGIN_ID` **required** Plugin ID.
 * `WAGGLE_PLUGIN_VERSION` **required** Plugin version `x.y.z`.
-* `WAGGLE_PLUGIN_INSTANCE` **optional** Plugin instance. Defaults to 0.
-* `WAGGLE_PLUGIN_HOST` **optional** RabbitMQ host. Defaults to `rabbitmq`.
-* `WAGGLE_PLUGIN_PORT` **optional** RabbitMQ port. Defaults to `5672`.
-* `WAGGLE_PLUGIN_USERNAME` **optional** RabbitMQ username. Defaults to `worker`.
-* `WAGGLE_PLUGIN_PASSWORD` **optional** RabbitMQ password. Defaults to `worker`.
+* `WAGGLE_PLUGIN_INSTANCE` **_optional_** Plugin instance. Defaults to 0.
+* `WAGGLE_PLUGIN_HOST` **_optional_** RabbitMQ host. Defaults to `rabbitmq`.
+* `WAGGLE_PLUGIN_PORT` **_optional_** RabbitMQ port. Defaults to `5672`.
+* `WAGGLE_PLUGIN_USERNAME` **_optional_** RabbitMQ username. Defaults to `worker`.
+* `WAGGLE_PLUGIN_PASSWORD` **_optional_** RabbitMQ password. Defaults to `worker`.
 
 #### add_measurement(measurement)
 
@@ -35,10 +35,10 @@ A measurement is either be a dictionary with fields:
 * `id` **required** Sensor ID.
 * `sub_id` **required** Sensor sub ID.
 * `value` **required** Measurement value. Data type is infered from Python type.
-* `inst` **optional** Sensor instance. Default is 0.
-* `source_id` **optional** Hardware source ID. Default is 0.
-* `source_inst` **optional** Hardware source instance. Default is 0.
-* `timestamp` **optional** Seconds since epoch. Default is current time.
+* `inst` **_optional_** Sensor instance. Default is 0.
+* `source_id` **_optional_** Hardware source ID. Default is 0.
+* `source_inst` **_optional_** Hardware source instance. Default is 0.
+* `timestamp` **_optional_** Seconds since epoch. Default is current time.
 
 Or, prepacked sensorgram bytes. See the [protocol docs](https://github.com/waggle-sensor/pywaggle/tree/develop/waggle/protocol) for more information about sensorgrams and other data types.
 
@@ -80,9 +80,9 @@ plugin = waggle.plugin.Plugin()
 
 while True:
     # Add our three measurements to the batch.
-    plugin.add_measurement({'sensor_id': 1, 'sub_id': 0, 'value': 100})
-    plugin.add_measurement({'sensor_id': 1, 'sub_id': 1, 'value': 32.1})
-    plugin.add_measurement({'sensor_id': 2, 'sub_id': 0, 'value': b'blob of data'})
+    plugin.add_measurement({'id': 1, 'sub_id': 0, 'value': 100})
+    plugin.add_measurement({'id': 1, 'sub_id': 1, 'value': 32.1})
+    plugin.add_measurement({'id': 2, 'sub_id': 0, 'value': b'blob of data'})
 
     # Publish the batch.
     plugin.publish_measurements()
@@ -93,16 +93,18 @@ while True:
 
 Running this should produce:
 
+TODO: This examples will not work as-is. It currently requires runtime support from virtual waggle or a node.
+
 ```sh
 $ python3 plugin
 publish measurements:
-{'sensor_id': 1, 'sensor_instance': 0, 'sub_id': 0, 'timestamp': 1532965991, 'type': 20, 'value': 100}
-{'sensor_id': 1, 'sensor_instance': 0, 'sub_id': 1, 'timestamp': 1532965991, 'type': 30, 'value': 32.099998474121094}
-{'sensor_id': 2, 'sensor_instance': 0, 'sub_id': 0, 'timestamp': 1532965991, 'type': 0, 'value': b'blob of data'}
+{'id': 1, 'inst': 0, 'sub_id': 0, 'timestamp': 1532965991, 'value': 100}
+{'id': 1, 'inst': 0, 'sub_id': 1, 'timestamp': 1532965991, 'value': 32.099998474121094}
+{'id': 2, 'inst': 0, 'sub_id': 0, 'timestamp': 1532965991, 'value': b'blob of data'}
 publish measurements:
-{'sensor_id': 1, 'sensor_instance': 0, 'sub_id': 0, 'timestamp': 1532965996, 'type': 20, 'value': 100}
-{'sensor_id': 1, 'sensor_instance': 0, 'sub_id': 1, 'timestamp': 1532965996, 'type': 30, 'value': 32.099998474121094}
-{'sensor_id': 2, 'sensor_instance': 0, 'sub_id': 0, 'timestamp': 1532965996, 'type': 0, 'value': b'blob of data'}
+{'id': 1, 'inst': 0, 'sub_id': 0, 'timestamp': 1532965996, 'value': 100}
+{'id': 1, 'inst': 0, 'sub_id': 1, 'timestamp': 1532965996, 'value': 32.099998474121094}
+{'id': 2, 'inst': 0, 'sub_id': 0, 'timestamp': 1532965996, 'value': b'blob of data'}
 ...
 ```
 
