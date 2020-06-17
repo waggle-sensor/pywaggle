@@ -58,14 +58,6 @@ Enumerates messages send to the plugin.
 
 Publish a heartbeat message. _May_ be used by node to provide software watchdog.
 
-### class waggle.plugin.PrintPlugin
-
-This class provides the same interface as waggle.plugin.Plugin, but will print
-results to the console instead of interacting with the message pipeline.
-
-It is intended for local development and testing without requiring a full node
-environment.
-
 ## Basic Example
 
 In our first example, we prepare three synthetic measurements and publish them
@@ -106,25 +98,4 @@ publish measurements:
 {'id': 1, 'inst': 0, 'sub_id': 1, 'timestamp': 1532965996, 'value': 32.099998474121094}
 {'id': 2, 'inst': 0, 'sub_id': 0, 'timestamp': 1532965996, 'value': b'blob of data'}
 ...
-```
-
-## Advanced Example
-
-Additional plugin connection info can be specified through the Credentials
-object. For example, we can connect directly to a beehive server as a specific
-node assuming we have the SSL files.
-
-```python
-credentials = waggle.plugin.Credentials(
-    host='my-beehive',
-    node_id='0000000000000001',
-    sub_id='0000000000000002',
-    cacert='/path/to/cacert.pem',
-    cert='/path/to/cert.pem',
-    key='/path/to/key.pem')
-
-plugin = waggle.plugin.Plugin(
-    id=37,
-    version=(1, 0, 0),
-    credentials=credentials)
 ```
