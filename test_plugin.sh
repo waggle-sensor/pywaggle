@@ -11,8 +11,6 @@ test_plugin_env() {
     WAGGLE_PLUGIN_VERSION=1.2.3 \
     WAGGLE_NODE_ID=0000000000000000 \
     WAGGLE_SUB_ID=0000000000000000 \
-    WAGGLE_PLUGIN_USERNAME=worker \
-    WAGGLE_PLUGIN_PASSWORD=worker \
     python3 -c '
 from waggle.plugin import Plugin
 import socket
