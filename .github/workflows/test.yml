@@ -42,3 +42,7 @@ jobs:
     - name: Test protocol
       run: |
         python test_protocol.py
+
+    - name: Test documentation
+      run: |
+        python test_docs.py
