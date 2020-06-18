@@ -154,9 +154,6 @@ sensorgrams = [
     {'id': 2, 'sub_id': 0, 'value': 22.1},
     {'id': 3, 'sub_id': 0, 'value': b'blob of bytes'},
     {'id': 3, 'sub_id': 1, 'value': 'string'},
-    {'id': 4, 'sub_id': 0, 'value': True, 'inst': 0},
-    {'id': 4, 'sub_id': 1, 'value': False, 'inst': 0},
-    {'id': 4, 'sub_id': 2, 'value': None, 'inst': 1},
 ]
 
 # First, we'll pack some data of many different types.
