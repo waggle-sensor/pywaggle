@@ -63,7 +63,7 @@ Publish a heartbeat message. _May_ be used by node to provide software watchdog.
 In our first example, we prepare three synthetic measurements and publish them
 to the console to make sure that our code is working.
 
-```python
+```txt
 import waggle.plugin
 import time
 
