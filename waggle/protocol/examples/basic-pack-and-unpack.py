@@ -7,13 +7,13 @@
 import waggle.protocol
 
 sensorgrams = [
-    {'sensor_id': 1, 'parameter_id': 0, 'value': 10},
-    {'sensor_id': 2, 'parameter_id': 0, 'value': 22.1},
-    {'sensor_id': 3, 'parameter_id': 0, 'value': b'blob of bytes'},
-    {'sensor_id': 3, 'parameter_id': 1, 'value': 'string'},
-    {'sensor_id': 4, 'parameter_id': 0, 'value': True, 'sensor_instance': 0},
-    {'sensor_id': 4, 'parameter_id': 1, 'value': False, 'sensor_instance': 0},
-    {'sensor_id': 4, 'parameter_id': 2, 'value': None, 'sensor_instance': 1},
+    {'id': 1, 'sub_id': 0, 'value': 10},
+    {'id': 2, 'sub_id': 0, 'value': 22.1},
+    {'id': 3, 'sub_id': 0, 'value': b'blob of bytes'},
+    {'id': 3, 'sub_id': 1, 'value': 'string'},
+    {'id': 4, 'sub_id': 0, 'value': True, 'inst': 0},
+    {'id': 4, 'sub_id': 1, 'value': False, 'inst': 0},
+    {'id': 4, 'sub_id': 2, 'value': None, 'inst': 1},
 ]
 
 # First, we'll pack some data of many different types.

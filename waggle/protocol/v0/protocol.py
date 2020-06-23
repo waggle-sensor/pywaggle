@@ -84,9 +84,9 @@ class Encoder:
     def encode_sensorgram(self, sg):
         body = pack_typed_values(sg['value'])
         self.encode_uint(2, len(body))
-        self.encode_uint(2, sg['sensor_id'])
-        self.encode_uint(1, sg.get('sensor_instance', 0))
-        self.encode_uint(1, sg['parameter_id'])
+        self.encode_uint(2, sg['id'])
+        self.encode_uint(1, sg.get('inst', 0))
+        self.encode_uint(1, sg['sub_id'])
         self.encode_uint(4, get_timestamp_or_now(sg))
         self.encode_bytes(body)
 
@@ -240,9 +240,9 @@ class Decoder:
         body = self.decode_bytes(body_length)
 
         return {
-            'sensor_id': sensor_id,
-            'sensor_instance': sensor_instance,
-            'parameter_id': parameter_id,
+            'id': sensor_id,
+            'inst': sensor_instance,
+            'sub_id': parameter_id,
             'timestamp': timestamp,
             'value': decode_value_type(body),
         }
@@ -571,37 +571,37 @@ def pack_sensor_data_message(sensorgrams):
 
 if __name__ == '__main__':
     print(unpack_sensorgram(pack_sensorgram({
-        'sensor_id': 1,
-        'parameter_id': 1,
+        'id': 1,
+        'sub_id': 1,
         'value': (1, 10.2, 'hello'),
     })))
 
     print(unpack_sensorgram(pack_sensorgram({
-        'sensor_id': 1,
-        'parameter_id': 1,
+        'id': 1,
+        'sub_id': 1,
         'value': (1, 2, 3, 4, 5, b'more bytes'),
     })))
 
     print(unpack_sensorgram(pack_sensorgram({
-        'sensor_id': 1,
-        'parameter_id': 1,
+        'id': 1,
+        'sub_id': 1,
         'value': 32.1,
     })))
 
     print(unpack_sensorgram(pack_sensorgram({
-        'sensor_id': 1,
-        'parameter_id': 1,
+        'id': 1,
+        'sub_id': 1,
         'value': -23,
     })))
 
     print(unpack_sensorgram(pack_sensorgram({
-        'sensor_id': 1,
-        'parameter_id': 1,
+        'id': 1,
+        'sub_id': 1,
         'value': [1., 2., 3.],
     })))
 
     print(unpack_sensorgram(pack_sensorgram({
-        'sensor_id': 1,
-        'parameter_id': 1,
+        'id': 1,
+        'sub_id': 1,
         'value': (1, [1., 2., 3.]),
     })))

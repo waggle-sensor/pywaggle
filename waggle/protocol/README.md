@@ -65,13 +65,13 @@ Technical Note: Validity of sensorgrams is checked using an 8-bit CRC with polyn
 
 Pack a dictionary into a sensorgram. The supported fields are:
 
-* `sensor_id` **required** Sensor ID.
+* `id` **required** Sensor ID.
 * `sub_id` **required** Sensor sub-ID.
 * `value` **required** Measurement value.
 * `timestamp` **optional** Seconds since epoch. Default is current time.
-* `sensor_instance` **optional** Sensor instance. Default is 0.
+* `inst` **optional** Sensor instance. Default is 0.
 * `source_id` **optional** Source ID. Default is 0.
-* `source_instance` **optional** Source instance. Default is 0.
+* `source_inst` **optional** Source instance. Default is 0.
 * `value` **requred** Single or list of values.
 
 Supported types are:

@@ -10,9 +10,9 @@ import waggle.protocol
 # a body of sensorgrams.
 
 body = waggle.protocol.pack_sensorgrams([
-    {'sensor_id': 1, 'parameter_id': 0, 'value': b'first'},
-    {'sensor_id': 2, 'parameter_id': 0, 'value': b'second'},
-    {'sensor_id': 3, 'parameter_id': 0, 'value': b'third'},
+    {'id': 1, 'sub_id': 0, 'value': b'first'},
+    {'id': 2, 'sub_id': 0, 'value': b'second'},
+    {'id': 3, 'sub_id': 0, 'value': b'third'},
 ])
 
 data = waggle.protocol.pack_datagram({

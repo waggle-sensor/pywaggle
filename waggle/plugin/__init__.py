@@ -27,9 +27,9 @@ import waggle.plugin
 plugin = waggle.plugin.PrintPlugin()
 
 # Add measurements to batch.
-plugin.add_measurement({'sensor_id': 1, 'parameter_id': 0, 'value': 1})
-plugin.add_measurement({'sensor_id': 1, 'parameter_id': 1, 'value': 2})
-plugin.add_measurement({'sensor_id': 2, 'parameter_id': 0, 'value': 3})
+plugin.add_measurement({'id': 1, 'sub_id': 0, 'value': 1})
+plugin.add_measurement({'id': 1, 'sub_id': 1, 'value': 2})
+plugin.add_measurement({'id': 2, 'sub_id': 0, 'value': 3})
 
 # Publish the batch.
 plugin.publish_measurements()
