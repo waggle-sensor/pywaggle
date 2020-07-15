@@ -12,6 +12,7 @@ import random
 import struct
 import logging
 import array
+from typing import Callable
 
 
 logger = logging.getLogger('waggle.protocol')
@@ -53,7 +54,7 @@ crc8_table = [
 ]
 
 
-def crc8(data, value):
+def crc8(data: bytes, value: int) -> int:
     for x in data:
         value = crc8_table[value ^ x]
     return value
@@ -61,12 +62,12 @@ def crc8(data, value):
 
 class CRCReader:
 
-    def __init__(self, reader, func):
+    def __init__(self, reader, func: Callable[[bytes, int], int]):
         self.reader = reader
         self.func = func
         self.sum = 0
 
-    def read(self, n):
+    def read(self, n: int) -> bytes:
         s = self.reader.read(n)
         self.sum = self.func(s, self.sum)
         return s
@@ -74,12 +75,12 @@ class CRCReader:
 
 class CRCWriter:
 
-    def __init__(self, writer, func):
+    def __init__(self, writer, func: Callable[[bytes, int], int]):
         self.writer = writer
         self.func = func
         self.sum = 0
 
-    def write(self, s):
+    def write(self, s: bytes):
         self.writer.write(s)
         self.sum = self.func(s, self.sum)
 
@@ -127,21 +128,21 @@ sender_sequence = 0
 packet_sequence = 0
 
 
-def get_sender_sequence_number():
+def get_sender_sequence_number() -> int:
     global sender_sequence
     result = sender_sequence
     sender_sequence = (sender_sequence + 1) & 0xffff
     return result
 
 
-def get_packet_sequence_number():
+def get_packet_sequence_number() -> int:
     global packet_sequence
     result = packet_sequence
     packet_sequence = (packet_sequence + 1) & 0xffff
     return result
 
 
-def get_timestamp_or_now(obj):
+def get_timestamp_or_now(obj) -> int:
     return obj.get('timestamp') or int(time.time())
 
 

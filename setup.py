@@ -8,7 +8,7 @@ from distutils.core import setup
 
 setup(
     name='waggle',
-    version='0.30.0',
+    version='0.31.0',
     description='Python Waggle Module',
     url='https://github.com/waggle-sensor/pywaggle',
     install_requires=[
