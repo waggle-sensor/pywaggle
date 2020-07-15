@@ -49,9 +49,9 @@ from base64 import b64encode
 from threading import Thread
 import time
 import socket
-from collections import deque
+from queue import Queue
 import re
-from typing import NamedTuple, Deque, List
+from typing import NamedTuple, List
 
 
 class PluginVersion(NamedTuple):
@@ -118,13 +118,13 @@ class Plugin:
 
         self.measurements: List[bytes] = []
 
-        self.publish_deque: Deque[bytes] = deque()
+        self.publish_queue: Queue = Queue()
         self.worker_thread = Thread(target=plugin_worker_main, args=(
-            self, self.publish_deque), daemon=True)
+            self, self.publish_queue), daemon=True)
         self.worker_thread.start()
 
     def publish(self, body: bytes) -> None:
-        self.publish_deque.appendleft(body)
+        self.publish_queue.put(body)
 
     # def get_waiting_messages(self):
     #     raise NotImplementedError(
@@ -187,29 +187,31 @@ class Plugin:
         self.publish(message)
 
 
-def plugin_worker_main(plugin: Plugin, publish_deque: Deque[bytes]) -> None:
+def plugin_worker_main(plugin: Plugin, publish_queue: Queue) -> None:
+    # dial down extremely verbose logs from pika.
     logging.getLogger('pika').setLevel(logging.CRITICAL)
     logger = logging.getLogger('plugin.worker')
 
     while True:
         try:
-            plugin_worker_connect_and_process(plugin, publish_deque)
+            plugin_worker_connect_and_process(plugin, publish_queue)
         except Exception as e:
             logger.debug(e, exc_info=True)
         time.sleep(10)
 
 
-def plugin_worker_connect_and_process(plugin: Plugin, publish_deque: Deque[bytes]) -> None:
+def plugin_worker_connect_and_process(plugin: Plugin, publish_queue: Queue) -> None:
     logger = logging.getLogger('plugin.worker')
 
     logger.debug('connecting to rabbitmq at "%s:%d"',
                  plugin.config.host, plugin.config.port)
     connection = pika.BlockingConnection(plugin.connection_parameters)
-    logger.debug('connected to rabbitmq')
     channel = connection.channel()
+    logger.debug('connected to rabbitmq')
 
     while True:
-        body = publish_deque.pop()
+        body = publish_queue.get()
+
         try:
             channel.basic_publish(
                 exchange='messages',
@@ -218,8 +220,11 @@ def plugin_worker_connect_and_process(plugin: Plugin, publish_deque: Deque[bytes
                     delivery_mode=2,
                     user_id=plugin.config.username),
                 body=body)
+            logger.debug('published %s', body)
         except Exception:
-            publish_deque.append(body)
+            # on failure, return item to publish queue. note that this
+            # will prioritize more recent items to be pubished first
+            publish_queue.put(body)
 
 
 def pack_measurement(sensorgram: dict) -> bytes:
