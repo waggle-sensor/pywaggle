@@ -1,23 +1,13 @@
 #!/bin/bash -e
 
-# BUG This test relies on the internal detail that Plugin gets it's
-# env config before connecting to RabbitMQ. This is bad!
-#
-# What this leads to is expecting the config step to pass and then
-# the connection to fail, hence the except socket.gaierror.
-test_plugin_env() {
-    # check for ennvironmental dependencies
-    WAGGLE_PLUGIN_ID=1 \
-    WAGGLE_PLUGIN_VERSION=1.2.3 \
-    python3 -c '
+python3 -c '
 from waggle.plugin import Plugin
 import socket
 
-try:
-    Plugin()
-except socket.gaierror:
-    pass
-'
-}
+plugin = Plugin()
 
-test_plugin_env
+for x in range(10):
+    plugin.add_measurement({"id": 1, "sub_id": 2, "value": x})
+
+plugin.publish_measurements()
+'
