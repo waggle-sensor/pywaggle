@@ -55,13 +55,17 @@ class VideoHandler:
         return self.queue.get()
 
 
-def get_camera_endpoint(name, **kwargs):
-    return os.environ['WAGGLE_SES_CAMERA']
+def get_camera_image_endpoint(name, **kwargs):
+    return os.environ['WAGGLE_SES_CAMERA_IMAGE_ENDPOINT']
+
+
+def get_camera_video_endpoint(name, **kwargs):
+    return os.environ['WAGGLE_SES_CAMERA_VIDEO_ENDPOINT']
 
 
 table = {
-    'camera/image': (get_camera_endpoint, ImageHandler),
-    'camera/video': (get_camera_endpoint, VideoHandler),
+    'camera/image': (get_camera_image_endpoint, ImageHandler),
+    'camera/video': (get_camera_video_endpoint, VideoHandler),
 }
 
 
@@ -69,22 +73,3 @@ table = {
 def open_data_source(name, **kwargs):
     get_endpoint, handler = table[name]
     yield handler(get_endpoint(name, **kwargs))
-
-
-if __name__ == '__main__':
-    with open_data_source('camera/image', orientation='ground', min_resolution=(800, 600)) as dev:
-        while True:
-            ts, data = dev.get()
-            print(ts, data)
-
-# # select all temperature
-# with waggle.open_data_source('env/temperature') as dev:
-#     while True:
-#         r = r.get()  # <- handle uses pika internally and queues up readings from exchange
-#         print(r.timestamp, r.data)
-
-
-# # select just from metsense board
-# with waggle.open_data_source('sys/internal', sensor='htu21d') as r:
-#     while True:
-#         reading = r.get()
