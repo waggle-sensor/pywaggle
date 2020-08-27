@@ -1,6 +1,5 @@
 import numpy as np
 from urllib.request import urlopen
-from contextlib import contextmanager
 from threading import Thread
 from queue import Queue, Empty
 import cv2
@@ -23,20 +22,20 @@ class RandomHandler:
     def __init__(self, query, **kwargs):
         pass
 
-    def close(self):
-        pass
-
     def get(self, timeout=None):
         return time.time_ns(), random.random()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        pass
 
 
 class ImageHandler:
 
     def __init__(self, query, url):
         self.url = url
-
-    def close(self):
-        pass
 
     def get(self, timeout=None):
         try:
@@ -47,6 +46,12 @@ class ImageHandler:
                 return ts, cv2.imdecode(arr, cv2.IMREAD_COLOR)
         except socket.timeout:
             raise TimeoutError('get timed out')
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        pass
 
 
 def video_worker(cap, out):
@@ -78,14 +83,17 @@ class VideoHandler:
             cap, self.queue), daemon=True)
         worker.start()
 
-    def close(self):
-        pass
-
     def get(self, timeout=None):
         try:
             return self.queue.get(timeout=timeout)
         except Empty:
             raise TimeoutError('get timed out')
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        pass
 
 
 def pubsub_worker(topic, out):
@@ -121,6 +129,12 @@ class PubSubHandler:
         except Empty:
             raise TimeoutError('get timed out')
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        pass
+
 
 def dict_is_subset(a, b):
     return all(k in b and re.match(b[k], a[k]) for k in a.keys())
@@ -147,9 +161,8 @@ handlers = {
 }
 
 
-@contextmanager
 def open_data_source(**query):
     match = find_match(query)
     handler = handlers[match['handler']['type']]
     args = match['handler']['args']
-    yield handler(query, **args)
+    return handler(query, **args)
