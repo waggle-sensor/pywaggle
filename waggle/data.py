@@ -11,6 +11,10 @@ from pathlib import Path
 import json
 
 
+with Path('data-config.json').open() as f:
+    config = json.load(f)
+
+
 class ImageHandler:
 
     def __init__(self, url):
@@ -40,6 +44,10 @@ def video_worker(cap, out):
         else:
             time.sleep(0.01)
 
+# TODO We need to use a flexible model where the data returned is
+# extensible. For example, serial data won't really have a good
+# notion of "timestamp". Maybe it's better to not include that.
+
 
 class VideoHandler:
 
@@ -63,10 +71,6 @@ class VideoHandler:
             return self.queue.get(timeout=timeout)
         except Empty:
             raise TimeoutError('get timed out')
-
-
-with Path('data-config.json').open() as f:
-    config = json.load(f)
 
 
 def dict_is_subset(a, b):
@@ -93,12 +97,7 @@ handlers = {
 
 
 @contextmanager
-def open_data_source(query):
-    match = find_match(query)
+def open_data_source(**kwargs):
+    match = find_match(kwargs)
     handler = handlers[match['handler']['type']]
     yield handler(**match['handler']['args'])
-
-
-if __name__ == '__main__':
-    with open_data_source({'type': 'camera/image', 'orientation': 'bottom'}) as s:
-        print(s.get())
