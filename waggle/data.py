@@ -10,6 +10,7 @@ import socket
 from pathlib import Path
 import json
 import random
+import re
 
 
 with Path('data-config.json').open() as f:
@@ -84,7 +85,7 @@ class VideoHandler:
 
 
 def dict_is_subset(a, b):
-    return all(k in b and a[k] == b[k] for k in a.keys())
+    return all(k in b and re.match(b[k], a[k]) for k in a.keys())
 
 
 def find_all_matches(query):
@@ -104,6 +105,7 @@ handlers = {
     'random': RandomHandler,
     'image': ImageHandler,
     'video': VideoHandler,
+    'pubsub': RandomHandler,
 }
 
 
