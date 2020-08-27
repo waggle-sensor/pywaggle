@@ -11,6 +11,7 @@ from pathlib import Path
 import json
 import random
 import re
+import pika
 
 
 with Path('data-config.json').open() as f:
@@ -18,6 +19,9 @@ with Path('data-config.json').open() as f:
 
 
 class RandomHandler:
+
+    def __init__(self, query, **kwargs):
+        pass
 
     def close(self):
         pass
@@ -28,7 +32,7 @@ class RandomHandler:
 
 class ImageHandler:
 
-    def __init__(self, url):
+    def __init__(self, query, url):
         self.url = url
 
     def close(self):
@@ -62,7 +66,7 @@ def video_worker(cap, out):
 
 class VideoHandler:
 
-    def __init__(self, url):
+    def __init__(self, query, url):
         cap = cv2.VideoCapture(url)
 
         if not cap.isOpened():
@@ -84,11 +88,38 @@ class VideoHandler:
             raise TimeoutError('get timed out')
 
 
+def pubsub_worker(topic, out):
+    def callback(ch, method, properties, body):
+        ts = properties.timestamp or time.time_ns()
+        out.put((ts, body))
+
+    while True:
+        try:
+            connection = pika.BlockingConnection()
+            channel = connection.channel()
+            result = channel.queue_declare(queue='', exclusive=True)
+            queue = result.method.queue
+            channel.queue_bind(exchange='data', queue=queue, routing_key=topic)
+            channel.basic_consume(
+                queue=queue, on_message_callback=callback, auto_ack=True)
+            channel.start_consuming()
+        except Exception:
+            time.sleep(1)
+
+
 class PubSubHandler:
 
-    def __init__(self):
+    def __init__(self, query):
         self.queue = Queue()
-        raise NotImplementedError('PubSub handler not implemented.')
+        worker = Thread(target=pubsub_worker, args=(
+            query['type'], self.queue), daemon=True)
+        worker.start()
+
+    def get(self, timeout=None):
+        try:
+            return self.queue.get(timeout=timeout)
+        except Empty:
+            raise TimeoutError('get timed out')
 
 
 def dict_is_subset(a, b):
@@ -117,7 +148,8 @@ handlers = {
 
 
 @contextmanager
-def open_data_source(**kwargs):
-    match = find_match(kwargs)
+def open_data_source(**query):
+    match = find_match(query)
     handler = handlers[match['handler']['type']]
-    yield handler(**match['handler']['args'])
+    args = match['handler']['args']
+    yield handler(query, **args)
