@@ -70,9 +70,9 @@ class VideoHandler:
 
         self.queue = Queue()
 
-        self.worker = Thread(target=video_worker, args=(
+        worker = Thread(target=video_worker, args=(
             cap, self.queue), daemon=True)
-        self.worker.start()
+        worker.start()
 
     def close(self):
         pass
@@ -87,6 +87,7 @@ class VideoHandler:
 class PubSubHandler:
 
     def __init__(self):
+        self.queue = Queue()
         raise NotImplementedError('PubSub handler not implemented.')
 
 
