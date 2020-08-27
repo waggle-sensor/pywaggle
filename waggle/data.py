@@ -84,6 +84,12 @@ class VideoHandler:
             raise TimeoutError('get timed out')
 
 
+class PubSubHandler:
+
+    def __init__(self):
+        raise NotImplementedError('PubSub handler not implemented.')
+
+
 def dict_is_subset(a, b):
     return all(k in b and re.match(b[k], a[k]) for k in a.keys())
 
@@ -105,7 +111,7 @@ handlers = {
     'random': RandomHandler,
     'image': ImageHandler,
     'video': VideoHandler,
-    'pubsub': RandomHandler,
+    'pubsub': PubSubHandler,
 }
 
 
