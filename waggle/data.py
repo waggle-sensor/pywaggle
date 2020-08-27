@@ -9,10 +9,20 @@ import os
 import socket
 from pathlib import Path
 import json
+import random
 
 
 with Path('data-config.json').open() as f:
     config = json.load(f)
+
+
+class RandomHandler:
+
+    def close(self):
+        pass
+
+    def get(self, timeout=None):
+        return time.time_ns(), random.random()
 
 
 class ImageHandler:
@@ -91,6 +101,7 @@ def find_match(query):
 
 
 handlers = {
+    'random': RandomHandler,
     'image': ImageHandler,
     'video': VideoHandler,
 }
