@@ -13,8 +13,9 @@ import re
 import pika
 
 
-with Path('data-config.json').open() as f:
-    config = json.load(f)
+WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))
+
+config = json.loads(WAGGLE_DATA_CONFIG_PATH.read_text())
 
 
 class RandomHandler:
@@ -23,7 +24,7 @@ class RandomHandler:
         pass
 
     def get(self, timeout=None):
-        return time.time_ns(), random.random()
+        return time.time(), random.random()
 
     def __enter__(self):
         return self
@@ -41,7 +42,7 @@ class ImageHandler:
         try:
             with urlopen(self.url, timeout=timeout) as f:
                 data = f.read()
-                ts = time.time_ns()
+                ts = time.time()
                 arr = np.frombuffer(data, np.uint8)
                 return ts, cv2.imdecode(arr, cv2.IMREAD_COLOR)
         except socket.timeout:
@@ -60,7 +61,7 @@ def video_worker(cap, out):
         if ok:
             # think about correct behavior for this
             # should expected the behavior be to make the latest
-            out.put_nowait((time.time_ns(), img))
+            out.put_nowait((time.time(), img))
         else:
             time.sleep(0.01)
 
@@ -98,18 +99,23 @@ class VideoHandler:
 
 def pubsub_worker(topic, out):
     def callback(ch, method, properties, body):
-        ts = properties.timestamp or time.time_ns()
+        ts = properties.timestamp or time.time()
         out.put((ts, body))
 
     while True:
         try:
-            connection = pika.BlockingConnection()
+            connection = pika.BlockingConnection(parameters=pika.ConnectionParameters(
+                host='rabbitmq',
+                credentials=pika.PlainCredentials('worker', 'worker')
+            ))
             channel = connection.channel()
+
             result = channel.queue_declare(queue='', exclusive=True)
             queue = result.method.queue
-            channel.queue_bind(exchange='data', queue=queue, routing_key=topic)
+            channel.queue_bind(exchange='data.topic', queue=queue, routing_key=topic)
             channel.basic_consume(
                 queue=queue, on_message_callback=callback, auto_ack=True)
+
             channel.start_consuming()
         except Exception:
             time.sleep(1)
@@ -160,7 +166,7 @@ handlers = {
     'pubsub': PubSubHandler,
 }
 
-
+# optimizations *could* happen here, on demand...
 def open_data_source(**query):
     match = find_match(query)
     handler = handlers[match['handler']['type']]
