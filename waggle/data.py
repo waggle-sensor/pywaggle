@@ -106,7 +106,7 @@ def pubsub_worker(topic, out):
         try:
             connection = pika.BlockingConnection(parameters=pika.ConnectionParameters(
                 host='rabbitmq',
-                credentials=pika.PlainCredentials('worker', 'worker')
+                credentials=pika.PlainCredentials('plugin', 'plugin')
             ))
             channel = connection.channel()
 
