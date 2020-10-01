@@ -26,6 +26,9 @@ class Value:
         self.name = name
         self.value = value
         self.timestamp = timestamp or time.time_ns()
+    
+    def __str__(self):
+        return '<{} {} @ {}>'.format(self.name, self.value, self.timestamp)
 
 
 class PluginVersion(NamedTuple):
