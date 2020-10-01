@@ -17,6 +17,17 @@ import re
 from typing import Any, NamedTuple, List
 
 
+class Value:
+    name: str
+    value: Any
+    timestamp: int
+
+    def __init__(self, name, value, timestamp=None):
+        self.name = name
+        self.value = value
+        self.timestamp = timestamp or time.time_ns()
+
+
 class PluginVersion(NamedTuple):
     major: int
     minor: int
@@ -79,7 +90,9 @@ def init(name):
 
 def get(timeout=None):
     try:
-        return json.loads(incoming_queue.get(timeout=timeout))
+        body = incoming_queue.get(timeout=timeout)
+        msg = json.loads(body)
+        return Value(msg['name'], msg['value'], msg['ts'])
     except Empty:
         pass
     raise TimeoutError('plugin get timed out')
@@ -89,14 +102,17 @@ def subscribe(*topics):
     Thread(target=subscriber_main, args=topics, daemon=True).start()
 
 
-def publish(msg):
-    body = json.dumps({
-        'ts': msg.get('ts') or time.time_ns(),
-        'name': msg['name'],
-        'value': msg['value'],
+def publish(obj, scope=None):
+    if scope is None:
+        scope = ['beehive']
+    msg = {
+        'name': obj.name,
+        'value': obj.value,
+        'ts': obj.timestamp,
         'plugin': plugin_config.name,
-    })
-
+        'scope': scope,
+    }
+    body = json.dumps(msg)
     outgoing_queue.put(body)
 
 
