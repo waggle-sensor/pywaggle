@@ -17,22 +17,6 @@ import re
 from typing import Any, NamedTuple, List
 
 
-class Value:
-    name: str
-    value: Any
-    timestamp: int
-
-    def __init__(self, name, value, timestamp=None):
-        if timestamp is None:
-            timestamp = time.time_ns()
-        self.name = name
-        self.value = value
-        self.timestamp = timestamp
-    
-    def __str__(self):
-        return f'<{self.name} : {self.value} @ {self.timestamp}>'
-
-
 class PluginVersion(NamedTuple):
     major: int
     minor: int
@@ -40,6 +24,7 @@ class PluginVersion(NamedTuple):
 
 
 class PluginConfig(NamedTuple):
+    name: str
     id: int
     version: PluginVersion
     instance: int
@@ -63,6 +48,7 @@ def parse_version_string(s: str) -> PluginVersion:
 
 def get_plugin_info_from_env() -> PluginConfig:
     return PluginConfig(
+        name=os.environ.get('WAGGLE_PLUGIN_NAME', ''),
         id=int(os.environ.get('WAGGLE_PLUGIN_ID', 0)),
         version=parse_version_string(
             os.environ.get('WAGGLE_PLUGIN_VERSION', '0.0.0')),
@@ -75,6 +61,7 @@ def get_plugin_info_from_env() -> PluginConfig:
         port=int(os.environ.get('WAGGLE_PLUGIN_PORT', 5672)),
     )
 
+plugin_config = get_plugin_info_from_env()
 plugin_running = False
 plugin_lock = Lock()
 outgoing_queue = Queue()
@@ -92,8 +79,7 @@ def init(name):
 
 def get(timeout=None):
     try:
-        msg = json.loads(incoming_queue.get(timeout=timeout))
-        return Value(name=msg['topic'], value=msg['value'], timestamp=msg['ts'])
+        return json.loads(incoming_queue.get(timeout=timeout))
     except Empty:
         pass
     raise TimeoutError('plugin get timed out')
@@ -103,33 +89,32 @@ def subscribe(*topics):
     Thread(target=subscriber_main, args=topics, daemon=True).start()
 
 
-def publish(obj):
+def publish(msg):
     body = json.dumps({
-        'ts': obj.timestamp,
-        'topic': obj.name,
-        'value': obj.value,
-        'plugin': 'simple:0.2.0',
+        'ts': msg.get('ts') or time.time_ns(),
+        'name': msg['name'],
+        'value': msg['value'],
+        'plugin': plugin_config.name,
     })
 
     outgoing_queue.put(body)
 
 
 def publisher_main():
-    config = get_plugin_info_from_env()
-    connection_parameters = get_connection_parameters_for_config(config)
+    connection_parameters = get_connection_parameters_for_config(plugin_config)
 
     while True:
         try:
             connection = pika.BlockingConnection(connection_parameters)
             channel = connection.channel()
-            publish_loop(config, channel)
+            publish_loop(channel)
         except pika.exceptions.AMQPConnectionError:
             continue
         except pika.exceptions.AMQPChannelError:
             continue
 
 
-def publish_loop(config, channel):
+def publish_loop(channel):
     while True:
         try:
             body = outgoing_queue.get(timeout=30)
@@ -142,13 +127,12 @@ def publish_loop(config, channel):
             routing_key='',
             properties=pika.BasicProperties(
                 delivery_mode=2,
-                user_id=config.username),
+                user_id=plugin_config.username),
             body=body)
 
 
 def subscriber_main(*topics):
-    config = get_plugin_info_from_env()
-    connection_parameters = get_connection_parameters_for_config(config)
+    connection_parameters = get_connection_parameters_for_config(plugin_config)
 
     while True:
         try:
