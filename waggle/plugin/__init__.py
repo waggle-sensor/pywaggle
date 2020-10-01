@@ -50,6 +50,24 @@ class PluginConfig(NamedTuple):
     port: int
 
 
+class DataStore:
+
+    def __init__(self):
+        self.lock = Lock()
+        self.data = {}
+
+    def get(self, name):
+        with self.lock:
+            return self.data.get(name)
+
+    def __getitem__(self, name):
+        with self.lock:
+            return self.data[name]
+        
+    def __setitem__(self, name, value):
+        with self.lock:
+            self.data[name] = value
+
 def parse_version_string(s: str) -> PluginVersion:
     m = re.match(r'(\d+)\.(\d+)\.(\d+)$', s)
     if m is None:
@@ -80,9 +98,9 @@ plugin_running = False
 plugin_lock = Lock()
 outgoing_queue = Queue()
 incoming_queue = Queue()
+data = DataStore()
 
-
-def init(name):
+def init():
     global plugin_running
     with plugin_lock:
         if plugin_running:
@@ -93,9 +111,7 @@ def init(name):
 
 def get(timeout=None):
     try:
-        body = incoming_queue.get(timeout=timeout)
-        msg = json.loads(body)
-        return Value(msg['name'], msg['value'], msg['ts'])
+        return incoming_queue.get(timeout=timeout)
     except Empty:
         pass
     raise TimeoutError('plugin get timed out')
@@ -106,14 +122,12 @@ def subscribe(*topics):
 
 
 def publish(obj, scope=None):
-    if scope is None:
-        scope = ['beehive']
     msg = {
         'name': obj.name,
         'value': obj.value,
         'ts': obj.timestamp,
         'plugin': plugin_config.name,
-        'scope': scope,
+        'scope': scope or ['node', 'beehive'],
     }
     body = json.dumps(msg)
     outgoing_queue.put(body)
@@ -169,7 +183,14 @@ def subscriber_main(*topics):
 
 
 def subscriber_callback(ch, method, properties, body):
-    incoming_queue.put(body)
+    try:
+        msg = json.loads(body)
+    except json.JSONDecodeError:
+        return
+
+    obj = Value(msg['name'], msg['value'], msg['ts'])
+    data[obj.name] = obj
+    incoming_queue.put(obj)
 
 
 def get_connection_parameters_for_config(config):
