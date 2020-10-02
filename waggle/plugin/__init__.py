@@ -11,7 +11,7 @@ import os
 import pika
 import pika.exceptions
 from threading import Thread, Lock
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 import time
 import re
 from typing import Any, NamedTuple, List
@@ -97,7 +97,7 @@ plugin_config = get_plugin_info_from_env()
 plugin_running = False
 plugin_lock = Lock()
 outgoing_queue = Queue()
-incoming_queue = Queue()
+incoming_queue = Queue(64)
 data = DataStore()
 
 def init():
@@ -194,7 +194,23 @@ def subscriber_callback(ch, method, properties, body):
 
     obj = Value(msg['name'], msg['value'], msg['ts'])
     data[obj.name] = obj
-    incoming_queue.put(obj)
+
+    # attempt to add new item to incoming queue
+    try:
+        incoming_queue.put_nowait(obj)
+        return
+    except Full:
+        pass
+
+    # if incoming queue is full, remove oldest item and attempt to add new
+    try:
+        incoming_queue.get_nowait()
+    except Empty:
+        pass
+    try:
+        incoming_queue.put_nowait(obj)
+    except Full:
+        pass
 
 
 def get_connection_parameters_for_config(config):
