@@ -121,13 +121,17 @@ def subscribe(*topics):
     Thread(target=subscriber_main, args=topics, daemon=True).start()
 
 
-def publish(obj, scope=None):
+def publish(name, value, timestamp=None, scope=None):
+    if timestamp is None:
+        timestamp = time.time_ns()
+    if scope is None:
+        scope = ['node', 'beehive']
     msg = {
-        'name': obj.name,
-        'value': obj.value,
-        'ts': obj.timestamp,
+        'name': name,
+        'value': value,
+        'ts': timestamp,
         'plugin': plugin_config.name,
-        'scope': scope or ['node', 'beehive'],
+        'scope': scope,
     }
     body = json.dumps(msg)
     outgoing_queue.put(body)
