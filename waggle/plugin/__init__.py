@@ -17,6 +17,16 @@ import re
 from typing import Any, NamedTuple, List
 
 
+# BUG This *must* be addressed with the behavior written up in the plugin spec.
+# We don't want any surprises in terms of accuraccy 
+def fallback_time_ns():
+    return int(time.time() * 1e9)
+
+try:
+    from time import time_ns
+except ImportError:
+    time_ns = fallback_time_ns
+
 class Value:
     name: str
     value: Any
@@ -25,7 +35,7 @@ class Value:
     def __init__(self, name, value, timestamp=None):
         self.name = name
         self.value = value
-        self.timestamp = timestamp or time.time_ns()
+        self.timestamp = timestamp or time_ns()
     
     def __str__(self):
         return '<{} {} @ {}>'.format(self.name, self.value, self.timestamp)
@@ -123,7 +133,7 @@ def subscribe(*topics):
 
 def publish(name, value, timestamp=None, scope=None):
     if timestamp is None:
-        timestamp = time.time_ns()
+        timestamp = time_ns()
     if scope is None:
         scope = ['node', 'beehive']
     msg = {
