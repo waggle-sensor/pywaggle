@@ -5,53 +5,40 @@
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
 # ANL:waggle-license
-"""
-This module provides an easy way to integrate sensor code into the Waggle data
-pipeline as a plugin.
-
-Plugins provide a standard interface to publishing data and processing
-messages. The current API can be broken down into a few core areas:
-
-Publishing:
-
-* plugin.add_measurement(measument)
-* plugin.publish_measurements()
-* plugin.clear_measurements()
-
-Example:
-
-```
-import waggle.plugin
-
-# Initialize our plugin.
-plugin = waggle.plugin.PrintPlugin()
-
-# Add measurements to batch.
-plugin.add_measurement({'id': 1, 'sub_id': 0, 'value': 1})
-plugin.add_measurement({'id': 1, 'sub_id': 1, 'value': 2})
-plugin.add_measurement({'id': 2, 'sub_id': 0, 'value': 3})
-
-# Publish the batch.
-plugin.publish_measurements()
-```
-
-"""
 import json
-import configparser
 import logging
 import os
-import sys
 import pika
-import pika.credentials
-import ssl
-import waggle.protocol
-from base64 import b64encode
-from threading import Thread
+import pika.exceptions
+from threading import Thread, Lock
+from queue import Queue, Empty, Full
 import time
-import socket
-from queue import Queue
 import re
-from typing import NamedTuple, List
+from typing import Any, NamedTuple, List
+
+
+# BUG This *must* be addressed with the behavior written up in the plugin spec.
+# We don't want any surprises in terms of accuraccy 
+def fallback_time_ns():
+    return int(time.time() * 1e9)
+
+try:
+    from time import time_ns
+except ImportError:
+    time_ns = fallback_time_ns
+
+class Value:
+    name: str
+    value: Any
+    timestamp: int
+
+    def __init__(self, name, value, timestamp=None):
+        self.name = name
+        self.value = value
+        self.timestamp = timestamp or time_ns()
+    
+    def __str__(self):
+        return '<{} {} @ {}>'.format(self.name, self.value, self.timestamp)
 
 
 class PluginVersion(NamedTuple):
@@ -61,6 +48,7 @@ class PluginVersion(NamedTuple):
 
 
 class PluginConfig(NamedTuple):
+    name: str
     id: int
     version: PluginVersion
     instance: int
@@ -71,6 +59,24 @@ class PluginConfig(NamedTuple):
     host: str
     port: int
 
+
+class DataStore:
+
+    def __init__(self):
+        self.lock = Lock()
+        self.data = {}
+
+    def get(self, name):
+        with self.lock:
+            return self.data.get(name)
+
+    def __getitem__(self, name):
+        with self.lock:
+            return self.data[name]
+        
+    def __setitem__(self, name, value):
+        with self.lock:
+            self.data[name] = value
 
 def parse_version_string(s: str) -> PluginVersion:
     m = re.match(r'(\d+)\.(\d+)\.(\d+)$', s)
@@ -84,186 +90,147 @@ def parse_version_string(s: str) -> PluginVersion:
 
 def get_plugin_info_from_env() -> PluginConfig:
     return PluginConfig(
+        name=os.environ.get('WAGGLE_PLUGIN_NAME', ''),
         id=int(os.environ.get('WAGGLE_PLUGIN_ID', 0)),
         version=parse_version_string(
             os.environ.get('WAGGLE_PLUGIN_VERSION', '0.0.0')),
         instance=int(os.environ.get('WAGGLE_PLUGIN_INSTANCE', 0)),
         node_id=os.environ.get('WAGGLE_NODE_ID', '0000000000000000'),
         sub_id=os.environ.get('WAGGLE_SUB_ID', '0000000000000000'),
-        username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'worker'),
-        password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'worker'),
+        username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'plugin'),
+        password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'plugin'),
         host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
-        port=int(os.environ.get('WAGGLE_PLUGIN_PORT', '5672')),
+        port=int(os.environ.get('WAGGLE_PLUGIN_PORT', 5672)),
     )
 
+plugin_config = get_plugin_info_from_env()
+plugin_running = False
+plugin_lock = Lock()
+outgoing_queue = Queue()
+incoming_queue = Queue(64)
+data = DataStore()
 
-class Plugin:
-
-    def __init__(self) -> None:
-        self.logger = logging.getLogger('plugin.Plugin')
-        self.logger.setLevel(logging.INFO)
-
-        self.config = get_plugin_info_from_env()
-
-        self.connection_parameters = pika.ConnectionParameters(
-            host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
-            port=int(os.environ.get('WAGGLE_PLUGIN_PORT', '5672')),
-            credentials=pika.credentials.PlainCredentials(
-                username=self.config.username,
-                password=self.config.password,
-            ),
-        )
-
-        self.queue = 'to-{}'.format(self.config.username)
-
-        self.measurements: List[bytes] = []
-
-        self.publish_queue: Queue = Queue()
-        self.worker_thread = Thread(target=plugin_worker_main, args=(
-            self, self.publish_queue), daemon=True)
-        self.worker_thread.start()
-
-    def publish(self, body: bytes) -> None:
-        self.publish_queue.put(body)
-
-    # def get_waiting_messages(self):
-    #     raise NotImplementedError(
-    #         'get_waiting_messages is not implemented yet')
-    #     self.channel.queue_declare(queue=self.queue, durable=True)
-
-    #     while True:
-    #         method, _, body = self.channel.basic_get(queue=self.queue)
-
-    #         if body is None:
-    #             break
-
-    #         self.logger.debug('yield message %s', method.delivery_tag)
-    #         yield body
-
-    #         self.logger.debug('ack message %s', method.delivery_tag)
-    #         self.channel.basic_ack(delivery_tag=method.delivery_tag)
-
-    def add_measurement(self, sensorgram: dict) -> None:
-        self.logger.debug('add measurement %s', sensorgram)
-        self.measurements.append(pack_measurement(sensorgram))
-
-    def clear_measurements(self) -> None:
-        self.logger.debug('clear measurements')
-        self.measurements.clear()
-
-    def publish_measurements(self) -> None:
-        message = waggle.protocol.pack_message({
-            'sender_id': self.config.node_id,
-            'sender_sub_id': self.config.sub_id,
-            'body': waggle.protocol.pack_datagram({
-                'plugin_id': self.config.id,
-                'plugin_major_version': self.config.version.major,
-                'plugin_minor_version': self.config.version.minor,
-                'plugin_patch_version': self.config.version.patch,
-                'plugin_instance': self.config.instance,
-                'body': b''.join(self.measurements)
-            })
-        })
-
-        self.publish(message)
-        self.clear_measurements()
-
-    def publish_message(self, receiver_id: str, receiver_sub_id: str, body: bytes) -> None:
-        message = waggle.protocol.pack_message({
-            'sender_id': self.config.id,
-            'sender_sub_id': self.config.sub_id,
-            'receiver_id': receiver_id,
-            'receiver_sub_id': receiver_sub_id,
-            'body': waggle.protocol.pack_datagram({
-                'plugin_id': self.config.id,
-                'plugin_major_version': self.config.version.major,
-                'plugin_minor_version': self.config.version.minor,
-                'plugin_patch_version': self.config.version.patch,
-                'plugin_instance': self.config.instance,
-                'body': body,
-            })
-        })
-
-        self.publish(message)
+def init():
+    global plugin_running
+    with plugin_lock:
+        if plugin_running:
+            return
+        Thread(target=publisher_main, daemon=True).start()
+        plugin_running = True
 
 
-def plugin_worker_main(plugin: Plugin, publish_queue: Queue) -> None:
-    # dial down extremely verbose logs from pika.
-    logging.getLogger('pika').setLevel(logging.CRITICAL)
-    logger = logging.getLogger('plugin.worker')
+def get(timeout=None):
+    try:
+        return incoming_queue.get(timeout=timeout)
+    except Empty:
+        pass
+    raise TimeoutError('plugin get timed out')
+
+
+def subscribe(*topics):
+    Thread(target=subscriber_main, args=topics, daemon=True).start()
+
+
+def publish(name, value, timestamp=None, scope=None):
+    if timestamp is None:
+        timestamp = time_ns()
+    if scope is None:
+        scope = ['node', 'beehive']
+    msg = {
+        'name': name,
+        'value': value,
+        'ts': timestamp,
+        'plugin': plugin_config.name,
+        'scope': scope,
+    }
+    body = json.dumps(msg)
+    outgoing_queue.put(body)
+
+
+def publisher_main():
+    connection_parameters = get_connection_parameters_for_config(plugin_config)
 
     while True:
         try:
-            plugin_worker_connect_and_process(plugin, publish_queue)
-        except Exception as e:
-            logger.debug(e, exc_info=True)
-        time.sleep(10)
+            connection = pika.BlockingConnection(connection_parameters)
+            channel = connection.channel()
+            publish_loop(channel)
+        except pika.exceptions.AMQPConnectionError:
+            continue
+        except pika.exceptions.AMQPChannelError:
+            continue
 
 
-def plugin_worker_connect_and_process(plugin: Plugin, publish_queue: Queue) -> None:
-    logger = logging.getLogger('plugin.worker')
+def publish_loop(channel):
+    while True:
+        try:
+            body = outgoing_queue.get(timeout=30)
+        except Empty:
+            # TODO add a "heartbeat" to let server know we're still alive
+            continue
 
-    logger.debug('connecting to rabbitmq at "%s:%d"',
-                 plugin.config.host, plugin.config.port)
-    connection = pika.BlockingConnection(plugin.connection_parameters)
-    channel = connection.channel()
-    logger.debug('connected to rabbitmq')
+        channel.basic_publish(
+            exchange='to-validator',
+            routing_key='',
+            properties=pika.BasicProperties(
+                delivery_mode=2,
+                user_id=plugin_config.username),
+            body=body)
+
+
+def subscriber_main(*topics):
+    connection_parameters = get_connection_parameters_for_config(plugin_config)
 
     while True:
-        body = publish_queue.get()
-
         try:
-            channel.basic_publish(
-                exchange='messages',
-                routing_key='',
-                properties=pika.BasicProperties(
-                    delivery_mode=2,
-                    user_id=plugin.config.username),
-                body=body)
-            logger.debug('published %s', body)
-        except Exception:
-            # on failure, return item to publish queue. note that this
-            # will prioritize more recent items to be pubished first
-            publish_queue.put(body)
+            connection = pika.BlockingConnection(connection_parameters)
+            channel = connection.channel()
+            queue = channel.queue_declare('', exclusive=True).method.queue
+            for topic in topics:
+                channel.queue_bind(queue, 'data.topic', topic)
+            channel.basic_consume(queue, subscriber_callback, auto_ack=True)
+            channel.start_consuming()
+        except pika.exceptions.AMQPConnectionError:
+            continue
+        except pika.exceptions.AMQPChannelError:
+            continue
 
 
-def pack_measurement(sensorgram: dict) -> bytes:
-    if isinstance(sensorgram, (bytes, bytearray)):
-        return sensorgram
-    if isinstance(sensorgram, dict):
-        return waggle.protocol.pack_sensorgram(sensorgram)
-    raise ValueError('Sensorgram must be bytes or dict.')
+def subscriber_callback(ch, method, properties, body):
+    try:
+        msg = json.loads(body)
+    except json.JSONDecodeError:
+        return
+
+    obj = Value(msg['name'], msg['value'], msg['ts'])
+    data[obj.name] = obj
+
+    # attempt to add new item to incoming queue
+    try:
+        incoming_queue.put_nowait(obj)
+        return
+    except Full:
+        pass
+
+    # if incoming queue is full, remove oldest item and attempt to add new
+    try:
+        incoming_queue.get_nowait()
+    except Empty:
+        pass
+    try:
+        incoming_queue.put_nowait(obj)
+    except Full:
+        pass
 
 
-def measurements_in_message_data(message_data):
-    for message in waggle.protocol.unpack_messages(message_data):
-        for datagram in waggle.protocol.unpack_datagrams(message['body']):
-            for sensorgram in waggle.protocol.unpack_sensorgrams(datagram['body']):
-                yield message, datagram, sensorgram
-
-
-def encode_bytes(b: bytes) -> str:
-    return b64encode(b).decode()
-
-
-def encode_for_channel(x) -> str:
-    if isinstance(x, bytes):
-        return encode_bytes(x)
-    if isinstance(x, list):
-        return ','.join(encode_for_channel(xi) for xi in x)
-    if isinstance(x, bool):
-        return str(int(x))
-    return str(x)
-
-
-def start_processing_measurements(handler, reader=sys.stdin.buffer, writer=sys.stdout):
-    results = []
-
-    for message, datagram, sensorgram in measurements_in_message_data(reader.read()):
-        for r in handler(message, datagram, sensorgram):
-            r['timestamp'] = sensorgram['timestamp']
-            r['value_raw'] = encode_for_channel(r['value_raw'])
-            r['value_hrf'] = encode_for_channel(r['value_hrf'])
-            results.append(r)
-
-    json.dump(results, writer, separators=(',', ':'))
+def get_connection_parameters_for_config(config):
+    return pika.ConnectionParameters(
+        host=config.host,
+        port=config.port,
+        credentials=pika.PlainCredentials(
+            username=config.username,
+            password=config.password,
+        ),
+        connection_attempts=100,
+        socket_timeout=5.0,
+    )
