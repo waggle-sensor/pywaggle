@@ -15,7 +15,13 @@ from queue import Queue, Empty, Full
 import time
 import re
 from typing import Any, NamedTuple, List
+from hashlib import sha1
 
+
+class Image:
+
+    def __init__(self, data):
+        self.data = data
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
 # We don't want any surprises in terms of accuraccy 
@@ -52,8 +58,6 @@ class PluginConfig(NamedTuple):
     id: int
     version: PluginVersion
     instance: int
-    node_id: str
-    sub_id: str
     username: str
     password: str
     host: str
@@ -95,8 +99,6 @@ def get_plugin_info_from_env() -> PluginConfig:
         version=parse_version_string(
             os.environ.get('WAGGLE_PLUGIN_VERSION', '0.0.0')),
         instance=int(os.environ.get('WAGGLE_PLUGIN_INSTANCE', 0)),
-        node_id=os.environ.get('WAGGLE_NODE_ID', '0000000000000000'),
-        sub_id=os.environ.get('WAGGLE_SUB_ID', '0000000000000000'),
         username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'plugin'),
         password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'plugin'),
         host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
@@ -136,6 +138,9 @@ def publish(name, value, timestamp=None, scope=None):
         timestamp = time_ns()
     if scope is None:
         scope = ['node', 'beehive']
+    if isinstance(value, Image):
+        value = sha1(value.data.tobytes()).hexdigest()
+        print('TODO upload image with ref', value)
     msg = {
         'name': name,
         'value': value,
