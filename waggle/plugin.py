@@ -15,6 +15,33 @@ from queue import Queue, Empty, Full
 import time
 import re
 from typing import Any, NamedTuple, List
+from hashlib import sha1
+from base64 import b64encode
+
+
+class Image:
+
+    def __init__(self, data):
+        self.data = data
+
+
+def convert_numpy_image_to_png(a):
+    from PIL import Image
+    from io import BytesIO
+    import numpy as np
+    
+    # normalize data to [0, 255]
+    a = a - a.min()
+    max = a.max()
+    if max > 0:
+        a /= max * 255
+    a = np.uint8(a)
+
+    img = Image.fromarray(a, 'RGB')
+
+    with BytesIO() as buf:
+        img.save(buf, 'png')
+        return buf.getvalue()
 
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
@@ -52,8 +79,6 @@ class PluginConfig(NamedTuple):
     id: int
     version: PluginVersion
     instance: int
-    node_id: str
-    sub_id: str
     username: str
     password: str
     host: str
@@ -95,8 +120,6 @@ def get_plugin_info_from_env() -> PluginConfig:
         version=parse_version_string(
             os.environ.get('WAGGLE_PLUGIN_VERSION', '0.0.0')),
         instance=int(os.environ.get('WAGGLE_PLUGIN_INSTANCE', 0)),
-        node_id=os.environ.get('WAGGLE_NODE_ID', '0000000000000000'),
-        sub_id=os.environ.get('WAGGLE_SUB_ID', '0000000000000000'),
         username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'plugin'),
         password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'plugin'),
         host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
@@ -106,7 +129,7 @@ def get_plugin_info_from_env() -> PluginConfig:
 plugin_config = get_plugin_info_from_env()
 plugin_running = False
 plugin_lock = Lock()
-outgoing_queue = Queue()
+outgoing_queue = Queue(64)
 incoming_queue = Queue(64)
 data = DataStore()
 
@@ -131,20 +154,30 @@ def subscribe(*topics):
     Thread(target=subscriber_main, args=topics, daemon=True).start()
 
 
-def publish(name, value, timestamp=None, scope=None):
+def publish(name, value, timestamp=None, scope=None, timeout=None):
     if timestamp is None:
         timestamp = time_ns()
     if scope is None:
-        scope = ['node', 'beehive']
-    msg = {
-        'name': name,
-        'value': value,
-        'ts': timestamp,
-        'plugin': plugin_config.name,
-        'scope': scope,
-    }
-    body = json.dumps(msg)
-    outgoing_queue.put(body)
+        scope = 'all'
+
+    properties = pika.BasicProperties(
+        delivery_mode=2,
+        type=name,
+        timestamp=timestamp,
+        app_id=plugin_config.name,
+    )
+
+    if isinstance(value, (bytes, bytearray)):
+        body = value
+    elif isinstance(value, Image):
+        # encode as png to send as raw bytes
+        body = convert_numpy_image_to_png(value.data)
+        properties.content_type = 'image/png'
+    else:
+        body = json.dumps(value, separators=(',', ':'))
+        properties.content_type = 'application/json'
+
+    outgoing_queue.put((scope, properties, body), timeout=timeout)
 
 
 def publisher_main():
@@ -164,17 +197,15 @@ def publisher_main():
 def publish_loop(channel):
     while True:
         try:
-            body = outgoing_queue.get(timeout=30)
+            scope, properties, body = outgoing_queue.get(timeout=30)
         except Empty:
             # TODO add a "heartbeat" to let server know we're still alive
             continue
 
         channel.basic_publish(
             exchange='to-validator',
-            routing_key='',
-            properties=pika.BasicProperties(
-                delivery_mode=2,
-                user_id=plugin_config.username),
+            routing_key=scope,
+            properties=properties,
             body=body)
 
 
@@ -197,12 +228,20 @@ def subscriber_main(*topics):
 
 
 def subscriber_callback(ch, method, properties, body):
-    try:
-        msg = json.loads(body)
-    except json.JSONDecodeError:
+    if properties.content_type is None:
+        value = body
+    elif properties.content_type == 'application/json':
+        try:
+            value = json.loads(body)
+        except json.JSONDecodeError:
+            return
+    else:
         return
 
-    obj = Value(msg['name'], msg['value'], msg['ts'])
+    obj = Value(
+        name=properties.type,
+        value=value,
+        timestamp=properties.timestamp)
     data[obj.name] = obj
 
     # attempt to add new item to incoming queue

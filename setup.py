@@ -17,11 +17,10 @@ setup(
         'requests',
         'pyserial',
         'pyyaml',
-        'bitstring'
+        'bitstring',
     ],
     packages=[
         'waggle',
-        'waggle.plugin',
         'waggle.protocol',
         'waggle.protocol.utils',
         'waggle.protocol.develop',
