@@ -16,12 +16,33 @@ import time
 import re
 from typing import Any, NamedTuple, List
 from hashlib import sha1
+from base64 import b64encode
 
 
 class Image:
 
     def __init__(self, data):
         self.data = data
+
+
+def convert_numpy_image_to_png(a):
+    from PIL import Image
+    from io import BytesIO
+    import numpy as np
+    
+    # normalize data to [0, 255]
+    a = a - a.min()
+    max = a.max()
+    if max > 0:
+        a /= max * 255
+    a = np.uint8(a)
+
+    img = Image.fromarray(a, 'RGB')
+
+    with BytesIO() as buf:
+        img.save(buf, 'png')
+        return buf.getvalue()
+
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
 # We don't want any surprises in terms of accuraccy 
@@ -108,7 +129,7 @@ def get_plugin_info_from_env() -> PluginConfig:
 plugin_config = get_plugin_info_from_env()
 plugin_running = False
 plugin_lock = Lock()
-outgoing_queue = Queue()
+outgoing_queue = Queue(64)
 incoming_queue = Queue(64)
 data = DataStore()
 
@@ -138,18 +159,43 @@ def publish(name, value, timestamp=None, scope=None):
         timestamp = time_ns()
     if scope is None:
         scope = ['node', 'beehive']
-    if isinstance(value, Image):
-        value = sha1(value.data.tobytes()).hexdigest()
-        print('TODO upload image with ref', value)
+
     msg = {
-        'name': name,
-        'value': value,
         'ts': timestamp,
-        'plugin': plugin_config.name,
+        'name': name,
         'scope': scope,
+        'plugin': plugin_config.name,
     }
+
+    if isinstance(value, Image):
+        value = convert_numpy_image_to_png(value.data)
+        value = b64encode(value).decode()
+        msg['value'] = value
+        msg['enc'] = 'png'
+    elif isinstance(value, (bytes, bytearray)):
+        value = b64encode(value).decode()
+        msg['value'] = value
+        msg['enc'] = 'b64'
+    else:
+        msg['value'] = value
+
     body = json.dumps(msg)
-    outgoing_queue.put(body)
+
+    try:
+        outgoing_queue.put_nowait(body)
+        return
+    except Full:
+        pass
+
+    try:
+        outgoing_queue.get_nowait()
+    except Empty:
+        pass
+
+    try:
+        outgoing_queue.put_nowait(body)
+    except Full:
+        pass
 
 
 def publisher_main():
