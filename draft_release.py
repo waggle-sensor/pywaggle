@@ -3,6 +3,7 @@ import requests
 import waggle
 import json
 import subprocess
+import sys
 
 GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
@@ -13,7 +14,17 @@ headers = {
 
 name = f'v{waggle.__version__}'
 
-subprocess.check_output(['git', 'tag', '-a', name, '-m', f'drafting {name} release'])
+try:
+    subprocess.check_output(['git', 'diff', '--exit-code'])
+except subprocess.CalledProcessError:
+    print('uncommited changes - please resolve before drafting a release')
+    sys.exit(1)
+
+try:
+    subprocess.check_output(['git', 'tag', '-a', name, '-m', f'drafting {name} release'])
+except subprocess.CalledProcessError:
+    print(f'release for {name} already exists')
+    sys.exit(1)
 
 data = json.dumps({
     'draft': True,
