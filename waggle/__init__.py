@@ -4,3 +4,5 @@
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
 # ANL:waggle-license
+
+__version__ = '0.34.0'

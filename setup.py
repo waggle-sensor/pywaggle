@@ -5,10 +5,11 @@
 #          http://www.wa8.gl
 # ANL:waggle-license
 from distutils.core import setup
+import waggle
 
 setup(
     name='waggle',
-    version='0.33.0',
+    version=waggle.__version__,
     description='Python Waggle Module',
     url='https://github.com/waggle-sensor/pywaggle',
     install_requires=[
