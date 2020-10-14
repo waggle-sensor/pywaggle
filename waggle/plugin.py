@@ -10,7 +10,7 @@ import logging
 import os
 import pika
 import pika.exceptions
-from threading import Thread, Lock
+from threading import Thread, Lock, Event
 from queue import Queue, Empty, Full
 import time
 import re
@@ -54,18 +54,12 @@ try:
 except ImportError:
     time_ns = fallback_time_ns
 
-class Value:
+
+class Message(NamedTuple):
     name: str
     value: Any
     timestamp: int
-
-    def __init__(self, name, value, timestamp=None):
-        self.name = name
-        self.value = value
-        self.timestamp = timestamp or time_ns()
-    
-    def __str__(self):
-        return '<{} {} @ {}>'.format(self.name, self.value, self.timestamp)
+    sender: str
 
 
 class PluginVersion(NamedTuple):
@@ -103,6 +97,7 @@ class DataStore:
         with self.lock:
             self.data[name] = value
 
+
 def parse_version_string(s: str) -> PluginVersion:
     m = re.match(r'(\d+)\.(\d+)\.(\d+)$', s)
     if m is None:
@@ -126,20 +121,23 @@ def get_plugin_info_from_env() -> PluginConfig:
         port=int(os.environ.get('WAGGLE_PLUGIN_PORT', 5672)),
     )
 
+
 plugin_config = get_plugin_info_from_env()
-plugin_running = False
-plugin_lock = Lock()
+plugin_running = Event()
 outgoing_queue = Queue(64)
 incoming_queue = Queue(64)
+subscribe_queue = Queue(64)
 data = DataStore()
 
+
 def init():
-    global plugin_running
-    with plugin_lock:
-        if plugin_running:
-            return
-        Thread(target=publisher_main, daemon=True).start()
-        plugin_running = True
+    if not plugin_running.is_set():
+        plugin_running.set()
+        Thread(target=rabbitmq_worker_main, daemon=True).start()
+
+
+def stop():
+    plugin_running.clear()
 
 
 def get(timeout=None):
@@ -151,7 +149,7 @@ def get(timeout=None):
 
 
 def subscribe(*topics):
-    Thread(target=subscriber_main, args=topics, daemon=True).start()
+    subscribe_queue.put(topics)
 
 
 def publish(name, value, timestamp=None, scope=None, timeout=None):
@@ -159,117 +157,116 @@ def publish(name, value, timestamp=None, scope=None, timeout=None):
         timestamp = time_ns()
     if scope is None:
         scope = 'all'
-
-    properties = pika.BasicProperties(
-        delivery_mode=2,
-        type=name,
-        timestamp=timestamp,
-        app_id=plugin_config.name,
-    )
-
-    if isinstance(value, (bytes, bytearray)):
-        body = value
-    elif isinstance(value, Image):
-        # encode as png to send as raw bytes
-        body = convert_numpy_image_to_png(value.data)
-        properties.content_type = 'image/png'
-    else:
-        body = json.dumps(value, separators=(',', ':'))
-        properties.content_type = 'application/json'
-
-    outgoing_queue.put((scope, properties, body), timeout=timeout)
-
-
-def publisher_main():
-    connection_parameters = get_connection_parameters_for_config(plugin_config)
-
-    while True:
-        try:
-            connection = pika.BlockingConnection(connection_parameters)
-            channel = connection.channel()
-            publish_loop(channel)
-        except pika.exceptions.AMQPConnectionError:
-            continue
-        except pika.exceptions.AMQPChannelError:
-            continue
-
-
-def publish_loop(channel):
-    while True:
-        try:
-            scope, properties, body = outgoing_queue.get(timeout=30)
-        except Empty:
-            # TODO add a "heartbeat" to let server know we're still alive
-            continue
-
-        channel.basic_publish(
-            exchange='to-validator',
-            routing_key=scope,
-            properties=properties,
-            body=body)
-
-
-def subscriber_main(*topics):
-    connection_parameters = get_connection_parameters_for_config(plugin_config)
-
-    while True:
-        try:
-            connection = pika.BlockingConnection(connection_parameters)
-            channel = connection.channel()
-            queue = channel.queue_declare('', exclusive=True).method.queue
-            for topic in topics:
-                channel.queue_bind(queue, 'data.topic', topic)
-            channel.basic_consume(queue, subscriber_callback, auto_ack=True)
-            channel.start_consuming()
-        except pika.exceptions.AMQPConnectionError:
-            continue
-        except pika.exceptions.AMQPChannelError:
-            continue
-
-
-def subscriber_callback(ch, method, properties, body):
-    if properties.content_type is None:
-        value = body
-    elif properties.content_type == 'application/json':
-        try:
-            value = json.loads(body)
-        except json.JSONDecodeError:
-            return
-    else:
-        return
-
-    obj = Value(
-        name=properties.type,
+    msg = Message(
+        name=name,
         value=value,
-        timestamp=properties.timestamp)
-    data[obj.name] = obj
-
-    # attempt to add new item to incoming queue
-    try:
-        incoming_queue.put_nowait(obj)
-        return
-    except Full:
-        pass
-
-    # if incoming queue is full, remove oldest item and attempt to add new
-    try:
-        incoming_queue.get_nowait()
-    except Empty:
-        pass
-    try:
-        incoming_queue.put_nowait(obj)
-    except Full:
-        pass
+        timestamp=timestamp,
+        sender=plugin_config.name)
+    outgoing_queue.put((scope, msg), timeout=timeout)
 
 
-def get_connection_parameters_for_config(config):
-    return pika.ConnectionParameters(
-        host=config.host,
-        port=config.port,
+def rabbitmq_worker_main():
+    # create connection parameters from config
+    connection_parameters = pika.ConnectionParameters(
+        host=plugin_config.host,
+        port=plugin_config.port,
         credentials=pika.PlainCredentials(
-            username=config.username,
-            password=config.password,
+            username=plugin_config.username,
+            password=plugin_config.password,
         ),
         connection_attempts=100,
         socket_timeout=5.0,
     )
+
+    # main loop. should run until closed and automatically recover
+    # from rabbitmq related errors. 
+    while plugin_running.is_set():
+        try:
+            with pika.BlockingConnection(connection_parameters) as connection:
+                with connection.channel() as channel:
+                    rabbitmq_worker_loop(connection, channel)
+        except pika.exceptions.AMQPConnectionError:
+            continue
+        except pika.exceptions.AMQPChannelError:
+            continue
+
+
+def rabbitmq_worker_loop(connection, channel):
+    def subscriber_callback(ch, method, properties, body):
+        msg = amqp_to_message(properties, body)
+        data[msg.name] = msg
+        incoming_queue.put_nowait(msg)
+    
+    def process_subscribe_queue():
+        while plugin_running.is_set():
+            try:
+                topics = subscribe_queue.get_nowait()
+            except Empty:
+                break
+            for topic in topics:
+                channel.queue_bind(queue, 'data.topic', topic)
+    
+    def process_publish_queue():
+        while plugin_running.is_set():
+            try:
+                scope, msg = outgoing_queue.get_nowait()
+            except Empty:
+                break
+            properties, body = message_to_amqp(msg)
+            channel.basic_publish(
+                exchange='to-validator',
+                routing_key=scope,
+                properties=properties,
+                body=body)
+
+    def process_queues_and_events():
+        process_subscribe_queue()
+        process_publish_queue()
+        if plugin_running.is_set():
+            connection.call_later(0.001, process_queues_and_events)
+        else:
+            channel.stop_consuming()
+
+    # setup subscriber queue and bind
+    queue = channel.queue_declare('', exclusive=True).method.queue
+    channel.basic_consume(queue, subscriber_callback, auto_ack=True)
+    # setup periodic publish and subscribe to topic checks
+    connection.call_later(0.001, process_queues_and_events)
+    channel.start_consuming()
+
+
+def message_to_amqp(msg):
+    properties = pika.BasicProperties(
+        delivery_mode=2,
+        type=msg.name,
+        timestamp=msg.timestamp,
+        app_id=msg.sender)
+
+    # determine content type
+    if isinstance(msg.value, (bytes, bytearray)):
+        body = msg.value
+    elif isinstance(msg.value, Image):
+        # encode as png to send as raw bytes
+        properties.content_type = 'image/png'
+        body = convert_numpy_image_to_png(msg.value.data)
+    else:
+        # attempt to encode all other types as compact json blob
+        properties.content_type = 'application/json'
+        body = json.dumps(msg.value, separators=(',', ':'))
+
+    return properties, body
+
+
+def amqp_to_message(properties: pika, body):
+    if properties.content_type is None:
+        value = body
+    elif properties.content_type == 'application/json':
+        value = json.loads(body)
+    else:
+        raise TypeError('unsupported message type')
+
+    return Message(
+        name=properties.type,
+        value=value,
+        timestamp=properties.timestamp,
+        sender=properties.app_id)
