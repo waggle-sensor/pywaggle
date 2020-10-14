@@ -14,7 +14,7 @@ from threading import Thread, Lock, Event
 from queue import Queue, Empty, Full
 import time
 import re
-from typing import Any, NamedTuple, List
+from typing import Any, NamedTuple, List, Tuple
 from hashlib import sha1
 from base64 import b64encode
 
@@ -235,7 +235,8 @@ def rabbitmq_worker_loop(connection, channel):
     channel.start_consuming()
 
 
-def message_to_amqp(msg):
+def message_to_amqp(msg: Message) -> Tuple[pika.BasicProperties, bytes]:
+    # pack metadata into standard amqp message properties
     properties = pika.BasicProperties(
         delivery_mode=2,
         type=msg.name,
@@ -252,12 +253,12 @@ def message_to_amqp(msg):
     else:
         # attempt to encode all other types as compact json blob
         properties.content_type = 'application/json'
-        body = json.dumps(msg.value, separators=(',', ':'))
+        body = json.dumps(msg.value, separators=(',', ':')).encode()
 
     return properties, body
 
 
-def amqp_to_message(properties: pika, body):
+def amqp_to_message(properties: pika.BasicProperties, body: bytes) -> Message:
     if properties.content_type is None:
         value = body
     elif properties.content_type == 'application/json':
