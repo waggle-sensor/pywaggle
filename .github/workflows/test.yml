@@ -37,7 +37,7 @@ jobs:
 
     - name: Test plugin
       run: |
-        ./test_plugin.sh
+        python test_plugin.py
 
     - name: Test protocol
       run: |
