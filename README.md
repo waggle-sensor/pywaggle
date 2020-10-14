@@ -7,22 +7,16 @@ plugins running on the [Waggle platform](https://github.com/waggle-sensor/waggle
 
 ## Installation
 
-This module is developed for Python 3. It _may_ work fine with Python 2,
-but we don't specifically aim to support this.
+pywaggle expects Python 3.6 or later. To install, please run:
 
-### Installing from Github
-
-```
+```sh
 pip3 install git+https://github.com/waggle-sensor/pywaggle
 ```
 
-### Installing from local repo
+This will provide install all dependencies to provide core functionality. Additionally,
+pywaggle can leverages other optional packages to provide more functionality:
 
-```
-git clone https://github.com/waggle-sensor/pywaggle
-cd pywaggle
-pip3 install .
-```
+* `cv2`. Allow loading of images and video data.
 
 ## Documentation and Examples
 
