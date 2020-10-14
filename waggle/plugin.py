@@ -29,16 +29,7 @@ def convert_numpy_image_to_png(a):
     from PIL import Image
     from io import BytesIO
     import numpy as np
-    
-    # normalize data to [0, 255]
-    a = a - a.min()
-    max = a.max()
-    if max > 0:
-        a /= max * 255
-    a = np.uint8(a)
-
-    img = Image.fromarray(a, 'RGB')
-
+    img = Image.fromarray(np.uint8(a), 'RGB')
     with BytesIO() as buf:
         img.save(buf, 'png')
         return buf.getvalue()
