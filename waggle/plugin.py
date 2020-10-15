@@ -18,6 +18,10 @@ from typing import Any, NamedTuple, List, Tuple
 from hashlib import sha1
 from base64 import b64encode
 
+logger = logging.getLogger(__name__)
+# turn down pika's logger automatically. by default, it's very verbose.
+logging.getLogger('pika').setLevel(logging.CRITICAL)
+
 
 class Image:
 
@@ -122,10 +126,12 @@ data = DataStore()
 def init():
     if not plugin_running.is_set():
         plugin_running.set()
+        logger.debug('starting plugin worker thread')
         Thread(target=rabbitmq_worker_main, daemon=True).start()
 
 
 def stop():
+    logger.debug('stopping plugin worker thread')
     plugin_running.clear()
 
 
@@ -151,6 +157,7 @@ def publish(name, value, timestamp=None, scope=None, timeout=None):
         value=value,
         timestamp=timestamp,
         sender=plugin_config.name)
+    logger.debug('adding message to outgoing queue: %s', msg)
     outgoing_queue.put((scope, msg), timeout=timeout)
 
 
@@ -171,20 +178,29 @@ def rabbitmq_worker_main():
     # from rabbitmq related errors. 
     while plugin_running.is_set():
         try:
+            logger.debug('connecting to rabbitmq broker at %s:%d with username "%s"',
+                connection_parameters.host, connection_parameters.port,
+                connection_parameters.credentials.username)
             with pika.BlockingConnection(connection_parameters) as connection:
+                logger.debug('connected to rabbitmq broker')
                 with connection.channel() as channel:
                     rabbitmq_worker_loop(connection, channel)
         except pika.exceptions.AMQPConnectionError:
-            continue
+            pass
         except pika.exceptions.AMQPChannelError:
-            continue
+            pass
+        logger.debug('lost connection to rabbitmq broker')
 
 
 def rabbitmq_worker_loop(connection, channel):
     def subscriber_callback(ch, method, properties, body):
         msg = amqp_to_message(properties, body)
         data[msg.name] = msg
-        incoming_queue.put_nowait(msg)
+        try:
+            incoming_queue.put_nowait(msg)
+            logger.debug('add message to incoming queue: %s', msg)
+        except Full:
+            logger.debug('incoming queue full - dropping message: %s', msg)
     
     def process_subscribe_queue():
         while plugin_running.is_set():
@@ -193,6 +209,7 @@ def rabbitmq_worker_loop(connection, channel):
             except Empty:
                 break
             for topic in topics:
+                logger.debug('subscribing to topic "%s"', topic)
                 channel.queue_bind(queue, 'data.topic', topic)
     
     def process_publish_queue():
@@ -202,6 +219,7 @@ def rabbitmq_worker_loop(connection, channel):
             except Empty:
                 break
             properties, body = message_to_amqp(msg)
+            logger.debug('publishing message to rabbitmq: %s', msg)
             channel.basic_publish(
                 exchange='to-validator',
                 routing_key=scope,
@@ -214,6 +232,7 @@ def rabbitmq_worker_loop(connection, channel):
         if plugin_running.is_set():
             connection.call_later(0.001, process_queues_and_events)
         else:
+            logger.debug('stopping rabbitmq processing loop')
             channel.stop_consuming()
 
     # setup subscriber queue and bind
@@ -221,6 +240,7 @@ def rabbitmq_worker_loop(connection, channel):
     channel.basic_consume(queue, subscriber_callback, auto_ack=True)
     # setup periodic publish and subscribe to topic checks
     connection.call_later(0.001, process_queues_and_events)
+    logger.debug('starting rabbitmq processing loop')
     channel.start_consuming()
 
 
