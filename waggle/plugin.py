@@ -37,13 +37,11 @@ def convert_numpy_image_to_png(a):
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
 # We don't want any surprises in terms of accuraccy 
-def fallback_time_ns():
-    return int(time.time() * 1e9)
-
 try:
     from time import time_ns
 except ImportError:
-    time_ns = fallback_time_ns
+    def time_ns():
+        return int(time.time() * 1e9)
 
 
 class Message(NamedTuple):

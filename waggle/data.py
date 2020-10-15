@@ -2,7 +2,6 @@ import numpy as np
 from urllib.request import urlopen
 from threading import Thread
 from queue import Queue, Empty
-import cv2
 import time
 import os
 import socket
@@ -10,12 +9,25 @@ from pathlib import Path
 import json
 import random
 import re
-import pika
+
+try:
+    import cv2
+except ImportError:
+    print('WARNING cv2 module not found. pywaggle requires this to capture image and video data.')
 
 
 WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))
 
 config = json.loads(WAGGLE_DATA_CONFIG_PATH.read_text())
+
+
+# BUG This *must* be addressed with the behavior written up in the plugin spec.
+# We don't want any surprises in terms of accuraccy 
+try:
+    from time import time_ns
+except ImportError:
+    def time_ns():
+        return int(time.time() * 1e9)
 
 
 class RandomHandler:
@@ -24,7 +36,7 @@ class RandomHandler:
         pass
 
     def get(self, timeout=None):
-        return time.time(), random.random()
+        return time_ns(), random.random()
 
     def __enter__(self):
         return self
@@ -42,7 +54,7 @@ class ImageHandler:
         try:
             with urlopen(self.url, timeout=timeout) as f:
                 data = f.read()
-                ts = time.time()
+                ts = time_ns()
                 arr = np.frombuffer(data, np.uint8)
                 return ts, cv2.imdecode(arr, cv2.IMREAD_COLOR)
         except socket.timeout:
@@ -61,7 +73,7 @@ def video_worker(cap, out):
         if ok:
             # think about correct behavior for this
             # should expected the behavior be to make the latest
-            out.put_nowait((time.time(), img))
+            out.put_nowait((time_ns(), img))
         else:
             time.sleep(0.01)
 
@@ -82,51 +94,6 @@ class VideoHandler:
 
         worker = Thread(target=video_worker, args=(
             cap, self.queue), daemon=True)
-        worker.start()
-
-    def get(self, timeout=None):
-        try:
-            return self.queue.get(timeout=timeout)
-        except Empty:
-            raise TimeoutError('get timed out')
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc):
-        pass
-
-
-def pubsub_worker(topic, out):
-    def callback(ch, method, properties, body):
-        ts = properties.timestamp or time.time()
-        out.put((ts, body))
-
-    while True:
-        try:
-            connection = pika.BlockingConnection(parameters=pika.ConnectionParameters(
-                host='rabbitmq',
-                credentials=pika.PlainCredentials('plugin', 'plugin')
-            ))
-            channel = connection.channel()
-
-            result = channel.queue_declare(queue='', exclusive=True)
-            queue = result.method.queue
-            channel.queue_bind(exchange='data.topic', queue=queue, routing_key=topic)
-            channel.basic_consume(
-                queue=queue, on_message_callback=callback, auto_ack=True)
-
-            channel.start_consuming()
-        except Exception:
-            time.sleep(1)
-
-
-class PubSubHandler:
-
-    def __init__(self, query):
-        self.queue = Queue()
-        worker = Thread(target=pubsub_worker, args=(
-            query['type'], self.queue), daemon=True)
         worker.start()
 
     def get(self, timeout=None):
@@ -163,7 +130,6 @@ handlers = {
     'random': RandomHandler,
     'image': ImageHandler,
     'video': VideoHandler,
-    'pubsub': PubSubHandler,
 }
 
 # optimizations *could* happen here, on demand...
