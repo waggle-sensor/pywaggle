@@ -30,25 +30,25 @@ class TestMessage(unittest.TestCase):
                 name='env.temperature.htu21d',
                 value=10,
                 timestamp=1602704769215113000,
-                sender='test:0.0.1',
+                src='test:0.0.1',
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
                 value=21.2,
                 timestamp=1602704769215113000,
-                sender='test:0.0.1',
+                src='test:0.0.1',
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
                 value=b'some binary data',
                 timestamp=1602704769215113000,
-                sender='test:0.0.1',
+                src='test:0.0.1',
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
                 value='some binary data',
                 timestamp=1602704769215113000,
-                sender='test:0.0.1',
+                src='test:0.0.1',
             )
         ]
 

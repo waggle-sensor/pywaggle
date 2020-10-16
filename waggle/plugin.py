@@ -41,13 +41,7 @@ def convert_numpy_image_to_png(a):
 
 
 def convert_png_to_numpy_image(a):
-    from PIL import Image
-    from io import BytesIO
-    import numpy as np
-    img = Image.fromarray(np.uint8(a), 'RGB')
-    with BytesIO() as buf:
-        img.save(buf, 'png')
-        return buf.getvalue()
+    raise NotImplementedError()
 
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
