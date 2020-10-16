@@ -15,7 +15,6 @@ from queue import Queue, Empty, Full
 import time
 import re
 from typing import Any, NamedTuple, List, Tuple
-from hashlib import sha1
 from base64 import b64encode
 
 logger = logging.getLogger(__name__)
@@ -200,7 +199,11 @@ def rabbitmq_worker_main():
 
 def rabbitmq_worker_loop(connection, channel):
     def subscriber_callback(ch, method, properties, body):
-        msg = amqp_to_message(properties, body)
+        try:
+            msg = amqp_to_message(properties, body)
+        except TypeError:
+            logger.debug('unsupported message type: %s %s', properties, body)
+            return
         data[msg.name] = msg
         try:
             incoming_queue.put_nowait(msg)
