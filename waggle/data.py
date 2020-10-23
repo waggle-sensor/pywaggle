@@ -49,6 +49,7 @@ class ImageHandler:
 
     def __init__(self, query, url, bgr2rgb=True):
         self.url = url
+        self.bgr2rgb = bgr2rgb
 
     def get(self, timeout=None):
         try:
@@ -57,7 +58,7 @@ class ImageHandler:
                 ts = time_ns()
                 arr = np.frombuffer(data, np.uint8)
                 img =  cv2.imdecode(arr, cv2.IMREAD_COLOR)
-                if bgr2rgb:
+                if self.bgr2rgb:
                     return ts, cv2.cvtcolor(img, cv2.COLOR_BGR2RGB)
                 else:
                     return ts, img
@@ -75,7 +76,8 @@ def video_worker(cap, out, bgr2rgb=True):
     while True:
         ok, img = cap.read()
         if ok:
-            img = cv2.cvtcolor(img, cv2.COLOR_BGR2RGB)
+            if bgr2rgb:
+                img = cv2.cvtcolor(img, cv2.COLOR_BGR2RGB)
             # think about correct behavior for this
             # should expected the behavior be to make the latest
             out.put_nowait((time_ns(), img))
