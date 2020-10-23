@@ -59,7 +59,7 @@ class ImageHandler:
                 arr = np.frombuffer(data, np.uint8)
                 img =  cv2.imdecode(arr, cv2.IMREAD_COLOR)
                 if self.bgr2rgb:
-                    return ts, cv2.cvtcolor(img, cv2.COLOR_BGR2RGB)
+                    return ts, cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 else:
                     return ts, img
         except socket.timeout:
@@ -77,7 +77,7 @@ def video_worker(cap, out, bgr2rgb=True):
         ok, img = cap.read()
         if ok:
             if bgr2rgb:
-                img = cv2.cvtcolor(img, cv2.COLOR_BGR2RGB)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             # think about correct behavior for this
             # should expected the behavior be to make the latest
             out.put_nowait((time_ns(), img))
