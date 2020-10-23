@@ -47,7 +47,7 @@ class RandomHandler:
 
 class ImageHandler:
 
-    def __init__(self, query, url):
+    def __init__(self, query, url, bgr2rgb=True):
         self.url = url
 
     def get(self, timeout=None):
@@ -56,7 +56,11 @@ class ImageHandler:
                 data = f.read()
                 ts = time_ns()
                 arr = np.frombuffer(data, np.uint8)
-                return ts, cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                img =  cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                if bgr2rgb:
+                    return ts, cv2.cvtcolor(img, cv2.COLOR_BGR2RGB)
+                else:
+                    return ts, img
         except socket.timeout:
             raise TimeoutError('get timed out')
 
@@ -67,10 +71,11 @@ class ImageHandler:
         pass
 
 
-def video_worker(cap, out):
+def video_worker(cap, out, bgr2rgb=True):
     while True:
         ok, img = cap.read()
         if ok:
+            img = cv2.cvtcolor(img, cv2.COLOR_BGR2RGB)
             # think about correct behavior for this
             # should expected the behavior be to make the latest
             out.put_nowait((time_ns(), img))
@@ -84,7 +89,7 @@ def video_worker(cap, out):
 
 class VideoHandler:
 
-    def __init__(self, query, url):
+    def __init__(self, query, url, bgr2rgb=True):
         cap = cv2.VideoCapture(url)
 
         if not cap.isOpened():
@@ -93,7 +98,7 @@ class VideoHandler:
         self.queue = Queue()
 
         worker = Thread(target=video_worker, args=(
-            cap, self.queue), daemon=True)
+            cap, self.queue, bgr2rgb), daemon=True)
         worker.start()
 
     def get(self, timeout=None):
