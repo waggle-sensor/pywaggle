@@ -22,7 +22,7 @@ config = json.loads(WAGGLE_DATA_CONFIG_PATH.read_text())
 
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
-# We don't want any surprises in terms of accuraccy 
+# We don't want any surprises in terms of accuraccy
 try:
     from time import time_ns
 except ImportError:
@@ -45,10 +45,17 @@ class RandomHandler:
         pass
 
 
+def cvtColor(bgr_img, pixel_format='rgb'):
+    if pixel_format == 'rgb':
+        return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
+    return bgr_img
+
+
 class ImageHandler:
 
-    def __init__(self, query, url):
+    def __init__(self, query, url, pixel_format='rgb'):
         self.url = url
+        self.pixel_format = pixel_format
 
     def get(self, timeout=None):
         try:
@@ -56,7 +63,8 @@ class ImageHandler:
                 data = f.read()
                 ts = time_ns()
                 arr = np.frombuffer(data, np.uint8)
-                return ts, cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                bgr_img =  cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                return ts, cvtColor(bgr_img, self.pixel_format)
         except socket.timeout:
             raise TimeoutError('get timed out')
 
@@ -67,10 +75,11 @@ class ImageHandler:
         pass
 
 
-def video_worker(cap, out):
+def video_worker(cap, out, pixel_format='rgb'):
     while True:
-        ok, img = cap.read()
+        ok, bgr_img = cap.read()
         if ok:
+            img = cvtColor(bgr_img, pixel_format)
             # think about correct behavior for this
             # should expected the behavior be to make the latest
             out.put_nowait((time_ns(), img))
@@ -84,7 +93,7 @@ def video_worker(cap, out):
 
 class VideoHandler:
 
-    def __init__(self, query, url):
+    def __init__(self, query, url, pixel_format='rgb'):
         cap = cv2.VideoCapture(url)
 
         if not cap.isOpened():
@@ -93,7 +102,7 @@ class VideoHandler:
         self.queue = Queue()
 
         worker = Thread(target=video_worker, args=(
-            cap, self.queue), daemon=True)
+            cap, self.queue, pixel_format), daemon=True)
         worker.start()
 
     def get(self, timeout=None):
