@@ -278,7 +278,7 @@ def amqp_to_message(properties: pika.BasicProperties, body: bytes) -> Message:
 class Uploader:
 
     def __init__(self, root):
-        self.root = root
+        self.root = Path(root)
 
     # NOTE uploads are stored in the following directory structure:
     # root/
@@ -309,7 +309,9 @@ class Uploader:
             json.dump(meta, f, separators=(',', ':'))
 
         # atomically move tempdir to real name
-        tempdir.rename(Path(self.root, f'{timestamp}-{checksum}'))
+        filedir = Path(self.root, f'{timestamp}-{checksum}')
+        tempdir.rename(filedir)
+        return filedir
 
 def write_file_with_sha1sum(path, obj):
     h = hashlib.sha1()
@@ -333,15 +335,3 @@ get = plugin.get
 # define global default instance of Uploader
 uploader = Uploader(Path('/run/waggle/uploads'))
 upload = uploader.upload
-
-if __name__ == '__main__':
-    u = Uploader(Path('./testdata'))
-    u.upload(b'hello')
-    u.upload(b'hello', name='my cool data')
-
-    logging.basicConfig(level=logging.DEBUG)
-    init()
-    publish('env.temp', 12343)
-    time.sleep(5)
-    stop()
-    plugin.stopped.wait()
