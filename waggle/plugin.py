@@ -175,6 +175,11 @@ class Uploader:
     def __init__(self, root):
         self.root = root
 
+    # NOTE uploads are stored in the following directory structure:
+    # root/
+    #   timestamp-sha1sum/
+    #     data
+    #     meta
     def upload(self, obj):
         # get timestamp *before* any other work
         timestamp = time_ns()
@@ -183,39 +188,25 @@ class Uploader:
         if isinstance(obj, (bytes, bytearray)):
             obj = BytesIO(obj)
 
-        # first, we stage data and metadata in temp files
-        random_name = token_hex(20)
-        data_temp = Path(self.root, f'{random_name}.tmp')
-        meta_temp = Path(self.root, f'{random_name}.meta.tmp')
+        tempdir = Path(self.root, '.tmp' + token_hex(8))
+        tempdir.mkdir(parents=True, exist_ok=True)
 
-        # ensure staging directory exists
-        self.root.mkdir(parents=True, exist_ok=True)
-
-        sha1 = hashlib.sha1()
-        write_and_hash_file(data_temp, obj, sha1)
-        checksum = sha1.hexdigest()
+        checksum = write_file_with_sha1sum(Path(tempdir, 'data'), obj)
 
         meta = {
             'timestamp': timestamp,
             'sha1sum': checksum,
         }
 
-        with meta_temp.open('w') as f:
+        with Path(tempdir, 'meta').open('w') as f:
             json.dump(meta, f, separators=(',', ':'))
 
-        # atomically rename temp files
-        name = f'{timestamp}-{checksum}'
-        data_temp.rename(Path(self.root, name))
-        meta_temp.rename(Path(self.root, name+'.meta'))
-
-        # atomically move temp files
-        # TODO decide if we should bundle into single directory like
-        # * upload_id/data <- contains data
-        # * upload_id/meta <- contains metadata
-        # * ...?
+        # atomically move tempdir to real name
+        tempdir.rename(Path(self.root, f'{timestamp}-{checksum}'))
 
 
-def write_and_hash_file(path, obj, h):
+def write_file_with_sha1sum(path, obj):
+    h = hashlib.sha1()
     with path.open('wb') as f:
         while True:
             chunk = obj.read(32768)
@@ -223,6 +214,7 @@ def write_and_hash_file(path, obj, h):
                 break
             h.update(chunk)
             f.write(chunk)
+    return h.hexdigest()
 
 
 uploader = Uploader(Path('/run/waggle/uploads'))
