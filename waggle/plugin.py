@@ -170,9 +170,9 @@ class Plugin:
                                  self.connection_parameters.host,
                                  self.connection_parameters.port,
                                  self.connection_parameters.credentials.username)
-                    connection = pika.BlockingConnection(self.connection_parameters):
-                    logger.debug('connected to rabbitmq broker')
-                    self.rabbitmq_worker_mainloop(connection)
+                    with pika.BlockingConnection(self.connection_parameters) as connection:
+                        logger.debug('connected to rabbitmq broker')
+                        self.rabbitmq_worker_mainloop(connection)
                 except Exception as exc:
                     logger.debug('rabbitmq connection error: %s', exc)
                 time.sleep(1)
