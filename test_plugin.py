@@ -52,16 +52,17 @@ class TestUploader(unittest.TestCase):
         uploader = Uploader('.testdata')
 
         data = b'here some data in a data'
-        filename = '.myfile.txt'
+        upload_path = Path('.myfile.txt')
 
-        Path(filename).write_bytes(data)
-        path = uploader.upload_file(filename)
+        upload_path.write_bytes(data)
+        path = uploader.upload_file(upload_path)
+        self.assertFalse(upload_path.exists())
 
         self.assertEqual(data, Path(path, 'data').read_bytes())
         meta = json.loads(Path(path, 'meta').read_text())
         self.assertIn('timestamp', meta)
         self.assertIn('shasum', meta)
-        self.assertEqual(meta['labels']['filename'], filename)
+        self.assertEqual(meta['labels']['filename'], upload_path.name)
 
         shutil.rmtree('.testdata', ignore_errors=True)
 
