@@ -45,6 +45,25 @@ class TestUploader(unittest.TestCase):
         self.assertDictEqual(labels, meta['labels'])
 
         shutil.rmtree('.testdata', ignore_errors=True)
+    
+    def test_upload_file(self):
+        shutil.rmtree('.testdata', ignore_errors=True)
+
+        uploader = Uploader('.testdata')
+
+        data = b'here some data in a data'
+        filename = '.myfile.txt'
+
+        Path(filename).write_bytes(data)
+        path = uploader.upload_file(filename)
+
+        self.assertEqual(data, Path(path, 'data').read_bytes())
+        meta = json.loads(Path(path, 'meta').read_text())
+        self.assertIn('timestamp', meta)
+        self.assertIn('shasum', meta)
+        self.assertEqual(meta['labels']['filename'], filename)
+
+        shutil.rmtree('.testdata', ignore_errors=True)
 
 
 class TestMessage(unittest.TestCase):

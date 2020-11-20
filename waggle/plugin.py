@@ -312,6 +312,12 @@ class Uploader:
         filedir = Path(self.root, f'{timestamp}-{checksum}')
         tempdir.rename(filedir)
         return filedir
+    
+    def upload_file(self, path, **labels):
+        path = Path(path)
+        with path.open('rb') as f:
+            return self.upload(f, filename=path.name, **labels)
+
 
 def write_file_with_sha1sum(path, obj):
     h = hashlib.sha1()
