@@ -16,6 +16,10 @@ import time
 import re
 from typing import Any, NamedTuple, List, Tuple
 from base64 import b64encode
+from pathlib import Path
+import hashlib
+from io import BytesIO
+from secrets import token_hex
 
 logger = logging.getLogger(__name__)
 # turn down pika's logger automatically. by default, it's very verbose.
@@ -166,6 +170,65 @@ def publish(name, value, timestamp=None, scope=None, timeout=None):
     outgoing_queue.put((scope, msg), timeout=timeout)
 
 
+class Uploader:
+
+    def __init__(self, root):
+        self.root = root
+
+    def upload(self, obj):
+        # get timestamp *before* any other work
+        timestamp = time_ns()
+
+        # wrap bytes-like objects as file-like object for convinience
+        if isinstance(obj, (bytes, bytearray)):
+            obj = BytesIO(obj)
+
+        # first, we stage data and metadata in temp files
+        random_name = token_hex(20)
+        data_temp = Path(self.root, f'{random_name}.tmp')
+        meta_temp = Path(self.root, f'{random_name}.meta.tmp')
+
+        # ensure staging directory exists
+        self.root.mkdir(parents=True, exist_ok=True)
+
+        sha1 = hashlib.sha1()
+        write_and_hash_file(data_temp, obj, sha1)
+        checksum = sha1.hexdigest()
+
+        meta = {
+            'timestamp': timestamp,
+            'sha1sum': checksum,
+        }
+
+        with meta_temp.open('w') as f:
+            json.dump(meta, f, separators=(',', ':'))
+
+        # atomically rename temp files
+        name = f'{timestamp}-{checksum}'
+        data_temp.rename(Path(self.root, name))
+        meta_temp.rename(Path(self.root, name+'.meta'))
+
+        # atomically move temp files
+        # TODO decide if we should bundle into single directory like
+        # * upload_id/data <- contains data
+        # * upload_id/meta <- contains metadata
+        # * ...?
+
+
+def write_and_hash_file(path, obj, h):
+    with path.open('wb') as f:
+        while True:
+            chunk = obj.read(32768)
+            if len(chunk) == 0:
+                break
+            h.update(chunk)
+            f.write(chunk)
+
+
+uploader = Uploader(Path('/run/waggle/uploads'))
+upload = uploader.upload
+
+
 def rabbitmq_worker_main():
     # create connection parameters from config
     connection_parameters = pika.ConnectionParameters(
@@ -289,3 +352,8 @@ def amqp_to_message(properties: pika.BasicProperties, body: bytes) -> Message:
         value=value,
         timestamp=properties.timestamp,
         src=properties.reply_to)
+
+
+if __name__ == '__main__':
+    u = Uploader(Path('./testdata'))
+    u.upload(b'hello')
