@@ -1,6 +1,10 @@
 import unittest
 import time
 import waggle.plugin as plugin
+from waggle.plugin import Uploader
+import shutil
+from pathlib import Path
+import json
 
 class TestPlugin(unittest.TestCase):
 
@@ -21,6 +25,27 @@ class TestPlugin(unittest.TestCase):
             plugin.get(timeout=0)
         with self.assertRaises(TimeoutError):
             plugin.get(timeout=0.001)
+
+class TestUploader(unittest.TestCase):
+
+    def test_upload(self):
+        shutil.rmtree('.testdata', ignore_errors=True)
+
+        uploader = Uploader('.testdata')
+
+        data = b'testdata'
+        labels = {'name': 'example label'}
+        path = uploader.upload(b'testdata', **labels)
+
+        self.assertEqual(data, Path(path, 'data').read_bytes())
+        meta = json.loads(Path(path, 'meta').read_text())
+        self.assertIn('timestamp', meta)
+        self.assertIn('shasum', meta)
+        self.assertIn('labels', meta)
+        self.assertDictEqual(labels, meta['labels'])
+
+        shutil.rmtree('.testdata', ignore_errors=True)
+
 
 class TestMessage(unittest.TestCase):
 
