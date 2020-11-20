@@ -81,25 +81,6 @@ class PluginConfig(NamedTuple):
     port: int
 
 
-class DataStore:
-
-    def __init__(self):
-        self.lock = Lock()
-        self.data = {}
-
-    def get(self, name):
-        with self.lock:
-            return self.data.get(name)
-
-    def __getitem__(self, name):
-        with self.lock:
-            return self.data[name]
-        
-    def __setitem__(self, name, value):
-        with self.lock:
-            self.data[name] = value
-
-
 def parse_version_string(s: str) -> PluginVersion:
     m = re.match(r'(\d+)\.(\d+)\.(\d+)$', s)
     if m is None:
@@ -124,188 +105,136 @@ def get_plugin_info_from_env() -> PluginConfig:
     )
 
 
-plugin_config = get_plugin_info_from_env()
-plugin_running = Event()
-outgoing_queue = Queue(64)
-incoming_queue = Queue(64)
-subscribe_queue = Queue(64)
-data = DataStore()
+class Plugin:
 
+    def __init__(self, config):
+        self.config = config
 
-def init():
-    if not plugin_running.is_set():
-        plugin_running.set()
+        self.connection_parameters = pika.ConnectionParameters(
+            host=config.host,
+            port=config.port,
+            credentials=pika.PlainCredentials(
+                username=config.username,
+                password=config.password,
+            ),
+            connection_attempts=1,
+            socket_timeout=3.0,
+        )
+
+        self.running = Event()
+        self.stopped = Event()
+
+        self.outgoing_queue = Queue(64)
+        self.incoming_queue = Queue(64)
+        self.subscribe_queue = Queue(64)
+
+    def init(self):
         logger.debug('starting plugin worker thread')
-        Thread(target=rabbitmq_worker_main, daemon=True).start()
+        Thread(target=self.run_rabbitmq_worker, daemon=True).start()
 
+    def stop(self):
+        logger.debug('stopping plugin worker thread')
+        self.running.clear()
 
-def stop():
-    logger.debug('stopping plugin worker thread')
-    plugin_running.clear()
-
-
-def get(timeout=None):
-    try:
-        return incoming_queue.get(timeout=timeout)
-    except Empty:
-        pass
-    raise TimeoutError('plugin get timed out')
-
-
-def subscribe(*topics):
-    subscribe_queue.put(topics)
-
-
-def publish(name, value, timestamp=None, scope=None, timeout=None):
-    if timestamp is None:
-        timestamp = time_ns()
-    if scope is None:
-        scope = 'all'
-    msg = Message(
-        name=name,
-        value=value,
-        timestamp=timestamp,
-        src=plugin_config.name)
-    logger.debug('adding message to outgoing queue: %s', msg)
-    outgoing_queue.put((scope, msg), timeout=timeout)
-
-
-class Uploader:
-
-    def __init__(self, root):
-        self.root = root
-
-    # NOTE uploads are stored in the following directory structure:
-    # root/
-    #   timestamp-sha1sum/
-    #     data
-    #     meta
-    def upload(self, obj):
-        # get timestamp *before* any other work
-        timestamp = time_ns()
-
-        # wrap bytes-like objects as file-like object for convinience
-        if isinstance(obj, (bytes, bytearray)):
-            obj = BytesIO(obj)
-
-        tempdir = Path(self.root, '.tmp' + token_hex(8))
-        tempdir.mkdir(parents=True, exist_ok=True)
-
-        checksum = write_file_with_sha1sum(Path(tempdir, 'data'), obj)
-
-        meta = {
-            'timestamp': timestamp,
-            'sha1sum': checksum,
-        }
-
-        with Path(tempdir, 'meta').open('w') as f:
-            json.dump(meta, f, separators=(',', ':'))
-
-        # atomically move tempdir to real name
-        tempdir.rename(Path(self.root, f'{timestamp}-{checksum}'))
-
-
-def write_file_with_sha1sum(path, obj):
-    h = hashlib.sha1()
-    with path.open('wb') as f:
-        while True:
-            chunk = obj.read(32768)
-            if len(chunk) == 0:
-                break
-            h.update(chunk)
-            f.write(chunk)
-    return h.hexdigest()
-
-
-uploader = Uploader(Path('/run/waggle/uploads'))
-upload = uploader.upload
-
-
-def rabbitmq_worker_main():
-    # create connection parameters from config
-    connection_parameters = pika.ConnectionParameters(
-        host=plugin_config.host,
-        port=plugin_config.port,
-        credentials=pika.PlainCredentials(
-            username=plugin_config.username,
-            password=plugin_config.password,
-        ),
-        connection_attempts=100,
-        socket_timeout=5.0,
-    )
-
-    # main loop. should run until closed and automatically recover
-    # from rabbitmq related errors. 
-    while plugin_running.is_set():
+    def get(self, timeout=None):
         try:
-            logger.debug('connecting to rabbitmq broker at %s:%d with username "%s"',
-                connection_parameters.host, connection_parameters.port,
-                connection_parameters.credentials.username)
-            with pika.BlockingConnection(connection_parameters) as connection:
-                logger.debug('connected to rabbitmq broker')
-                with connection.channel() as channel:
-                    rabbitmq_worker_loop(connection, channel)
-        except pika.exceptions.AMQPConnectionError:
+            return self.incoming_queue.get(timeout=timeout)
+        except Empty:
             pass
-        except pika.exceptions.AMQPChannelError:
-            pass
-        logger.debug('lost connection to rabbitmq broker')
+        raise TimeoutError('plugin get timed out')
 
+    def subscribe(self, *topics):
+        self.subscribe_queue.put(topics)
 
-def rabbitmq_worker_loop(connection, channel):
-    def subscriber_callback(ch, method, properties, body):
-        try:
-            msg = amqp_to_message(properties, body)
-        except TypeError:
-            logger.debug('unsupported message type: %s %s', properties, body)
+    def publish(self, name, value, timestamp=None, scope=None, timeout=None):
+        if timestamp is None:
+            timestamp = time_ns()
+        if scope is None:
+            scope = 'all'
+        msg = Message(name=name, value=value, timestamp=timestamp, src=self.config.name)
+        logger.debug('adding message to outgoing queue: %s', msg)
+        self.outgoing_queue.put((scope, msg), timeout=timeout)
+
+    def run_rabbitmq_worker(self):
+        if self.running.is_set():
+            logger.warning('already have an instance of rabbitmq worker running')
             return
-        data[msg.name] = msg
+
         try:
-            incoming_queue.put_nowait(msg)
-            logger.debug('add message to incoming queue: %s', msg)
-        except Full:
-            logger.debug('incoming queue full - dropping message: %s', msg)
-    
-    def process_subscribe_queue():
-        while plugin_running.is_set():
-            try:
-                topics = subscribe_queue.get_nowait()
-            except Empty:
-                break
-            for topic in topics:
-                logger.debug('subscribing to topic "%s"', topic)
-                channel.queue_bind(queue, 'data.topic', topic)
-    
-    def process_publish_queue():
-        while plugin_running.is_set():
-            try:
-                scope, msg = outgoing_queue.get_nowait()
-            except Empty:
-                break
-            properties, body = message_to_amqp(msg)
-            logger.debug('publishing message to rabbitmq: %s', msg)
-            channel.basic_publish(
-                exchange='to-validator',
-                routing_key=scope,
-                properties=properties,
-                body=body)
+            self.running.set()
+            self.stopped.clear()
 
-    def process_queues_and_events():
-        process_subscribe_queue()
-        process_publish_queue()
-        if plugin_running.is_set():
-            connection.call_later(0.001, process_queues_and_events)
-        else:
-            logger.debug('stopping rabbitmq processing loop')
-            channel.stop_consuming()
+            while self.running.is_set():
+                try:
+                    logger.debug('connecting to rabbitmq broker at %s:%d with username "%s"',
+                                 self.connection_parameters.host,
+                                 self.connection_parameters.port,
+                                 self.connection_parameters.credentials.username)
+                    connection = pika.BlockingConnection(self.connection_parameters):
+                    logger.debug('connected to rabbitmq broker')
+                    self.rabbitmq_worker_mainloop(connection)
+                except Exception as exc:
+                    logger.debug('rabbitmq connection error: %s', exc)
+                time.sleep(1)
+        finally:
+            self.running.clear()
+            self.stopped.set()
 
-    # setup subscriber queue and bind
-    queue = channel.queue_declare('', exclusive=True).method.queue
-    channel.basic_consume(queue, subscriber_callback, auto_ack=True)
-    # setup periodic publish and subscribe to topic checks
-    connection.call_later(0.001, process_queues_and_events)
-    logger.debug('starting rabbitmq processing loop')
-    channel.start_consuming()
+    def rabbitmq_worker_mainloop(self, connection):
+        channel = connection.channel()
+
+        def subscriber_callback(ch, method, properties, body):
+            try:
+                msg = amqp_to_message(properties, body)
+            except TypeError:
+                logger.debug('unsupported message type: %s %s', properties, body)
+                return
+            try:
+                self.incoming_queue.put_nowait(msg)
+                logger.debug('add message to incoming queue: %s', msg)
+            except Full:
+                logger.debug('incoming queue full - dropping message: %s', msg)
+        
+        def process_subscribe_queue():
+            while self.running.is_set():
+                try:
+                    topics = self.subscribe_queue.get_nowait()
+                except Empty:
+                    break
+                for topic in topics:
+                    logger.debug('subscribing to topic "%s"', topic)
+                    channel.queue_bind(queue, 'data.topic', topic)
+        
+        def process_publish_queue():
+            while self.running.is_set():
+                try:
+                    scope, msg = self.outgoing_queue.get_nowait()
+                except Empty:
+                    break
+                properties, body = message_to_amqp(msg)
+                logger.debug('publishing message to rabbitmq: %s', msg)
+                channel.basic_publish(
+                    exchange='to-validator',
+                    routing_key=scope,
+                    properties=properties,
+                    body=body)
+
+        def process_queues_and_events():
+            process_subscribe_queue()
+            process_publish_queue()
+            if self.running.is_set():
+                connection.call_later(0.001, process_queues_and_events)
+            else:
+                logger.debug('stopping rabbitmq processing loop')
+                channel.stop_consuming()
+
+        # setup subscriber queue and bind
+        queue = channel.queue_declare('', exclusive=True).method.queue
+        channel.basic_consume(queue, subscriber_callback, auto_ack=True)
+        # setup periodic publish and subscribe to topic checks
+        connection.call_later(0.001, process_queues_and_events)
+        logger.debug('starting rabbitmq processing loop')
+        channel.start_consuming()
 
 
 def message_to_amqp(msg: Message) -> Tuple[pika.BasicProperties, bytes]:
@@ -327,7 +256,7 @@ def message_to_amqp(msg: Message) -> Tuple[pika.BasicProperties, bytes]:
         # attempt to encode all other types as compact json blob
         properties.content_type = 'application/json'
         body = json.dumps(msg.value, separators=(',', ':')).encode()
-
+    
     return properties, body
 
 
@@ -346,6 +275,73 @@ def amqp_to_message(properties: pika.BasicProperties, body: bytes) -> Message:
         src=properties.reply_to)
 
 
+class Uploader:
+
+    def __init__(self, root):
+        self.root = root
+
+    # NOTE uploads are stored in the following directory structure:
+    # root/
+    #   timestamp-sha1sum/
+    #     data
+    #     meta
+    # TODO this needs a way to name this...
+    def upload(self, obj, **labels):
+        # get timestamp *before* any other work
+        timestamp = time_ns()
+
+        # wrap bytes-like objects as file-like object for convinience
+        if isinstance(obj, (bytes, bytearray)):
+            obj = BytesIO(obj)
+
+        tempdir = Path(self.root, '.tmp' + token_hex(8))
+        tempdir.mkdir(parents=True, exist_ok=True)
+
+        checksum = write_file_with_sha1sum(Path(tempdir, 'data'), obj)
+
+        meta = {
+            'timestamp': timestamp,
+            'shasum': checksum,
+            'labels': {k: v for k, v in labels.items()},
+        }
+
+        with Path(tempdir, 'meta').open('w') as f:
+            json.dump(meta, f, separators=(',', ':'))
+
+        # atomically move tempdir to real name
+        tempdir.rename(Path(self.root, f'{timestamp}-{checksum}'))
+
+def write_file_with_sha1sum(path, obj):
+    h = hashlib.sha1()
+    with path.open('wb') as f:
+        while True:
+            chunk = obj.read(32768)
+            if len(chunk) == 0:
+                break
+            h.update(chunk)
+            f.write(chunk)
+    return h.hexdigest()
+
+# define global default instance of Plugin
+plugin = Plugin(get_plugin_info_from_env())
+init = plugin.init
+stop = plugin.stop
+subscribe = plugin.subscribe
+publish = plugin.publish
+get = plugin.get
+
+# define global default instance of Uploader
+uploader = Uploader(Path('/run/waggle/uploads'))
+upload = uploader.upload
+
 if __name__ == '__main__':
     u = Uploader(Path('./testdata'))
     u.upload(b'hello')
+    u.upload(b'hello', name='my cool data')
+
+    logging.basicConfig(level=logging.DEBUG)
+    init()
+    publish('env.temp', 12343)
+    time.sleep(5)
+    stop()
+    plugin.stopped.wait()
