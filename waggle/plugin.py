@@ -345,3 +345,4 @@ get = plugin.get
 # define global default instance of Uploader
 uploader = Uploader(Path('/run/waggle/uploads'))
 upload = uploader.upload
+upload_file = uploader.upload_file
