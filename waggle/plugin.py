@@ -286,7 +286,7 @@ class Uploader:
     #     data
     #     meta
     # TODO this needs a way to name this...
-    def upload(self, obj, **labels):
+    def upload(self, obj, labels={}):
         # get timestamp *before* any other work
         timestamp = time_ns()
 
@@ -313,10 +313,14 @@ class Uploader:
         tempdir.rename(filedir)
         return filedir
     
-    def upload_file(self, path, **labels):
+    def upload_file(self, path, keep=False, labels={}):
         path = Path(path)
+        labels['filename'] = path.name
         with path.open('rb') as f:
-            return self.upload(f, filename=path.name, **labels)
+            staged_path = self.upload(f, labels)
+            if keep is False:
+                path.unlink()
+            return staged_path
 
 
 def write_file_with_sha1sum(path, obj):

@@ -35,7 +35,7 @@ class TestUploader(unittest.TestCase):
 
         data = b'testdata'
         labels = {'name': 'example label'}
-        path = uploader.upload(b'testdata', **labels)
+        path = uploader.upload(b'testdata', labels=labels)
 
         self.assertEqual(data, Path(path, 'data').read_bytes())
         meta = json.loads(Path(path, 'meta').read_text())
