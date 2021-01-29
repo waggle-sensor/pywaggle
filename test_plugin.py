@@ -72,34 +72,45 @@ class TestMessage(unittest.TestCase):
     def test_message_invert(self):
         test_cases = [
             plugin.Message(
+                vers="1.0",
                 name='env.temperature.htu21d',
-                value=10,
-                timestamp=1602704769215113000,
-                src='test:0.0.1',
+                val=10,
+                ts=1602704769215113000,
+                enc=None,
+                meta=None,
             ),
             plugin.Message(
+                vers="1.0",
                 name='env.temperature.htu21d',
-                value=21.2,
-                timestamp=1602704769215113000,
-                src='test:0.0.1',
+                val=21.2,
+                ts=1602704769215113000,
+                enc=None,
+                meta=None,
             ),
             plugin.Message(
+                vers="1.0",
                 name='env.temperature.htu21d',
-                value=b'some binary data',
-                timestamp=1602704769215113000,
-                src='test:0.0.1',
+                val=b'some binary data',
+                ts=1602704769215113000,
+                enc="b64",
+                meta=None,
             ),
             plugin.Message(
+                vers="1.0",
                 name='env.temperature.htu21d',
-                value='some binary data',
-                timestamp=1602704769215113000,
-                src='test:0.0.1',
+                val='some binary data',
+                ts=1602704769215113000,
+                enc=None,
+                meta={
+                    "id": "omars-meta-test"
+                },
             )
         ]
 
         for msg in test_cases:
-            out = plugin.amqp_to_message(*plugin.message_to_amqp(msg))
+            out = plugin.amqp_to_message(plugin.message_to_amqp(msg))
             self.assertEqual(msg, out)
 
 if __name__ == '__main__':
     unittest.main()
+

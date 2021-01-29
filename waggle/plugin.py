@@ -5,8 +5,9 @@
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
 # ANL:waggle-license
-import json
+import simplejson as json
 import logging
+import base64
 import os
 import pika
 import pika.exceptions
@@ -15,7 +16,6 @@ from queue import Queue, Empty, Full
 import time
 import re
 from typing import Any, NamedTuple, List, Tuple
-from base64 import b64encode
 from pathlib import Path
 import hashlib
 from io import BytesIO
@@ -57,11 +57,12 @@ except ImportError:
 
 
 class Message(NamedTuple):
+    vers: str
     name: str
-    value: Any
-    timestamp: int
-    src: str = ''
-    dst: str = ''
+    val: Any
+    ts: int
+    enc: str
+    meta: dict
 
 
 class PluginVersion(NamedTuple):
@@ -151,7 +152,7 @@ class Plugin:
             timestamp = time_ns()
         if scope is None:
             scope = 'all'
-        msg = Message(name=name, value=value, timestamp=timestamp, src=self.config.name)
+        msg = Message(vers = "1.0", name=name, val=value, ts=timestamp, enc=None, meta=None)
         logger.debug('adding message to outgoing queue: %s', msg)
         self.outgoing_queue.put((scope, msg), timeout=timeout)
 
@@ -185,7 +186,7 @@ class Plugin:
 
         def subscriber_callback(ch, method, properties, body):
             try:
-                msg = amqp_to_message(properties, body)
+                msg = amqp_to_message(body)
             except TypeError:
                 logger.debug('unsupported message type: %s %s', properties, body)
                 return
@@ -211,7 +212,8 @@ class Plugin:
                     scope, msg = self.outgoing_queue.get_nowait()
                 except Empty:
                     break
-                properties, body = message_to_amqp(msg)
+                properties = pika.BasicProperties(delivery_mode=2)
+                body = message_to_amqp(msg)
                 logger.debug('publishing message to rabbitmq: %s', msg)
                 channel.basic_publish(
                     exchange='to-validator',
@@ -237,43 +239,39 @@ class Plugin:
         channel.start_consuming()
 
 
-def message_to_amqp(msg: Message) -> Tuple[pika.BasicProperties, bytes]:
+def message_to_amqp(msg: Message) -> bytes:
     # pack metadata into standard amqp message properties
-    properties = pika.BasicProperties(
-        delivery_mode=2,
-        type=msg.name,
-        timestamp=msg.timestamp,
-        reply_to=msg.src)
+    tmpval=msg.val
+    if msg.enc == "b64":
+        tmpval = base64.b64encode(msg.val)
 
-    # determine content type
-    if isinstance(msg.value, (bytes, bytearray)):
-        body = msg.value
-    elif isinstance(msg.value, Image):
-        # encode as png to send as raw bytes
-        properties.content_type = 'image/png'
-        body = convert_numpy_image_to_png(msg.value.data)
-    else:
-        # attempt to encode all other types as compact json blob
-        properties.content_type = 'application/json'
-        body = json.dumps(msg.value, separators=(',', ':')).encode()
-    
-    return properties, body
+    data = json.dumps({
+        "vers": "1.0",
+        "name": msg.name,
+        "ts": msg.ts,
+        "val": tmpval,
+        "enc": msg.enc,
+        "meta": msg.meta,
+    } )
 
 
-def amqp_to_message(properties: pika.BasicProperties, body: bytes) -> Message:
-    if properties.content_type is None:
-        value = body
-    elif properties.content_type == 'application/json':
-        value = json.loads(body)
-    else:
-        raise TypeError('unsupported message type')
+    return data
+
+
+def amqp_to_message(body: bytes) -> Message:
+    data = json.loads(body)
+
+    if data["enc"] == "b64":
+        data["val"] = base64.b64decode(data["val"])
+
 
     return Message(
-        name=properties.type,
-        value=value,
-        timestamp=properties.timestamp,
-        src=properties.reply_to)
-
+        vers=data["vers"],
+        name=data["name"],
+        val=data["val"],
+        ts=data["ts"],
+        enc=data["enc"],
+        meta=data["meta"])
 
 class Uploader:
 
@@ -346,3 +344,4 @@ get = plugin.get
 uploader = Uploader(Path('/run/waggle/uploads'))
 upload = uploader.upload
 upload_file = uploader.upload_file
+
