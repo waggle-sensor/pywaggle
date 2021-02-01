@@ -26,27 +26,6 @@ logger = logging.getLogger(__name__)
 logging.getLogger('pika').setLevel(logging.CRITICAL)
 
 
-# this wrapper around to distinguish ndarray from other types
-class Image:
-
-    def __init__(self, data):
-        self.data = data
-
-
-def convert_numpy_image_to_png(a):
-    from PIL import Image
-    from io import BytesIO
-    import numpy as np
-    img = Image.fromarray(np.uint8(a), 'RGB')
-    with BytesIO() as buf:
-        img.save(buf, 'png')
-        return buf.getvalue()
-
-
-def convert_png_to_numpy_image(a):
-    raise NotImplementedError()
-
-
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
 # We don't want any surprises in terms of accuraccy 
 try:
@@ -58,8 +37,8 @@ except ImportError:
 
 class Message(NamedTuple):
     name: str
-    val: Any
-    ts: int
+    value: Any
+    timestamp: int
     meta: dict
 
 
@@ -78,30 +57,6 @@ class PluginConfig(NamedTuple):
     password: str
     host: str
     port: int
-
-
-def parse_version_string(s: str) -> PluginVersion:
-    m = re.match(r'(\d+)\.(\d+)\.(\d+)$', s)
-    if m is None:
-        raise ValueError(f'Invalid version string {s}.')
-    return PluginVersion(
-        major=int(m.group(1)),
-        minor=int(m.group(2)),
-        patch=int(m.group(3)))
-
-
-def get_plugin_info_from_env() -> PluginConfig:
-    return PluginConfig(
-        name=os.environ.get('WAGGLE_PLUGIN_NAME', ''),
-        id=int(os.environ.get('WAGGLE_PLUGIN_ID', 0)),
-        version=parse_version_string(
-            os.environ.get('WAGGLE_PLUGIN_VERSION', '0.0.0')),
-        instance=int(os.environ.get('WAGGLE_PLUGIN_INSTANCE', 0)),
-        username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'plugin'),
-        password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'plugin'),
-        host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
-        port=int(os.environ.get('WAGGLE_PLUGIN_PORT', 5672)),
-    )
 
 
 class Plugin:
@@ -150,7 +105,7 @@ class Plugin:
             timestamp = time_ns()
         if scope is None:
             scope = 'all'
-        msg = Message(name=name, val=value, ts=timestamp, meta={})
+        msg = Message(name=name, value=value, timestamp=timestamp, meta={})
         logger.debug('adding message to outgoing queue: %s', msg)
         self.outgoing_queue.put((scope, msg), timeout=timeout)
 
@@ -239,24 +194,19 @@ class Plugin:
 
 def message_to_amqp(msg: Message) -> bytes:
     # pack metadata into standard amqp message properties
-    tmpval=msg.val
+    tmpval = msg.value
     enc = ""
-    if isinstance(msg.val, (bytes, bytearray)):
+    if isinstance(msg.value, (bytes, bytearray)):
         enc = "b64"
-        tmpval = base64.b64encode(msg.val).decode("ascii")
+        tmpval = base64.b64encode(msg.value).decode()
 
-    
-    
-    data = json.dumps({
+    return json.dumps({
         "name": msg.name,
-        "ts": msg.ts,
+        "ts": msg.timestamp,
         "val": tmpval,
         "meta": msg.meta,
-	"enc": enc
-    } )
-
-
-    return data
+	    "enc": enc
+    })
 
 
 def amqp_to_message(body: bytes) -> Message:
@@ -267,8 +217,8 @@ def amqp_to_message(body: bytes) -> Message:
 
     return Message(
         name=data["name"],
-        val=data["val"],
-        ts=data["ts"],
+        value=data["val"],
+        timestamp=data["ts"],
         meta=data["meta"])
 
 class Uploader:
@@ -330,8 +280,29 @@ def write_file_with_sha1sum(path, obj):
             f.write(chunk)
     return h.hexdigest()
 
+
+def parse_version_string(s: str) -> PluginVersion:
+    m = re.match(r'(\d+)\.(\d+)\.(\d+)$', s)
+    if m is None:
+        raise ValueError(f'Invalid version string {s}.')
+    return PluginVersion(
+        major=int(m.group(1)),
+        minor=int(m.group(2)),
+        patch=int(m.group(3)))
+
+
 # define global default instance of Plugin
-plugin = Plugin(get_plugin_info_from_env())
+plugin = Plugin(PluginConfig(
+    name=os.environ.get('WAGGLE_PLUGIN_NAME', ''),
+    id=int(os.environ.get('WAGGLE_PLUGIN_ID', 0)),
+    version=parse_version_string(
+        os.environ.get('WAGGLE_PLUGIN_VERSION', '0.0.0')),
+    instance=int(os.environ.get('WAGGLE_PLUGIN_INSTANCE', 0)),
+    username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'plugin'),
+    password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'plugin'),
+    host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
+    port=int(os.environ.get('WAGGLE_PLUGIN_PORT', 5672)),
+))
 init = plugin.init
 stop = plugin.stop
 subscribe = plugin.subscribe
@@ -339,6 +310,6 @@ publish = plugin.publish
 get = plugin.get
 
 # define global default instance of Uploader
-uploader = Uploader(Path('/run/waggle/uploads'))
+uploader = Uploader(Path(os.environ.get("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
 upload = uploader.upload
 upload_file = uploader.upload_file

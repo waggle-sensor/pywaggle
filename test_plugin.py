@@ -73,26 +73,26 @@ class TestMessage(unittest.TestCase):
         test_cases = [
             plugin.Message(
                 name='env.temperature.htu21d',
-                val=10,
-                ts=1602704769215113000,
+                value=10,
+                timestamp=1602704769215113000,
                 meta={},
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
-                val=21.2,
-                ts=1602704769215113000,
+                value=21.2,
+                timestamp=1602704769215113000,
                 meta={},
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
-                val=b'some binary data',
-                ts=1602704769215113000,
+                value=b'some binary data',
+                timestamp=1602704769215113000,
                 meta={},
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
-                val='some string data',
-                ts=1602704769215113000,
+                value='some string data',
+                timestamp=1602704769215113000,
                 meta={
                     "id": "meta-test-id"
                 },
