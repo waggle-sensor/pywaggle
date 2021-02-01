@@ -73,32 +73,34 @@ class TestMessage(unittest.TestCase):
         test_cases = [
             plugin.Message(
                 name='env.temperature.htu21d',
-                value=10,
-                timestamp=1602704769215113000,
-                src='test:0.0.1',
+                val=10,
+                ts=1602704769215113000,
+                meta={},
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
-                value=21.2,
-                timestamp=1602704769215113000,
-                src='test:0.0.1',
+                val=21.2,
+                ts=1602704769215113000,
+                meta={},
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
-                value=b'some binary data',
-                timestamp=1602704769215113000,
-                src='test:0.0.1',
+                val=b'some binary data',
+                ts=1602704769215113000,
+                meta={},
             ),
             plugin.Message(
                 name='env.temperature.htu21d',
-                value='some binary data',
-                timestamp=1602704769215113000,
-                src='test:0.0.1',
+                val='some string data',
+                ts=1602704769215113000,
+                meta={
+                    "id": "meta-test-id"
+                },
             )
         ]
 
         for msg in test_cases:
-            out = plugin.amqp_to_message(*plugin.message_to_amqp(msg))
+            out = plugin.amqp_to_message(plugin.message_to_amqp(msg))
             self.assertEqual(msg, out)
 
 if __name__ == '__main__':
