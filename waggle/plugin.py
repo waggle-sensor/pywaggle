@@ -5,7 +5,7 @@
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
 # ANL:waggle-license
-import simplejson as json
+import json
 import logging
 import base64
 import os
@@ -57,11 +57,9 @@ except ImportError:
 
 
 class Message(NamedTuple):
-    vers: str
     name: str
     val: Any
     ts: int
-    enc: str
     meta: dict
 
 
@@ -152,7 +150,7 @@ class Plugin:
             timestamp = time_ns()
         if scope is None:
             scope = 'all'
-        msg = Message(vers = "1.0", name=name, val=value, ts=timestamp, enc=None, meta=None)
+        msg = Message(name=name, val=value, ts=timestamp, meta={})
         logger.debug('adding message to outgoing queue: %s', msg)
         self.outgoing_queue.put((scope, msg), timeout=timeout)
 
@@ -242,16 +240,19 @@ class Plugin:
 def message_to_amqp(msg: Message) -> bytes:
     # pack metadata into standard amqp message properties
     tmpval=msg.val
-    if msg.enc == "b64":
-        tmpval = base64.b64encode(msg.val)
+    enc = ""
+    if isinstance(msg.val, (bytes, bytearray)):
+        enc = "b64"
+        tmpval = base64.b64encode(msg.val).decode("ascii")
 
+    
+    
     data = json.dumps({
-        "vers": "1.0",
         "name": msg.name,
         "ts": msg.ts,
         "val": tmpval,
-        "enc": msg.enc,
         "meta": msg.meta,
+	"enc": enc
     } )
 
 
@@ -264,13 +265,10 @@ def amqp_to_message(body: bytes) -> Message:
     if data["enc"] == "b64":
         data["val"] = base64.b64decode(data["val"])
 
-
     return Message(
-        vers=data["vers"],
         name=data["name"],
         val=data["val"],
         ts=data["ts"],
-        enc=data["enc"],
         meta=data["meta"])
 
 class Uploader:
@@ -344,4 +342,3 @@ get = plugin.get
 uploader = Uploader(Path('/run/waggle/uploads'))
 upload = uploader.upload
 upload_file = uploader.upload_file
-

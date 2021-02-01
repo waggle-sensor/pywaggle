@@ -72,37 +72,29 @@ class TestMessage(unittest.TestCase):
     def test_message_invert(self):
         test_cases = [
             plugin.Message(
-                vers="1.0",
                 name='env.temperature.htu21d',
                 val=10,
                 ts=1602704769215113000,
-                enc=None,
-                meta=None,
+                meta={},
             ),
             plugin.Message(
-                vers="1.0",
                 name='env.temperature.htu21d',
                 val=21.2,
                 ts=1602704769215113000,
-                enc=None,
-                meta=None,
+                meta={},
             ),
             plugin.Message(
-                vers="1.0",
                 name='env.temperature.htu21d',
                 val=b'some binary data',
                 ts=1602704769215113000,
-                enc="b64",
-                meta=None,
+                meta={},
             ),
             plugin.Message(
-                vers="1.0",
                 name='env.temperature.htu21d',
-                val='some binary data',
+                val='some string data',
                 ts=1602704769215113000,
-                enc=None,
                 meta={
-                    "id": "omars-meta-test"
+                    "id": "meta-test-id"
                 },
             )
         ]
@@ -113,4 +105,3 @@ class TestMessage(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
