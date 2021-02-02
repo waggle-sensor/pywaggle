@@ -5,6 +5,7 @@
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
 # ANL:waggle-license
+import waggle.message as message
 import json
 import logging
 import base64
@@ -33,13 +34,6 @@ try:
 except ImportError:
     def time_ns():
         return int(time.time() * 1e9)
-
-
-class Message(NamedTuple):
-    name: str
-    value: Any
-    timestamp: int
-    meta: dict
 
 
 class PluginVersion(NamedTuple):
@@ -100,12 +94,12 @@ class Plugin:
     def subscribe(self, *topics):
         self.subscribe_queue.put(topics)
 
-    def publish(self, name, value, timestamp=None, scope=None, timeout=None):
+    def publish(self, name, value, timestamp=None, meta={}, scope=None, timeout=None):
         if timestamp is None:
             timestamp = time_ns()
         if scope is None:
             scope = 'all'
-        msg = Message(name=name, value=value, timestamp=timestamp, meta={})
+        msg = message.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug('adding message to outgoing queue: %s', msg)
         self.outgoing_queue.put((scope, msg), timeout=timeout)
 
@@ -139,7 +133,7 @@ class Plugin:
 
         def subscriber_callback(ch, method, properties, body):
             try:
-                msg = amqp_to_message(body)
+                msg = message.load(body)
             except TypeError:
                 logger.debug('unsupported message type: %s %s', properties, body)
                 return
@@ -166,7 +160,7 @@ class Plugin:
                 except Empty:
                     break
                 properties = pika.BasicProperties(delivery_mode=2)
-                body = message_to_amqp(msg)
+                body = message.dump(msg)
                 logger.debug('publishing message to rabbitmq: %s', msg)
                 channel.basic_publish(
                     exchange='to-validator',
@@ -191,35 +185,6 @@ class Plugin:
         logger.debug('starting rabbitmq processing loop')
         channel.start_consuming()
 
-
-def message_to_amqp(msg: Message) -> bytes:
-    # pack metadata into standard amqp message properties
-    tmpval = msg.value
-    enc = ""
-    if isinstance(msg.value, (bytes, bytearray)):
-        enc = "b64"
-        tmpval = base64.b64encode(msg.value).decode()
-
-    return json.dumps({
-        "name": msg.name,
-        "ts": msg.timestamp,
-        "val": tmpval,
-        "meta": msg.meta,
-	    "enc": enc
-    })
-
-
-def amqp_to_message(body: bytes) -> Message:
-    data = json.loads(body)
-
-    if data["enc"] == "b64":
-        data["val"] = base64.b64decode(data["val"])
-
-    return Message(
-        name=data["name"],
-        value=data["val"],
-        timestamp=data["ts"],
-        meta=data["meta"])
 
 class Uploader:
 
