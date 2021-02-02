@@ -18,6 +18,9 @@ class TestPlugin(unittest.TestCase):
         plugin.publish('test.int', 1)
         plugin.publish('test.float', 2.0)
         plugin.publish('test.bytes', b'three')
+        plugin.publish('cows.total', 391, meta={
+            "camera": "bottom_left",
+        })
     
     def test_get(self):
         plugin.subscribe('raw.#')
@@ -66,42 +69,6 @@ class TestUploader(unittest.TestCase):
 
         shutil.rmtree('.testdata', ignore_errors=True)
 
-
-class TestMessage(unittest.TestCase):
-
-    def test_message_invert(self):
-        test_cases = [
-            plugin.Message(
-                name='env.temperature.htu21d',
-                value=10,
-                timestamp=1602704769215113000,
-                meta={},
-            ),
-            plugin.Message(
-                name='env.temperature.htu21d',
-                value=21.2,
-                timestamp=1602704769215113000,
-                meta={},
-            ),
-            plugin.Message(
-                name='env.temperature.htu21d',
-                value=b'some binary data',
-                timestamp=1602704769215113000,
-                meta={},
-            ),
-            plugin.Message(
-                name='env.temperature.htu21d',
-                value='some string data',
-                timestamp=1602704769215113000,
-                meta={
-                    "id": "meta-test-id"
-                },
-            )
-        ]
-
-        for msg in test_cases:
-            out = plugin.amqp_to_message(plugin.message_to_amqp(msg))
-            self.assertEqual(msg, out)
 
 if __name__ == '__main__':
     unittest.main()
