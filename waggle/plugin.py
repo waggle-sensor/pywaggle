@@ -159,7 +159,9 @@ class Plugin:
                     scope, msg = self.outgoing_queue.get_nowait()
                 except Empty:
                     break
-                properties = pika.BasicProperties(delivery_mode=2)
+                properties = pika.BasicProperties(
+                    delivery_mode=2,
+                    user_id=self.connection_parameters.credentials.username)
                 body = message.dump(msg)
                 logger.debug('publishing message to rabbitmq: %s', msg)
                 channel.basic_publish(
