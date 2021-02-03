@@ -24,7 +24,7 @@ def dump(msg: Message) -> bytes:
         "val": tmpval,
         "meta": msg.meta,
 	    "enc": enc
-    })
+    }, separators=(",", ":"))
 
 
 def load(body: bytes) -> Message:
