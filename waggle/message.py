@@ -11,26 +11,27 @@ class Message(NamedTuple):
 
 
 def dump(msg: Message) -> bytes:
-    # pack metadata into standard amqp message properties
-    tmpval = msg.value
-    enc = ""
-    if isinstance(msg.value, (bytes, bytearray)):
-        enc = "b64"
-        tmpval = base64.b64encode(msg.value).decode()
-
-    return json.dumps({
+    payload = {
         "name": msg.name,
         "ts": msg.timestamp,
-        "val": tmpval,
         "meta": msg.meta,
-	    "enc": enc
-    }, separators=(",", ":"))
+    }
+
+    # binary data is encoded to base64 by default. all other
+    # data is shipped as-is for now.
+    if isinstance(msg.value, (bytes, bytearray)):
+        payload["enc"] = "b64"
+        payload["val"] = base64.b64encode(msg.value).decode()
+    else:
+        payload["val"] = msg.value
+
+    return json.dumps(payload, separators=(",", ":"))
 
 
 def load(body: bytes) -> Message:
     data = json.loads(body)
 
-    if data["enc"] == "b64":
+    if data.get("enc") == "b64":
         data["val"] = base64.b64decode(data["val"])
 
     return Message(
