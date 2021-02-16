@@ -18,7 +18,7 @@ The current wire format implementation is a JSON payload with fields:
 
 * `ts`. nanoseconds since epoch (int64)
 * `name`: name of measurement (string)
-* `value`: value of measurement (any JSON encodable type)
+* `val`: value of measurement (any JSON encodable type)
 * `meta`: metadata tags (map[str]str)
 * `enc`: optional value encoding (either ommited or "b64" when binary encoded to base64)
 
@@ -28,7 +28,7 @@ We show a couple reference examples here.
 {
     "ts": 1613485750303896000,
     "name": "env.temp.htu21d",
-    "value": 23.1,
+    "val": 23.1,
     "meta": {
         "plugin": "metsense:1.0.3"
     }
@@ -39,7 +39,7 @@ We show a couple reference examples here.
 {
     "ts": 1613485750303896000,
     "name": "raw.htu21d",
-    "value": "AQIDBA==",
+    "val": "AQIDBA==",
     "meta": {
         "plugin": "metsense:1.0.3"
     },
