@@ -1,5 +1,9 @@
 # Writing a plugin
 
+In this guide, we'll walk through writing a basic plugin and exploring some of the functionality provided by pywaggle.
+
+That being said, we do want to emphasize that pywaggle is designed to make it easy to interface _existing_ Python code with the [Waggle](https://github.com/waggle-sensor/waggle) stack. To a first approximation, pywaggle aims to augment print statements with publish statements.
+
 ## What is a plugin?
 
 A plugin is a self-contained program which typically reads sensors, audio or video data, does some processing and finally publishes results derived from that data.
@@ -7,8 +11,6 @@ A plugin is a self-contained program which typically reads sensors, audio or vid
 <img width="600px" src="./images/plugin-overview.svg">
 
 The most basic example of a plugin is one which simply reads and publishes a values from a sensor. A more complex plugin could publish the number of cars seen in a video stream using a deep learning model.
-
-Finally, pywaggle is designed to make it easy to instrument _existing_ Python code to interface with the [Waggle](https://github.com/waggle-sensor/waggle) ecosystem. Approximately, pywaggle aims to augment print statements with publish statements.
 
 ## Basic example
 

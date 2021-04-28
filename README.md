@@ -2,7 +2,7 @@
 
 ![CI/CD](https://github.com/waggle-sensor/pywaggle/workflows/CI/CD/badge.svg)
 
-pywaggle is a Python module for implementing and interfacing with [Waggle](https://github.com/waggle-sensor/waggle) plugins and system services.
+pywaggle is a Python module for implementing [Waggle](https://github.com/waggle-sensor/waggle) plugins and system services.
 
 ## Installation Guides
 
