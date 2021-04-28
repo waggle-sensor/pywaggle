@@ -83,13 +83,25 @@ while True:
     print("Another plugin published my.sensor.name value", msg.value)
 ```
 
-The subscribe function also accepts multiple names. So, if you have mutiple sensors you wanted to subscribe to, you can write:
+In the case you need multiple multiple measurements, you can simply use:
 
 ```python
 plugin.subscribe("my.sensor.name1", "my.sensor.name2", "my.sensor.name3")
 ```
 
-Finally, the subscribe function can match two kinds of wildcard patterns. Measurement names are treated as "segments" broken up by a dot and we can match various segments using the star and hash operators.
+To differentiate the results, you can use the message name:
+
+```python
+msg = plugin.get()
+if msg.name == "my.sensor.name1":
+    # do something
+elif msg.name == "my.sensor.name2":
+    # do something else
+```
+
+## More about the subscribe function
+
+The subscribe function can match two kinds of wildcard patterns. Measurement names are treated as "segments" broken up by a dot and we can match various segments using the star and hash operators.
 
 First, we can match a single wildcard segment using the "my.sensor.*" pattern. This will match all measurements with exactly three segments and whose first segment is "my", second segment is "sensor" and third segment can be anything.
 
