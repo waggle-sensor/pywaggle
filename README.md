@@ -2,23 +2,20 @@
 
 ![CI/CD](https://github.com/waggle-sensor/pywaggle/workflows/CI/CD/badge.svg)
 
-This module provides abstractions which simplify the design of scripts and
-plugins running on the [Waggle platform](https://github.com/waggle-sensor/waggle).
+pywaggle is a Python module for implementing and interfacing with [Waggle](https://github.com/waggle-sensor/waggle) plugins and system services.
 
-## Installation
+## Installation Guides
 
-pywaggle expects Python 3.6 or later. To install, please run:
+pywaggle requires Python 3.6 or later. To install core pywaggle module, please run:
 
 ```sh
 pip3 install git+https://github.com/waggle-sensor/pywaggle
 ```
 
-This will provide install all dependencies to provide core functionality. Additionally,
-pywaggle can leverages other optional packages to provide more functionality:
+pywaggle provides the following additional functionality if these modules are installed:
 
-* `cv2`. Allow loading of images and video data.
+* [opencv-python](https://pypi.org/project/opencv-python/`). Allows loading of image / video data.
 
-## Documentation and Examples
+## Usage Guides
 
-Documentation and examples for each core submodule is indexed
-[here](https://github.com/waggle-sensor/pywaggle/blob/master/waggle).
+* [Writing a plugin](./docs/writing-a-plugin.md)
