@@ -10,7 +10,7 @@ A plugin is a self-contained program which typically reads sensors, audio or vid
 
 <img width="600px" src="./images/plugin-overview.svg">
 
-The most basic example of a plugin is one which simply reads and publishes a values from a sensor. A more complex plugin could publish the number of cars seen in a video stream using a deep learning model.
+The most basic example of a plugin is one which simply reads and publishes a value from a sensor. A more complex plugin could publish the number of cars seen in a video stream using a deep learning model.
 
 ## Basic example
 
@@ -69,7 +69,9 @@ _Note: Timestamps are expected to be in nanoseconds since epoch. In Python 3.7+,
 
 ## Subscribing to other measurements
 
-pywaggle also provides the ability to subscribe to other measurements.
+Plugins can subscribe to measurements published by other plugins running on the same node. This allows users to leverage existing work or compose a larger application of multiple independent components.
+
+The followng basic example simply waits for measurements named "my.sensor.name" and prints the value it received.
 
 ```python
 from waggle.plugin import plugin
@@ -164,7 +166,7 @@ with open_data_source("image_bottom") as cam:
 
 ## Seeing the internal details
 
-If we run the basic example, the only thing we'll see is the message "publishing a value!" every second. If you need to see more details, pywaggle is design to easily interface with Python's standard logging module. To enable debug logging, simply make the following additions:
+If we run the basic example, the only thing we'll see is the message "publishing a value!" every second. If you need to see more details, pywaggle is designed to easily interface with Python's standard logging module. To enable debug logging, simply make the following additions:
 
 ```python
 from waggle import plugin
@@ -208,4 +210,4 @@ These are telling us that our messages are being queued up in an outgoing queue 
 
 You'll also see a number of messages related to rabbitmq.
 
-These are simply indicating the our plugin is waiting to connect to the Waggle ecosystem. This is normal when testing a standalone plugin without the rest of the Waggle stack. Plugin will simply queue up measurements in-memory until they exit.
+These are simply indicating the our plugin is waiting to connect to the Waggle ecosystem. This is normal when testing a standalone plugin without the rest of the Waggle stack. Plugins will simply queue up measurements in-memory until they exit.
