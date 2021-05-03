@@ -14,7 +14,7 @@ The most basic example of a plugin is one which simply reads and publishes a val
 
 ## Basic example
 
-_Note: In this guide, we currently only cover writing the plugin code. We still are updating the docs on building and running a plugin inside [Virtual Waggle](https://github.com/waggle-sensor/virtual-waggle) and natively. As such, this guide will help you structure and run your code locally but not against the rest of platform, yet._
+_Note: In this guide, we currently only cover writing the plugin __code__. We still are updating the docs on building and running a plugin inside [Virtual Waggle](https://github.com/waggle-sensor/virtual-waggle) and natively. As such, this guide will help you structure and run your code locally but not against the rest of platform, yet._
 
 We'll start by writing a plugin which simply publishes the value 123 as
 measurement `my.sensor.name` every second.
