@@ -1,6 +1,7 @@
+import logging
 import numpy as np
 from urllib.request import urlopen
-from threading import Thread
+from threading import Thread, Event
 from queue import Queue, Empty
 import time
 import os
@@ -10,15 +11,12 @@ import json
 import random
 import re
 
+logger = logging.getLogger(__name__)
+
 try:
     import cv2
 except ImportError:
-    print('WARNING cv2 module not found. pywaggle requires this to capture image and video data.')
-
-
-WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))
-
-config = json.loads(WAGGLE_DATA_CONFIG_PATH.read_text())
+    logger.warning('cv2 module not found. pywaggle requires this to capture image and video data.')
 
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
@@ -26,6 +24,7 @@ config = json.loads(WAGGLE_DATA_CONFIG_PATH.read_text())
 try:
     from time import time_ns
 except ImportError:
+    logger.warning('using backwards compatible implementation of time_ns')
     def time_ns():
         return int(time.time() * 1e9)
 
@@ -75,16 +74,18 @@ class ImageHandler:
         pass
 
 
-def video_worker(cap, out, pixel_format='rgb'):
-    while True:
-        ok, bgr_img = cap.read()
-        if ok:
-            img = cvtColor(bgr_img, pixel_format)
-            # think about correct behavior for this
-            # should expected the behavior be to make the latest
-            out.put_nowait((time_ns(), img))
-        else:
-            time.sleep(0.01)
+def video_worker(handler):
+    try:
+        while not handler.quit.is_set():
+            ok, bgr_img = handler.cap.read()
+            if not ok:
+                break
+            img = cvtColor(bgr_img, handler.pixel_format)
+            handler.queue.put_nowait((time_ns(), img))
+    finally:
+        handler.cap.release()
+        handler.released.set()
+
 
 # TODO We need to use a flexible model where the data returned is
 # extensible. For example, serial data won't really have a good
@@ -94,15 +95,17 @@ def video_worker(cap, out, pixel_format='rgb'):
 class VideoHandler:
 
     def __init__(self, query, url, pixel_format='rgb'):
-        cap = cv2.VideoCapture(url)
-
-        if not cap.isOpened():
+        self.pixel_format = pixel_format
+        self.cap = cv2.VideoCapture(url)
+        if not self.cap.isOpened():
             raise RuntimeError(f'could not open camera at "{url}".')
-
-        self.queue = Queue()
-
-        worker = Thread(target=video_worker, args=(
-            cap, self.queue, pixel_format), daemon=True)
+        self.queue = Queue(8)
+        self.quit = Event()
+        self.released = Event()
+        # NOTE(sean) no further mutation can be done on VideoHandler state. all
+        # interaction with cap *must* be done in the worker thread or via queue
+        # and quit primitives
+        worker = Thread(target=video_worker, args=(self,), daemon=True)
         worker.start()
 
     def get(self, timeout=None):
@@ -115,7 +118,17 @@ class VideoHandler:
         return self
 
     def __exit__(self, *exc):
-        pass
+        self.quit.set()
+        self.released.wait() # <- wait for cleanup in worker thread
+
+
+WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))
+
+try:
+    config = json.loads(WAGGLE_DATA_CONFIG_PATH.read_text())
+except FileNotFoundError:
+    logger.warning('could not find data config file %s', WAGGLE_DATA_CONFIG_PATH)
+    config = []
 
 
 def dict_is_subset(a, b):
