@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from urllib.request import urlopen
 from threading import Thread, Event
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 import time
 import os
 import socket
@@ -81,7 +81,22 @@ def video_worker(handler):
             if not ok:
                 break
             img = cvtColor(bgr_img, handler.pixel_format)
-            handler.queue.put_nowait((time_ns(), img))
+            item = (time_ns(), img)
+            
+            # attempt to add an item to the queue
+            try:
+                handler.queue.put_nowait(item)
+                continue
+            except Full:
+                logger.warning("video frame queue full. evicting oldest frame...")
+            # evict an item from queue
+            try:
+                handler.queue.get_nowait()
+            except Empty:
+                pass
+            # queue should have space to add now. (assuming this
+            # is the only producer adding to this queue)
+            handler.queue.put_nowait(item)
     finally:
         handler.cap.release()
         handler.released.set()
