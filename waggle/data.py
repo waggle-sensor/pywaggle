@@ -88,7 +88,7 @@ def video_worker(handler):
                 handler.queue.put_nowait(item)
                 continue
             except Full:
-                logger.warning("video frame queue full. evicting oldest frame...")
+                logger.debug("video frame queue full. evicting oldest frame...")
             # evict an item from queue
             try:
                 handler.queue.get_nowait()
