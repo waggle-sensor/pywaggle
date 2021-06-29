@@ -124,6 +124,7 @@ pywaggle provides a simple abstraction to cameras and microphones.
 ```python
 from waggle import plugin
 from waggle.data.vision import Camera
+import numpy as np
 import time
 
 plugin.init()
