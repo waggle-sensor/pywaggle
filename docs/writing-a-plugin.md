@@ -115,59 +115,77 @@ First, we can match a single wildcard segment using the "my.sensor.*" pattern. T
 
 Second, we can match zero or more segments using the "my.#" pattern. This will match all measurements whose first segment is "my" like "my.sensor", "my.sensor.name" or "my.sensor.name.is.cool".
 
-## Accessing image data sources
+## Working with camera and microphone data
 
-_Warning: This may change as we integrate more data sources._
+pywaggle provides a simple abstraction to cameras and microphones.
 
-pywaggle provides an interface to access various data sources on the node. In this example, we'll look at how to get image from a camera.
-
-```python
-from waggle import plugin
-from waggle.data import open_data_source
-from time import sleep
-import cv2
-
-plugin.init()
-
-with open_data_source("image_bottom") as cam:
-    while True:
-        sleep(60)
-        timestamp, image = cam.get()
-        cv2.imwrite("sample.jpg", image)
-        plugin.upload_file("sample.jpg")
-```
-
-Similarly, if we need a video stream for applications like estimating traffic flow, we can request a video by changing the main loop to:
-
-```python
-# using video instead of image
-with open_data_source("video_bottom") as cam:
-    while True:
-        timestamp, frame = cam.get()
-        # process video frame
-```
-
-## Uploading data
-
-Let's say we wanted to augment the previous example to upload a sample image every 5m. We can save
-the image using OpenCV and use plugin.upload_file function as follows:
+### Camera image capture example
 
 ```python
 from waggle import plugin
-from waggle.data import open_data_source
-from time import sleep
-import cv2
+from waggle.data.vision import Camera
+import time
 
 plugin.init()
 
-with open_data_source("image_bottom") as cam:
-    while True:
-        sleep(300)
-        timestamp, image = cam.get()
-        # 1. save image to sample.jpg
-        cv2.imwrite("sample.jpg", image)
-        # 2. queue up the image to be upload
-        plugin.upload_file("sample.jpg")
+# open local webcam
+camera = Camera()
+
+# cameras can also be opened by id when deploying to a node:
+# camera = Camera("bottom")
+
+# periodically capture a frame, compute some stats and upload sample
+while True:
+    sample = camera.snapshot()
+
+    mean = np.mean(sample.data)
+    plugin.publish("image.mean", mean)
+
+    sample.save("sample.jpg")
+    plugin.upload_file("sample.jpg")
+
+    time.sleep(300)
+```
+
+### Camera video stream example
+
+```python
+from waggle import plugin
+from waggle.data.vision import Camera
+import time
+
+plugin.init()
+
+# open local webcam
+camera = Camera()
+
+# cameras can also be opened by id when deploying to a node:
+# camera = Camera("bottom")
+
+for sample in camera.stream():
+    count = count_cars_in_image(sample.data)
+    if count > 10:
+        sample.save("cars.jpg")
+        plugin.upload_file("cars.jpg")
+```
+
+### Microphone example
+
+```python
+from waggle import plugin
+from waggle.data.audio import Microphone
+import time
+
+plugin.init()
+
+microphone = Microphone()
+
+# record and upload a 10s sample periodically
+while True:
+    sample = microphone.record(10)
+    sample.save("sample.ogg")
+    plugin.upload_file("sample.ogg")
+    time.sleep(300)
 ```
 
 ## Seeing the internal details
