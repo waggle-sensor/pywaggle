@@ -51,7 +51,7 @@ class Camera:
     def __init__(self, device=0):
         self.device = resolve_device(device)
 
-    def snapshot(self, dropframes=5):
+    def snapshot(self, dropframes=0):
         with VideoCapture(self.device) as capture:
             # drop first few frames to improve exposure
             for _ in range(dropframes):
