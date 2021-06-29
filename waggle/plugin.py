@@ -152,7 +152,7 @@ class Plugin:
                 for topic in topics:
                     logger.debug('subscribing to topic "%s"', topic)
                     channel.queue_bind(queue, 'data.topic', topic)
-        
+
         def process_publish_queue():
             while self.running.is_set():
                 try:

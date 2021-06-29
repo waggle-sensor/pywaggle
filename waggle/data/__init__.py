@@ -1,6 +1,6 @@
-from .audio import Microphone, AudioFolder
-from .vision import Camera, ImageFolder
-from .measurements import MeasurementsFile
+# from .audio import Microphone, AudioFolder
+# from .vision import Camera, ImageFolder
+# from .measurements import MeasurementsFile
 
 # Maintaining backwards compatibility for now.
 from .data_shim import open_data_source
