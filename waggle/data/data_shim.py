@@ -29,21 +29,6 @@ except ImportError:
         return int(time.time() * 1e9)
 
 
-class RandomHandler:
-
-    def __init__(self, query, **kwargs):
-        pass
-
-    def get(self, timeout=None):
-        return time_ns(), random.random()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc):
-        pass
-
-
 def cvtColor(bgr_img, pixel_format='rgb'):
     if pixel_format == 'rgb':
         return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
@@ -142,7 +127,7 @@ WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/w
 try:
     config = json.loads(WAGGLE_DATA_CONFIG_PATH.read_text())
 except FileNotFoundError:
-    logger.warning('could not find data config file %s', WAGGLE_DATA_CONFIG_PATH)
+    logger.debug('could not find data config file %s. using empty resource list.', WAGGLE_DATA_CONFIG_PATH)
     config = []
 
 
@@ -164,7 +149,6 @@ def find_match(query):
 
 
 handlers = {
-    'random': RandomHandler,
     'image': ImageHandler,
     'video': VideoHandler,
 }
