@@ -189,6 +189,48 @@ while True:
     time.sleep(300)
 ```
 
+### AudioFolder and ImageFolder for testing
+
+We provide a couple simple classes to provide audio and image data from a directory for testing.
+
+In the following example, we assume we have directories:
+
+```txt
+audio_data/
+    example1.ogg
+    example2.ogg
+    ...
+image_data/
+    img1.png
+    cat-7.png
+    example10.jpg
+    ...
+```
+
+We can load up all the audio files in the `audio_data` folder for testing as follows:
+
+```python
+from waggle.data.audio import AudioFolder
+
+dataset = AudioFolder("audio_data")
+
+for sample in dataset:
+    process_data(sample.data)
+
+from waggle.data.vision import ImageFolder
+```
+
+Similarly, we can do something similar for all the image files in the `image_data` folder.
+
+```python
+from waggle.data.vision import ImageFolder
+
+dataset = ImageFolder("image_data")
+
+for sample in dataset:
+    process_image_frame(sample.data)
+```
+
 ## Seeing the internal details
 
 If we run the basic example, the only thing we'll see is the message "publishing a value!" every second. If you need to see more details, pywaggle is designed to easily interface with Python's standard logging module. To enable debug logging, simply make the following additions:
