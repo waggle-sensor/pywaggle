@@ -216,8 +216,6 @@ dataset = AudioFolder("audio_data")
 
 for sample in dataset:
     process_data(sample.data)
-
-from waggle.data.vision import ImageFolder
 ```
 
 Similarly, we can do something similar for all the image files in the `image_data` folder.
