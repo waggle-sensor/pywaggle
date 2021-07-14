@@ -170,6 +170,19 @@ for sample in camera.stream():
         plugin.upload_file("cars.jpg")
 ```
 
+In addition, a prerecorded video file can by played back by providing a Path to Camera as follows:
+
+```python
+from waggle.data.vision import Camera
+from pathlib import Path
+
+camera = Camera(Path("my_cool_video.mp4"))
+
+for sample in camera.stream():
+    count = count_cars_in_image(sample.data)
+    print(count)
+```
+
 ### Microphone example
 
 ```python
