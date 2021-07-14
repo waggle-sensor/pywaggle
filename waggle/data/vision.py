@@ -8,6 +8,7 @@ import os
 import random
 import json
 import re
+from .timestamp import get_timestamp
 
 
 WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))
@@ -21,20 +22,23 @@ def read_device_config(path):
 # TODO use format spec like rgb vs bgr in config file
 class ImageSample(NamedTuple):
     data: numpy.ndarray
+    timestamp: int
 
     def save(self, filename):
         cv2.imwrite(filename, self.data)
 
 
+# TODO(sean) handle various data sources more uniformly
 def resolve_device(device):
-    # non strings are already considered resolved
+    # path like files are converted to strings for opencv
+    if isinstance(device, Path):
+        return str(device.absolute())
+    # objects that are not paths or strings are considered already resolved
     if not isinstance(device, str):
         return device
-    
-    # forward url like devices through
+    # url like strings are considered resolved
     if re.match(r"[A-Za-z0-9]+://", device):
         return device
-
     # otherwise, lookup device in data config
     config = read_device_config(WAGGLE_DATA_CONFIG_PATH)
     section = config.get(device)
@@ -56,18 +60,20 @@ class Camera:
             # drop first few frames to improve exposure
             for _ in range(dropframes):
                 capture.read()
+            timestamp = get_timestamp()
             ok, frame = capture.read()
             if not ok:
                 raise RuntimeError("failed to take snapshot")
-            return ImageSample(frame)
+            return ImageSample(data=frame, timestamp=timestamp)
 
     def stream(self):
         with VideoCapture(self.device) as capture:
             while True:
+                timestamp = get_timestamp()
                 ok, frame = capture.read()
                 if not ok:
                     break
-                yield ImageSample(frame)
+                yield ImageSample(data=frame, timestamp=timestamp)
 
 
 @contextmanager
@@ -95,7 +101,8 @@ class ImageFolder:
     
     def __getitem__(self, i):
         data = cv2.imread(str(self.files[i]))
-        return ImageSample(data)
+        timestamp = Path(self.files[i]).stat().st_mtime_ns
+        return ImageSample(data=data, timestamp=timestamp)
 
     def __repr__(self):
         return f"ImageFolder{self.files!r}"
