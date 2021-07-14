@@ -4,11 +4,13 @@ import soundcard
 import soundfile
 from typing import NamedTuple
 import random
+from .timestamp import get_timestamp
 
 
 class AudioSample(NamedTuple):
     data: numpy.ndarray
     samplerate: int
+    timestamp: int
 
     def save(self, filename):
         soundfile.write(filename, self.data, self.samplerate)
@@ -23,11 +25,12 @@ class Microphone:
         self.name = name
     
     def record(self, duration):
+        timestamp = get_timestamp()
         data = self.microphone.record(
             samplerate=self.samplerate,
             numframes=int(duration * self.samplerate),
             channels=self.channels)
-        return AudioSample(data, self.samplerate)
+        return AudioSample(data, self.samplerate, timestamp=timestamp)
 
 
 class AudioFolder:
@@ -44,7 +47,8 @@ class AudioFolder:
     
     def __getitem__(self, i):
         data, samplerate = soundfile.read(str(self.files[i]), always_2d=True)
-        return AudioSample(data, samplerate)
+        timestamp = Path(self.files[i]).stat().st_mtime_ns
+        return AudioSample(data, samplerate, timestamp=timestamp)
 
     def __repr__(self):
         return f"AudioFolder{self.files!r}"
