@@ -5,4 +5,4 @@
 #          http://www.wa8.gl
 # ANL:waggle-license
 
-__version__ = '0.42.1'
+__version__ = '0.43.0'

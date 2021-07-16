@@ -134,6 +134,7 @@ class ImageFolder:
 
     def __init__(self, root, format=RGB, shuffle=False):
         self.files = sorted(p.absolute() for p in Path(root).glob("*") if p.suffix in self.available_formats)
+        self.format = format
         if shuffle:
             random.shuffle(self.files)
 
@@ -143,7 +144,7 @@ class ImageFolder:
     def __getitem__(self, i):
         data = cv2.imread(str(self.files[i]))
         timestamp = Path(self.files[i]).stat().st_mtime_ns
-        return ImageSample(data=data, timestamp=timestamp, format=format)
+        return ImageSample(data=data, timestamp=timestamp, format=self.format)
 
     def __repr__(self):
         return f"ImageFolder{self.files!r}"
