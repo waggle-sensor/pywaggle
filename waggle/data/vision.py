@@ -1,7 +1,7 @@
 import cv2
 from pathlib import Path
 import numpy
-from typing import NamedTuple
+from typing import Union
 from contextlib import contextmanager
 import time
 import os
@@ -9,6 +9,39 @@ import random
 import json
 import re
 from .timestamp import get_timestamp
+
+
+class BGR:
+    
+    @classmethod
+    def cv2_to_format(cls, data):
+        return data
+    
+    @classmethod
+    def format_to_cv2(cls, data):
+        return data
+
+
+class RGB:
+
+    @classmethod
+    def cv2_to_format(cls, data):
+        return cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+
+    @classmethod
+    def format_to_cv2(cls, data):
+        return cv2.cvtColor(data, cv2.COLOR_RGB2BGR)
+
+
+class HSV:
+
+    @classmethod
+    def cv2_to_format(cls, data):
+        return cv2.cvtColor(data, cv2.COLOR_BGR2HSV)
+
+    @classmethod
+    def format_to_cv2(cls, data):
+        return cv2.cvtColor(data, cv2.COLOR_HSV2BGR)
 
 
 WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))
@@ -20,13 +53,18 @@ def read_device_config(path):
 
 
 # TODO use format spec like rgb vs bgr in config file
-class ImageSample(NamedTuple):
+class ImageSample:
     data: numpy.ndarray
     timestamp: int
+    format: Union[BGR, RGB, HSV]
+
+    def __init__(self, data, timestamp, format):
+        self.format = format
+        self.data = self.format.cv2_to_format(data)
+        self.timestamp = timestamp
 
     def save(self, filename):
-        # NOTE cv2 assumes BGR images, so to save our image we convert back to the orignal format
-        cv2.imwrite(filename, cv2.cvtColor(self.data, cv2.COLOR_RGB2BGR))
+        cv2.imwrite(filename, self.format.format_to_cv2(self.data))
 
 
 # TODO(sean) handle various data sources more uniformly
@@ -50,14 +88,12 @@ def resolve_device(device):
     except KeyError:
         raise KeyError(f"missing .handler.args.url field for device {device!r}.")
 
-def bgr2rgb(data):
-    return cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
-
 
 class Camera:
 
-    def __init__(self, device=0):
+    def __init__(self, device=0, format=RGB):
         self.device = resolve_device(device)
+        self.format = format
 
     def snapshot(self, dropframes=0):
 
@@ -66,19 +102,19 @@ class Camera:
             for _ in range(dropframes):
                 capture.read()
             timestamp = get_timestamp()
-            ok, frame = capture.read()
+            ok, data = capture.read()
             if not ok:
                 raise RuntimeError("failed to take snapshot")
-            return ImageSample(data=bgr2rgb(frame), timestamp=timestamp)
+            return ImageSample(data=data, timestamp=timestamp, format=self.format)
 
     def stream(self):
         with VideoCapture(self.device) as capture:
             while True:
                 timestamp = get_timestamp()
-                ok, frame = capture.read()
+                ok, data = capture.read()
                 if not ok:
                     break
-                yield ImageSample(data=bgr2rgb(frame), timestamp=timestamp)
+                yield ImageSample(data=data, timestamp=timestamp, format=self.format)
 
 
 @contextmanager
@@ -96,7 +132,7 @@ class ImageFolder:
 
     available_formats = {".jpg", ".jpeg", ".png"}
 
-    def __init__(self, root, shuffle=False):
+    def __init__(self, root, format=RGB, shuffle=False):
         self.files = sorted(p.absolute() for p in Path(root).glob("*") if p.suffix in self.available_formats)
         if shuffle:
             random.shuffle(self.files)
@@ -107,7 +143,7 @@ class ImageFolder:
     def __getitem__(self, i):
         data = cv2.imread(str(self.files[i]))
         timestamp = Path(self.files[i]).stat().st_mtime_ns
-        return ImageSample(data=bgr2rgb(data), timestamp=timestamp)
+        return ImageSample(data=data, timestamp=timestamp, format=format)
 
     def __repr__(self):
         return f"ImageFolder{self.files!r}"
