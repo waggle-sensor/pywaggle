@@ -242,6 +242,20 @@ for sample in dataset:
     process_image_frame(sample.data)
 ```
 
+### Advanced: Choosing a color format
+
+By default, the waggle.data.vision submodule uses an [RGB color format](https://en.wikipedia.org/wiki/RGB_color_model). If you need more control, you can specify one of `RGB`, `BGR` or `HSV` to both the `Camera` and `ImageFolder` objects as follows:
+
+```python
+from waggle.data.vision import Camera, ImageFolder, RGB, BGR, HSV
+
+# use BRG data instead of RGB
+camera = Camera(format=BGR)
+
+# use HSV data instead of RGB
+camera = ImageFolder(format=HSV)
+```
+
 ## Seeing the internal details
 
 If we run the basic example, the only thing we'll see is the message "publishing a value!" every second. If you need to see more details, pywaggle is designed to easily interface with Python's standard logging module. To enable debug logging, simply make the following additions:
