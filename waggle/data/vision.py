@@ -56,7 +56,7 @@ def read_device_config(path):
 class ImageSample:
     data: numpy.ndarray
     timestamp: int
-    format: Union[BGR, RGB, HSV]
+    format: Union[BGR, RGB]
 
     def __init__(self, data, timestamp, format):
         self.format = format
