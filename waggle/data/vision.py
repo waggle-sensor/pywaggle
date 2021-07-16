@@ -25,7 +25,8 @@ class ImageSample(NamedTuple):
     timestamp: int
 
     def save(self, filename):
-        cv2.imwrite(filename, self.data)
+        # NOTE cv2 assumes BGR images, so to save our image we convert back to the orignal format
+        cv2.imwrite(filename, cv2.cvtColor(self.data, cv2.COLOR_RGB2BGR))
 
 
 # TODO(sean) handle various data sources more uniformly
@@ -49,6 +50,9 @@ def resolve_device(device):
     except KeyError:
         raise KeyError(f"missing .handler.args.url field for device {device!r}.")
 
+def bgr2rgb(data):
+    return cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+
 
 class Camera:
 
@@ -56,6 +60,7 @@ class Camera:
         self.device = resolve_device(device)
 
     def snapshot(self, dropframes=0):
+
         with VideoCapture(self.device) as capture:
             # drop first few frames to improve exposure
             for _ in range(dropframes):
@@ -64,7 +69,7 @@ class Camera:
             ok, frame = capture.read()
             if not ok:
                 raise RuntimeError("failed to take snapshot")
-            return ImageSample(data=frame, timestamp=timestamp)
+            return ImageSample(data=bgr2rgb(frame), timestamp=timestamp)
 
     def stream(self):
         with VideoCapture(self.device) as capture:
@@ -73,7 +78,7 @@ class Camera:
                 ok, frame = capture.read()
                 if not ok:
                     break
-                yield ImageSample(data=frame, timestamp=timestamp)
+                yield ImageSample(data=bgr2rgb(frame), timestamp=timestamp)
 
 
 @contextmanager
@@ -102,7 +107,7 @@ class ImageFolder:
     def __getitem__(self, i):
         data = cv2.imread(str(self.files[i]))
         timestamp = Path(self.files[i]).stat().st_mtime_ns
-        return ImageSample(data=data, timestamp=timestamp)
+        return ImageSample(data=bgr2rgb(data), timestamp=timestamp)
 
     def __repr__(self):
         return f"ImageFolder{self.files!r}"
