@@ -33,15 +33,15 @@ class RGB:
         return cv2.cvtColor(data, cv2.COLOR_RGB2BGR)
 
 
-class HSV:
+# class HSV:
 
-    @classmethod
-    def cv2_to_format(cls, data):
-        return cv2.cvtColor(data, cv2.COLOR_BGR2HSV)
+#     @classmethod
+#     def cv2_to_format(cls, data):
+#         return cv2.cvtColor(data, cv2.COLOR_BGR2HSV)
 
-    @classmethod
-    def format_to_cv2(cls, data):
-        return cv2.cvtColor(data, cv2.COLOR_HSV2BGR)
+#     @classmethod
+#     def format_to_cv2(cls, data):
+#         return cv2.cvtColor(data, cv2.COLOR_HSV2BGR)
 
 
 WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))

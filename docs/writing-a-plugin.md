@@ -247,13 +247,13 @@ for sample in dataset:
 By default, the waggle.data.vision submodule uses an [RGB color format](https://en.wikipedia.org/wiki/RGB_color_model). If you need more control, you can specify one of `RGB`, `BGR` or `HSV` to both the `Camera` and `ImageFolder` objects as follows:
 
 ```python
-from waggle.data.vision import Camera, ImageFolder, RGB, BGR, HSV
+from waggle.data.vision import Camera, ImageFolder, RGB, BGR
 
 # use BRG data instead of RGB
 camera = Camera(format=BGR)
 
-# use HSV data instead of RGB
-camera = ImageFolder(format=HSV)
+# use BGR data instead of RGB
+camera = ImageFolder(format=BGR)
 ```
 
 ## Seeing the internal details
