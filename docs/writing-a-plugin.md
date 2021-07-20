@@ -14,6 +14,10 @@ A plugin is a self-contained program which typically reads sensors, audio or vid
 
 <img width="600px" src="./images/plugin-overview.svg">
 
+Plugins fit into the wider Waggle infrastructure by being tracked in the Edge Code Repository, deployed to nodes and publishing data to our data repository.
+
+<img width="600px" src="./images/plugin-flow.svg">
+
 The most basic example of a plugin is one which simply reads and publishes a value from a sensor. A more complex plugin could publish the number of cars seen in a video stream using a deep learning model.
 
 ## Basic example
@@ -249,7 +253,7 @@ By default, the waggle.data.vision submodule uses an [RGB color format](https://
 ```python
 from waggle.data.vision import Camera, ImageFolder, RGB, BGR
 
-# use BRG data instead of RGB
+# use BGR data instead of RGB
 camera = Camera(format=BGR)
 
 # use BGR data instead of RGB
