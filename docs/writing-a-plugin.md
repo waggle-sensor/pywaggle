@@ -160,7 +160,7 @@ from pathlib import Path
 camera = Camera(Path("my_cool_video.mp4"))
 ```
 
-### Microphone example
+### Recording audio data
 
 ```python
 from waggle import plugin
