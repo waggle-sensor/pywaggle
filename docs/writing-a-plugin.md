@@ -123,36 +123,7 @@ Second, we can match zero or more segments using the "my.#" pattern. This will m
 
 pywaggle provides a simple abstraction to cameras and microphones.
 
-### Camera image capture example
-
-```python
-from waggle import plugin
-from waggle.data.vision import Camera
-import numpy as np
-import time
-
-plugin.init()
-
-# open local webcam
-camera = Camera()
-
-# cameras can also be opened by id when deploying to a node:
-# camera = Camera("bottom")
-
-# periodically capture a frame, compute some stats and upload sample
-while True:
-    sample = camera.snapshot()
-
-    mean = np.mean(sample.data)
-    plugin.publish("image.mean", mean)
-
-    sample.save("sample.jpg")
-    plugin.upload_file("sample.jpg")
-
-    time.sleep(300)
-```
-
-### Camera video stream example
+### Accessing default webcam example
 
 ```python
 from waggle import plugin
@@ -161,12 +132,10 @@ import time
 
 plugin.init()
 
-# open local webcam
+# open default local camera
 camera = Camera()
 
-# cameras can also be opened by id when deploying to a node:
-# camera = Camera("bottom")
-
+# process samples from video stream
 for sample in camera.stream():
     count = count_cars_in_image(sample.data)
     if count > 10:
@@ -174,17 +143,21 @@ for sample in camera.stream():
         plugin.upload_file("cars.jpg")
 ```
 
-In addition, a prerecorded video file can by played back by providing a Path to Camera as follows:
+Additionally, the Camera class accepts URLs and video files as input. For example:
 
 ```python
-from waggle.data.vision import Camera
+# open an mjpeg-over-http stream
+camera = Camera("http://camera-server/profile1.mjpeg")
+
+# open an rtsp stream
+camera = Camera("rtsp://camera-server/v0.mp4")
+```
+
+```python
 from pathlib import Path
 
+# open a prerecorded video file
 camera = Camera(Path("my_cool_video.mp4"))
-
-for sample in camera.stream():
-    count = count_cars_in_image(sample.data)
-    print(count)
 ```
 
 ### Microphone example
