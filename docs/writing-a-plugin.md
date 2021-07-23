@@ -123,7 +123,7 @@ Second, we can match zero or more segments using the "my.#" pattern. This will m
 
 pywaggle provides a simple abstraction to cameras and microphones.
 
-### Accessing default webcam example
+### Accessing a video stream
 
 ```python
 from waggle import plugin
