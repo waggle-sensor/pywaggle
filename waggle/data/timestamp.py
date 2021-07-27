@@ -3,4 +3,4 @@ try:
 except ImportError:
     from time import time
     def get_timestamp():
-        return int(time.time() * 1e9)
+        return int(time() * 1e9)
