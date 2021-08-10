@@ -38,7 +38,7 @@ cd plugin-hello-world
 
 ### 2. Create main.py file
 
-Create a new file called `main.py` and add the following code:
+Create a new file called `main.py` with the following code:
 
 ```python
 from waggle import plugin
@@ -90,9 +90,9 @@ publishing value 2
 ...
 ```
 
-## Adding "Hello World" plugin packaging
+## Adding "Hello World" plugin packaging info
 
-Now that we have the basic plugin code working, let's prepare this code to be submitted to the Edge Code Repository.
+Now that we have the basic plugin code working, let's prepare this code to be submitted to the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore).
 
 ### 1. Create a Github repo for plugin
 
@@ -100,9 +100,9 @@ First, we need to create a Github repo for our plugin. Go ahead a create one cal
 
 For the purposes of this example, we'll assume our plugin URL is `https://github.com/username/plugin-hello-world`.
 
-### 2. Adding sage.yaml
+### 2. Add sage.yaml
 
-Create and add a new file called `sage.yaml` and add the following:
+Create and add a new file called `sage.yaml` with the following contents:
 
 ```yaml
 name: "hello-world"
@@ -115,9 +115,21 @@ source:
     - "linux/arm/v7"
   url: "https://github.com/username/plugin-hello-world"
   branch: "main"
-  testing:
-    command: ["test.py"]
 ```
+
+This file contains metadata about what your plugin is called, what it's supposed to do and where it lives. It is used by the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore) when submitting plugins.
+
+### 3. Add Dockerfile
+
+Create and add a new file called `Dockerfile` with the following contents:
+
+```dockerfile
+FROM waggle/plugin-base:1.1.0-ml-cuda11.0-amd64
+COPY main.py .
+CMD ["python", "main.py"]
+```
+
+This file defines what base image should be used by a plugin and how it should be run. In more complex examples, additional dependencies may be specified here.
 
 ## More about the publish function
 
