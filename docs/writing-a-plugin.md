@@ -12,20 +12,33 @@ If you'd like to jump ahead to real code, please see the following examples:
 
 A plugin is a self-contained program which typically reads sensors, audio or video data, does some processing and finally publishes results derived from that data.
 
-<img width="600px" src="./images/plugin-overview.svg">
+The most basic example of a plugin is one which simply reads and publishes a value from a sensor. A more complex plugin could publish the number of cars seen in a video stream using a deep learning model.
+
+<img width="600px" src="./images/plugin-basic.svg">
 
 Plugins fit into the wider Waggle infrastructure by being tracked in the Edge Code Repository, deployed to nodes and publishing data to our data repository.
 
-<img width="600px" src="./images/plugin-flow.svg">
+<img width="600px" src="./images/plugin-sage.svg">
 
-The most basic example of a plugin is one which simply reads and publishes a value from a sensor. A more complex plugin could publish the number of cars seen in a video stream using a deep learning model.
+## Writing "Hello World" plugin code
 
-## Basic example
+_Note: In this guide, we currently only cover writing the plugin __code__. We still are updating the docs on building and running a plugin inside [Virtual Waggle](https://github.com/waggle-sensor/virtual-waggle) and natively. As such, this guide will help you structure and run your code locally but not against the rest of platform._
 
-_Note: In this guide, we currently only cover writing the plugin __code__. We still are updating the docs on building and running a plugin inside [Virtual Waggle](https://github.com/waggle-sensor/virtual-waggle) and natively. As such, this guide will help you structure and run your code locally but not against the rest of platform, yet._
+We'll walk through writing a "hello world" plugin which simply publishes a increasing counter as
+measurement `hello.world.counter` every second.
 
-We'll start by writing a plugin which simply publishes the value 123 as
-measurement `my.sensor.name` every second.
+### 1. Create empty plugin directory
+
+First, we'll create a new empty directory which we'll write our plugin in.
+
+```sh
+mkdir plugin-hello-world
+cd plugin-hello-world
+```
+
+### 2. Create main.py file
+
+Create a new file called `main.py` with the following code:
 
 ```python
 from waggle import plugin
@@ -33,10 +46,13 @@ from time import sleep
 
 plugin.init()
 
+counter = 0
+
 while True:
     sleep(1)
-    print("publishing a value!")
-    plugin.publish("my.sensor.name", 123)
+    print("publishing value", counter)
+    plugin.publish("hello.world.counter", counter)
+    counter += 1
 ```
 
 Let's walk through the pywaggle related details. First, we import the pywaggle plugin module:
@@ -51,13 +67,73 @@ Next, we initialize our plugin. This will prepare our plugin to interface with W
 plugin.init()
 ```
 
-Finally, we add our publish statement. This will queue up our measurement name and value along with the current timestamp.
+Finally, we publish our counter value. This will queue up our measurement name and value along with the current timestamp and will eventually be shipped to our data repository where it can be accessed.
 
 ```python
-plugin.publish("my.sensor.name", 123)
+plugin.publish("hello.world.counter", counter)
 ```
 
-## More about the publish function
+### 3. Run plugin
+
+The plugin can now be run using:
+
+```sh
+python3 main.py
+```
+
+You should see the output:
+
+```txt
+publishing value 0
+publishing value 1
+publishing value 2
+...
+```
+
+## Adding "Hello World" plugin packaging info
+
+Now that we have the basic plugin code working, let's prepare this code to be submitted to the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore).
+
+### 1. Create a Github repo for plugin
+
+First, we need to create a Github repo for our plugin. Go ahead a create one called "plugin-hello-world" and add the contents from our plugin-hello-world directory.
+
+For the purposes of this example, we'll assume our plugin URL is `https://github.com/username/plugin-hello-world`.
+
+### 2. Add sage.yaml
+
+Create and add a new file called `sage.yaml` with the following contents:
+
+```yaml
+name: "hello-world"
+description: "My hello world plugin"
+version: "0.0.1"
+source:
+  architectures:
+    - "linux/amd64"
+    - "linux/arm64"
+    - "linux/arm/v7"
+  url: "https://github.com/username/plugin-hello-world"
+  branch: "main"
+```
+
+This file contains metadata about what your plugin is called, what it's supposed to do and where it lives. It is used by the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore) when submitting plugins.
+
+### 3. Add Dockerfile
+
+Create and add a new file called `Dockerfile` with the following contents:
+
+```dockerfile
+FROM waggle/plugin-base:1.1.0-ml-cuda11.0-amd64
+COPY main.py .
+CMD ["python", "main.py"]
+```
+
+This file defines what base image should be used by a plugin and how it should be run. In more complex examples, additional dependencies may be specified here.
+
+## Beyond the basics
+
+### More about the publish function
 
 In the previous example, we saw the most basic usage of the publish function. Now, we want to talk about a couple additional features available to you.
 
@@ -77,7 +153,7 @@ plugin.publish("my.sensor.name", 123, timestamp=my_timestamp_in_ns)
 
 _Note: Timestamps are expected to be in nanoseconds since epoch. In Python 3.7+, this is available through the standard time.time_ns() function._
 
-## Subscribing to other measurements
+### Subscribing to other measurements
 
 Plugins can subscribe to measurements published by other plugins running on the same node. This allows users to leverage existing work or compose a larger application of multiple independent components.
 
@@ -111,7 +187,7 @@ elif msg.name == "my.sensor.name2":
     # do something else
 ```
 
-## More about the subscribe function
+### More about the subscribe function
 
 The subscribe function can match two kinds of wildcard patterns. Measurement names are treated as "segments" broken up by a dot and we can match various segments using the star and hash operators.
 
