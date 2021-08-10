@@ -131,7 +131,9 @@ CMD ["python", "main.py"]
 
 This file defines what base image should be used by a plugin and how it should be run. In more complex examples, additional dependencies may be specified here.
 
-## More about the publish function
+## Beyond the basics
+
+### More about the publish function
 
 In the previous example, we saw the most basic usage of the publish function. Now, we want to talk about a couple additional features available to you.
 
@@ -151,7 +153,7 @@ plugin.publish("my.sensor.name", 123, timestamp=my_timestamp_in_ns)
 
 _Note: Timestamps are expected to be in nanoseconds since epoch. In Python 3.7+, this is available through the standard time.time_ns() function._
 
-## Subscribing to other measurements
+### Subscribing to other measurements
 
 Plugins can subscribe to measurements published by other plugins running on the same node. This allows users to leverage existing work or compose a larger application of multiple independent components.
 
@@ -185,7 +187,7 @@ elif msg.name == "my.sensor.name2":
     # do something else
 ```
 
-## More about the subscribe function
+### More about the subscribe function
 
 The subscribe function can match two kinds of wildcard patterns. Measurement names are treated as "segments" broken up by a dot and we can match various segments using the star and hash operators.
 
