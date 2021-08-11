@@ -5,8 +5,11 @@ In this guide, we'll walk through writing a basic plugin and exploring some of t
 That being said, we do want to emphasize that pywaggle is designed to make it easy to interface _existing_ Python code with the [Waggle](https://github.com/waggle-sensor/waggle) stack. To a first approximation, pywaggle aims to augment print statements with publish statements.
 
 If you'd like to jump ahead to real code, please see the following examples:
+
 * [Minimal Numpy Example](https://github.com/waggle-sensor/plugin-numpy-example)
 * [Hello World ML Example](https://github.com/waggle-sensor/plugin-helloworld-ml)
+
+These repos can be used as starter templates for your own plugin development.
 
 ## What is a plugin?
 
