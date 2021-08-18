@@ -30,16 +30,27 @@ _Note: In this guide, we currently only cover writing the plugin __code__. We st
 We'll walk through writing a "hello world" plugin which simply publishes a increasing counter as
 measurement `hello.world.counter` every second.
 
-### 1. Create empty plugin directory
+### 1. Install pywaggle
 
-First, we'll create a new empty directory which we'll write our plugin in.
+First, we'll install the latest version of pywaggle.
+
+```sh
+git clone https://github.com/waggle-sensor/pywaggle
+pip install -U ./pywaggle[dev]
+```
+
+This will install the core pywaggle modules along with the extra developer modules.
+
+### 2. Create empty plugin directory
+
+Create a new empty directory which we'll write our plugin in.
 
 ```sh
 mkdir plugin-hello-world
 cd plugin-hello-world
 ```
 
-### 2. Create main.py file
+### 3. Create main.py file
 
 Create a new file called `main.py` with the following code:
 
@@ -76,7 +87,7 @@ Finally, we publish our counter value. This will queue up our measurement name a
 plugin.publish("hello.world.counter", counter)
 ```
 
-### 3. Run plugin
+### 4. Run plugin
 
 The plugin can now be run using:
 
