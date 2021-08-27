@@ -255,6 +255,9 @@ camera = Camera("http://camera-server/profile1.mjpeg")
 
 # open an rtsp stream
 camera = Camera("rtsp://camera-server/v0.mp4")
+
+# open a camera by manifest id
+camera = Camera("bottom_camera")
 ```
 
 ```python
