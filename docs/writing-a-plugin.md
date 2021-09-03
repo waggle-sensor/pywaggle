@@ -50,7 +50,15 @@ mkdir plugin-hello-world
 cd plugin-hello-world
 ```
 
-### 3. Create main.py file
+### 3. Create a requirements.txt dependency file
+
+We'll create an empty `requirements.txt` file which we will use to track future dependencies.
+
+```sh
+touch requirements.txt
+```
+
+### 4. Create main.py file
 
 Create a new file called `main.py` with the following code:
 
@@ -87,7 +95,7 @@ Finally, we publish our counter value. This will queue up our measurement name a
 plugin.publish("hello.world.counter", counter)
 ```
 
-### 4. Run plugin
+### 5. Run plugin
 
 The plugin can now be run using:
 
@@ -138,9 +146,12 @@ This file contains metadata about what your plugin is called, what it's supposed
 Create and add a new file called `Dockerfile` with the following contents:
 
 ```dockerfile
-FROM waggle/plugin-base:1.1.0-ml-cuda11.0-amd64
-COPY main.py .
-CMD ["python", "main.py"]
+FROM waggle/plugin-base:1.1.1-ml
+COPY requirements.txt /app/
+RUN pip3 install --no-cache-dir -r /app/requirements.txt
+COPY . /app/
+WORKDIR /app
+ENTRYPOINT ["python3", "/app/main.py"]
 ```
 
 This file defines what base image should be used by a plugin and how it should be run. In more complex examples, additional dependencies may be specified here.
