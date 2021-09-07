@@ -8,15 +8,14 @@
 import waggle.message as message
 import json
 import logging
-import base64
 import os
 import pika
 import pika.exceptions
-from threading import Thread, Lock, Event
-from queue import Queue, Empty, Full
+from threading import Thread, Event
+from queue import Queue, Empty
 import time
 import re
-from typing import Any, NamedTuple, List, Tuple
+from typing import NamedTuple
 from pathlib import Path
 import hashlib
 from io import BytesIO
@@ -51,6 +50,7 @@ class PluginConfig(NamedTuple):
     password: str
     host: str
     port: int
+    app_id: str
 
 
 class Plugin:
@@ -72,9 +72,9 @@ class Plugin:
         self.running = Event()
         self.stopped = Event()
 
-        self.outgoing_queue = Queue(64)
-        self.incoming_queue = Queue(64)
-        self.subscribe_queue = Queue(64)
+        self.outgoing_queue = Queue()
+        self.incoming_queue = Queue()
+        self.subscribe_queue = Queue()
 
     def init(self):
         logger.debug('starting plugin worker thread')
@@ -137,11 +137,7 @@ class Plugin:
             except TypeError:
                 logger.debug('unsupported message type: %s %s', properties, body)
                 return
-            try:
-                self.incoming_queue.put_nowait(msg)
-                logger.debug('add message to incoming queue: %s', msg)
-            except Full:
-                logger.debug('incoming queue full - dropping message: %s', msg)
+            self.incoming_queue.put(msg)
         
         def process_subscribe_queue():
             while self.running.is_set():
@@ -162,6 +158,11 @@ class Plugin:
                 properties = pika.BasicProperties(
                     delivery_mode=2,
                     user_id=self.connection_parameters.credentials.username)
+                
+                if self.config.app_id != '':
+                    properties.app_id = self.config.app_id
+                    # NOTE app_id is used by data service to validate and tag additional metadata provided by k3s scheduler.
+
                 body = message.dump(msg)
                 logger.debug('publishing message to rabbitmq: %s', msg)
                 channel.basic_publish(
@@ -269,6 +270,7 @@ plugin = Plugin(PluginConfig(
     password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'plugin'),
     host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
     port=int(os.environ.get('WAGGLE_PLUGIN_PORT', 5672)),
+    app_id=os.environ.get('WAGGLE_APP_ID', ''),
 ))
 init = plugin.init
 stop = plugin.stop
