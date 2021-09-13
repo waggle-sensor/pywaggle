@@ -122,7 +122,22 @@ First, we need to create a Github repo for our plugin. Go ahead a create one cal
 
 For the purposes of this example, we'll assume our plugin URL is `https://github.com/username/plugin-hello-world`.
 
-### 2. Add sage.yaml
+### 2. Add Dockerfile
+
+Create and add a new file called `Dockerfile` with the following contents:
+
+```dockerfile
+FROM waggle/plugin-base:1.1.1-ml
+COPY requirements.txt /app/
+RUN pip3 install --no-cache-dir -r /app/requirements.txt
+COPY . /app/
+WORKDIR /app
+ENTRYPOINT ["python3", "/app/main.py"]
+```
+
+This file defines what base image should be used by a plugin and how it should be run. In more complex examples, additional dependencies may be specified here.
+
+### 3. Add sage.yaml
 
 Create and add a new file called `sage.yaml` with the following contents:
 
@@ -146,21 +161,6 @@ source:
 ```
 
 This file contains metadata about what your plugin is called, what it's supposed to do and where it lives. It is used by the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore) when submitting plugins.
-
-### 3. Add Dockerfile
-
-Create and add a new file called `Dockerfile` with the following contents:
-
-```dockerfile
-FROM waggle/plugin-base:1.1.1-ml
-COPY requirements.txt /app/
-RUN pip3 install --no-cache-dir -r /app/requirements.txt
-COPY . /app/
-WORKDIR /app
-ENTRYPOINT ["python3", "/app/main.py"]
-```
-
-This file defines what base image should be used by a plugin and how it should be run. In more complex examples, additional dependencies may be specified here.
 
 ### 4. Add ECR media
 
