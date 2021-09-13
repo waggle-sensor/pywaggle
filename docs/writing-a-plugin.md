@@ -130,6 +130,12 @@ Create and add a new file called `sage.yaml` with the following contents:
 name: "hello-world"
 description: "My hello world plugin"
 version: "0.0.1"
+keywords: "hello, testing"
+authors: "Your Name <your.email@somewhere.org>, A Coworker <your.coworker@somewhere.org>"
+collaborators: "Helpful Collaborator <our.collaborator@otherplace.edu>"
+funding: ""
+license: ""
+homepage: "https://github.com/username/plugin-hello-world/blob/main/README.md"
 source:
   architectures:
     - "linux/amd64"
@@ -160,15 +166,10 @@ This file defines what base image should be used by a plugin and how it should b
 
 Create a `ecr-meta` directory and populate it with the following text and media:
 
+1. `README.md` - Markdown file providing a landing page for your plugin.
 1. `ecr-icon.jpg` - An icon for the project/work 512x512px. 
 2. `ecr-science-image.jpg` - A science image for the project with a minimum size of 1920x1080px.
 3. `ecr-science-description.md` - Markdown with description of the science being done here (1 page of text)
-4. `ecr-project-url.txt` - A URL to a science page.   
-5. `ecr-credits-license.txt` - A list of authors, technical collaborators, funding credits, license. The authors can optionally specify email and a webpage, for example: `Science Master <science@master.me> (http://sciencemaster.me.com/)`
-4.  `ecr-project-keywords.txt` - Keywords / ontology for the work. Use one of the following that best suits the work - 
-    1. https://www.agu.org/Publish-with-AGU/Publish/Author-Resources/Index-terms
-    2. https://www.ieee.org/content/dam/ieee-org/ieee/web/org/pubs/taxonomy_v101.pdf
-    3. https://dl.acm.org/ccs 
 
 ## Beyond the basics
 
