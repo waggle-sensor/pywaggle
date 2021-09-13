@@ -166,10 +166,10 @@ This file defines what base image should be used by a plugin and how it should b
 
 Create a `ecr-meta` directory and populate it with the following text and media:
 
-1. `README.md` - Markdown file providing a landing page for your plugin.
-1. `ecr-icon.jpg` - An icon for the project/work 512x512px. 
-2. `ecr-science-image.jpg` - A science image for the project with a minimum size of 1920x1080px.
-3. `ecr-science-description.md` - Markdown with description of the science being done here (1 page of text)
+1. `README.md` - Markdown providing a high level overview and landing page for your plugin.
+2. `ecr-science-description.md` - Markdown with in depth description of the science being done here (1 page of text)
+3. `ecr-icon.jpg` - An icon for the project/work 512x512px. 
+4. `ecr-science-image.jpg` - A science image for the project with a minimum size of 1920x1080px.
 
 ## Beyond the basics
 
