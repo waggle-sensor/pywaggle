@@ -6,7 +6,8 @@
 # ANL:waggle-license
 from distutils.core import setup
 import waggle
-import unittest
+
+# TODO split minimal and full deps better
 
 setup(
     name="waggle",
