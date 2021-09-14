@@ -29,9 +29,9 @@ logging.getLogger('pika').setLevel(logging.CRITICAL)
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
 # We don't want any surprises in terms of accuraccy 
 try:
-    from time import time_ns
+    from time import time_ns as get_timestamp
 except ImportError:
-    def time_ns():
+    def get_timestamp():
         return int(time.time() * 1e9)
 
 
@@ -51,6 +51,19 @@ class PluginConfig(NamedTuple):
     host: str
     port: int
     app_id: str
+
+
+publish_name_part_pattern = re.compile("^[a-z0-9_]+$")
+
+def raise_for_invalid_publish_name(s):
+    if not isinstance(s, str):
+        raise TypeError(f"publish name must be a string: {s!r}")
+    if len(s) > 128:
+        raise ValueError(f"publish must be at most 128 characters: {s!r}")
+    parts = s.split(".")
+    for p in parts:
+        if not publish_name_part_pattern.match(p):
+            raise ValueError(f"publish name invalid: {s!r} part: {p!r}")
 
 
 class Plugin:
@@ -96,9 +109,10 @@ class Plugin:
 
     def publish(self, name, value, timestamp=None, meta={}, scope=None, timeout=None):
         if timestamp is None:
-            timestamp = time_ns()
+            timestamp = get_timestamp()
         if scope is None:
             scope = 'all'
+        raise_for_invalid_publish_name(name)
         msg = message.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug('adding message to outgoing queue: %s', msg)
         self.outgoing_queue.put((scope, msg), timeout=timeout)
@@ -199,10 +213,12 @@ class Uploader:
     #   timestamp-sha1sum/
     #     data
     #     meta
-    # TODO this needs a way to name this...
-    def upload(self, obj, labels={}):
+    # TODO I don't want this function to be public until we really see
+    # the need for it. It's rather people be able to put a name to what
+    # they're uploading, as much as possible.
+    def __upload(self, obj, labels={}):
         # get timestamp *before* any other work
-        timestamp = time_ns()
+        timestamp = get_timestamp()
 
         # wrap bytes-like objects as file-like object for convinience
         if isinstance(obj, (bytes, bytearray)):
@@ -227,11 +243,11 @@ class Uploader:
         tempdir.rename(filedir)
         return filedir
     
-    def upload_file(self, path, keep=False, labels={}):
+    def upload_file(self, path, keep=False, meta={}):
         path = Path(path)
-        labels['filename'] = path.name
+        meta['filename'] = path.name
         with path.open('rb') as f:
-            staged_path = self.upload(f, labels)
+            staged_path = self.__upload(f, meta)
             if keep is False:
                 path.unlink()
             return staged_path
@@ -280,5 +296,4 @@ get = plugin.get
 
 # define global default instance of Uploader
 uploader = Uploader(Path(os.environ.get("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
-upload = uploader.upload
 upload_file = uploader.upload_file

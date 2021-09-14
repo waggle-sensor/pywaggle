@@ -29,25 +29,41 @@ class TestPlugin(unittest.TestCase):
         with self.assertRaises(TimeoutError):
             plugin.get(timeout=0.001)
 
+    def test_get_timestamp(self):
+        ts = plugin.get_timestamp()
+        self.assertIsInstance(ts, int)
+
+    def test_raise_for_invalid_publish_name(self):
+        with self.assertRaises(TypeError):
+            plugin.raise_for_invalid_publish_name(None)
+        with self.assertRaises(ValueError):
+            plugin.raise_for_invalid_publish_name("")
+        with self.assertRaises(ValueError):
+            plugin.raise_for_invalid_publish_name(".")
+
+        # use _ instead of -
+        with self.assertRaises(ValueError):
+            plugin.raise_for_invalid_publish_name("my-metric")
+        # correct alternative
+        plugin.raise_for_invalid_publish_name("my_metric")
+        
+        # assert len(name) <= 128
+        with self.assertRaises(ValueError):
+            plugin.raise_for_invalid_publish_name("x"*129)
+        
+        # no empty parts allowed
+        with self.assertRaises(ValueError):
+            plugin.raise_for_invalid_publish_name("vision.count..bird")
+        # correct alternative
+        plugin.raise_for_invalid_publish_name("vision.count.bird")
+
+        # no spaces allowed
+        with self.assertRaises(ValueError):
+            plugin.raise_for_invalid_publish_name("sys.cpu temp")
+        # correct alternative
+        plugin.raise_for_invalid_publish_name("sys.cpu_temp")
+
 class TestUploader(unittest.TestCase):
-
-    def test_upload(self):
-        shutil.rmtree('.testdata', ignore_errors=True)
-
-        uploader = Uploader('.testdata')
-
-        data = b'testdata'
-        labels = {'name': 'example label'}
-        path = uploader.upload(b'testdata', labels=labels)
-
-        self.assertEqual(data, Path(path, 'data').read_bytes())
-        meta = json.loads(Path(path, 'meta').read_text())
-        self.assertIn('timestamp', meta)
-        self.assertIn('shasum', meta)
-        self.assertIn('labels', meta)
-        self.assertDictEqual(labels, meta['labels'])
-
-        shutil.rmtree('.testdata', ignore_errors=True)
     
     def test_upload_file(self):
         shutil.rmtree('.testdata', ignore_errors=True)
