@@ -1,10 +1,10 @@
 import unittest
-import time
 import waggle.plugin as plugin
 from waggle.plugin import Uploader
 import shutil
 from pathlib import Path
 import json
+from tempfile import TemporaryDirectory
 
 class TestPlugin(unittest.TestCase):
 
@@ -66,24 +66,22 @@ class TestPlugin(unittest.TestCase):
 class TestUploader(unittest.TestCase):
     
     def test_upload_file(self):
-        shutil.rmtree('.testdata', ignore_errors=True)
+        with TemporaryDirectory() as tempdir:
+            uploader = Uploader(Path(tempdir, "uploads"))
 
-        uploader = Uploader('.testdata')
+            data = b'here some data in a data'
 
-        data = b'here some data in a data'
-        upload_path = Path('.myfile.txt')
+            upload_path = Path(tempdir, 'myfile.txt')
+            upload_path.write_bytes(data)
+            
+            path = uploader.upload_file(upload_path)
+            self.assertFalse(upload_path.exists())
 
-        upload_path.write_bytes(data)
-        path = uploader.upload_file(upload_path)
-        self.assertFalse(upload_path.exists())
-
-        self.assertEqual(data, Path(path, 'data').read_bytes())
-        meta = json.loads(Path(path, 'meta').read_text())
-        self.assertIn('timestamp', meta)
-        self.assertIn('shasum', meta)
-        self.assertEqual(meta['labels']['filename'], upload_path.name)
-
-        shutil.rmtree('.testdata', ignore_errors=True)
+            self.assertEqual(data, Path(path, 'data').read_bytes())
+            meta = json.loads(Path(path, 'meta').read_text())
+            self.assertIn('timestamp', meta)
+            self.assertIn('shasum', meta)
+            self.assertEqual(meta['labels']['filename'], upload_path.name)
 
 
 if __name__ == '__main__':

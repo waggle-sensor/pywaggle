@@ -8,7 +8,7 @@
 import waggle.message as message
 import json
 import logging
-import os
+from os import getenv
 import pika
 import pika.exceptions
 from threading import Thread, Event
@@ -18,12 +18,12 @@ import re
 from typing import NamedTuple
 from pathlib import Path
 import hashlib
-from io import BytesIO
-from secrets import token_hex
+from shutil import copyfile
+
 
 logger = logging.getLogger(__name__)
 # turn down pika's logger automatically. by default, it's very verbose.
-logging.getLogger('pika').setLevel(logging.CRITICAL)
+logging.getLogger("pika").setLevel(logging.CRITICAL)
 
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
@@ -35,17 +35,7 @@ except ImportError:
         return int(time.time() * 1e9)
 
 
-class PluginVersion(NamedTuple):
-    major: int
-    minor: int
-    patch: int
-
-
 class PluginConfig(NamedTuple):
-    name: str
-    id: int
-    version: PluginVersion
-    instance: int
     username: str
     password: str
     host: str
@@ -90,11 +80,11 @@ class Plugin:
         self.subscribe_queue = Queue()
 
     def init(self):
-        logger.debug('starting plugin worker thread')
+        logger.debug("starting plugin worker thread")
         Thread(target=self.run_rabbitmq_worker, daemon=True).start()
 
     def stop(self):
-        logger.debug('stopping plugin worker thread')
+        logger.debug("stopping plugin worker thread")
         self.running.clear()
 
     def get(self, timeout=None):
@@ -102,7 +92,7 @@ class Plugin:
             return self.incoming_queue.get(timeout=timeout)
         except Empty:
             pass
-        raise TimeoutError('plugin get timed out')
+        raise TimeoutError("plugin get timed out")
 
     def subscribe(self, *topics):
         self.subscribe_queue.put(topics)
@@ -111,15 +101,15 @@ class Plugin:
         if timestamp is None:
             timestamp = get_timestamp()
         if scope is None:
-            scope = 'all'
+            scope = "all"
         raise_for_invalid_publish_name(name)
         msg = message.Message(name=name, value=value, timestamp=timestamp, meta=meta)
-        logger.debug('adding message to outgoing queue: %s', msg)
+        logger.debug("adding message to outgoing queue: %s", msg)
         self.outgoing_queue.put((scope, msg), timeout=timeout)
 
     def run_rabbitmq_worker(self):
         if self.running.is_set():
-            logger.warning('already have an instance of rabbitmq worker running')
+            logger.warning("already have an instance of rabbitmq worker running")
             return
 
         try:
@@ -128,15 +118,15 @@ class Plugin:
 
             while self.running.is_set():
                 try:
-                    logger.debug('connecting to rabbitmq broker at %s:%d with username "%s"',
+                    logger.debug("connecting to rabbitmq broker at %s:%d with username %r",
                                  self.connection_parameters.host,
                                  self.connection_parameters.port,
                                  self.connection_parameters.credentials.username)
                     with pika.BlockingConnection(self.connection_parameters) as connection:
-                        logger.debug('connected to rabbitmq broker')
+                        logger.debug("connected to rabbitmq broker")
                         self.rabbitmq_worker_mainloop(connection)
                 except Exception as exc:
-                    logger.debug('rabbitmq connection error: %s', exc)
+                    logger.debug("rabbitmq connection error: %s", exc)
                 time.sleep(1)
         finally:
             self.running.clear()
@@ -149,7 +139,7 @@ class Plugin:
             try:
                 msg = message.load(body)
             except TypeError:
-                logger.debug('unsupported message type: %s %s', properties, body)
+                logger.debug("unsupported message type: %s %s", properties, body)
                 return
             self.incoming_queue.put(msg)
         
@@ -160,8 +150,8 @@ class Plugin:
                 except Empty:
                     break
                 for topic in topics:
-                    logger.debug('subscribing to topic "%s"', topic)
-                    channel.queue_bind(queue, 'data.topic', topic)
+                    logger.debug("subscribing to topic %r", topic)
+                    channel.queue_bind(queue, "data.topic", topic)
 
         def process_publish_queue():
             while self.running.is_set():
@@ -173,14 +163,14 @@ class Plugin:
                     delivery_mode=2,
                     user_id=self.connection_parameters.credentials.username)
                 
-                if self.config.app_id != '':
+                if self.config.app_id != "":
                     properties.app_id = self.config.app_id
                     # NOTE app_id is used by data service to validate and tag additional metadata provided by k3s scheduler.
 
                 body = message.dump(msg)
-                logger.debug('publishing message to rabbitmq: %s', msg)
+                logger.debug("publishing message to rabbitmq: %s", msg)
                 channel.basic_publish(
-                    exchange='to-validator',
+                    exchange="to-validator",
                     routing_key=scope,
                     properties=properties,
                     body=body)
@@ -191,15 +181,15 @@ class Plugin:
             if self.running.is_set():
                 connection.call_later(0.001, process_queues_and_events)
             else:
-                logger.debug('stopping rabbitmq processing loop')
+                logger.debug("stopping rabbitmq processing loop")
                 channel.stop_consuming()
 
         # setup subscriber queue and bind
-        queue = channel.queue_declare('', exclusive=True).method.queue
+        queue = channel.queue_declare("", exclusive=True).method.queue
         channel.basic_consume(queue, subscriber_callback, auto_ack=True)
         # setup periodic publish and subscribe to topic checks
         connection.call_later(0.001, process_queues_and_events)
-        logger.debug('starting rabbitmq processing loop')
+        logger.debug("starting rabbitmq processing loop")
         channel.start_consuming()
 
 
@@ -213,80 +203,57 @@ class Uploader:
     #   timestamp-sha1sum/
     #     data
     #     meta
-    # TODO I don't want this function to be public until we really see
-    # the need for it. It's rather people be able to put a name to what
-    # they're uploading, as much as possible.
-    def __upload(self, obj, labels={}):
-        # get timestamp *before* any other work
-        timestamp = get_timestamp()
+    def upload_file(self, path, meta={}, timestamp=None, keep=False):
+        # get timestamp *before* doing any other work!
+        if timestamp is None:
+            timestamp = get_timestamp()
 
-        # wrap bytes-like objects as file-like object for convinience
-        if isinstance(obj, (bytes, bytearray)):
-            obj = BytesIO(obj)
-
-        tempdir = Path(self.root, '.tmp' + token_hex(8))
-        tempdir.mkdir(parents=True, exist_ok=True)
-
-        checksum = write_file_with_sha1sum(Path(tempdir, 'data'), obj)
-
-        meta = {
-            'timestamp': timestamp,
-            'shasum': checksum,
-            'labels': {k: v for k, v in labels.items()},
-        }
-
-        with Path(tempdir, 'meta').open('w') as f:
-            json.dump(meta, f, separators=(',', ':'))
-
-        # atomically move tempdir to real name
-        filedir = Path(self.root, f'{timestamp}-{checksum}')
-        tempdir.rename(filedir)
-        return filedir
-    
-    def upload_file(self, path, keep=False, meta={}):
         path = Path(path)
-        meta['filename'] = path.name
-        with path.open('rb') as f:
-            staged_path = self.__upload(f, meta)
-            if keep is False:
-                path.unlink()
-            return staged_path
+
+        checksum = sha1sum_for_path(path)
+
+        # create upload dir
+        upload_dir = Path(self.root, f"{timestamp}-{checksum}")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        # stage data file
+        # NOTE we do a copy instead of move, as the upload dir may
+        # be mounted from another disk.
+        copyfile(path, Path(upload_dir, "data"))
+        if not keep:
+            path.unlink()
+
+        # stage meta file
+        metafile = {
+            "timestamp": timestamp,
+            "shasum": checksum,
+            "labels": {k: v for k, v in meta.items()},
+        }
+        metafile["labels"]["filename"] = path.name
+
+        Path(upload_dir, "meta").write_text(json.dumps(metafile, separators=(',', ':')))
+
+        return upload_dir
 
 
-def write_file_with_sha1sum(path, obj):
+def sha1sum_for_path(path):
     h = hashlib.sha1()
-    with path.open('wb') as f:
+    with open(path, "rb") as f:
         while True:
-            chunk = obj.read(32768)
-            if len(chunk) == 0:
+            chunk = f.read(32768)
+            if chunk == b"":
                 break
             h.update(chunk)
-            f.write(chunk)
     return h.hexdigest()
-
-
-def parse_version_string(s: str) -> PluginVersion:
-    m = re.match(r'(\d+)\.(\d+)\.(\d+)$', s)
-    if m is None:
-        raise ValueError(f'Invalid version string {s}.')
-    return PluginVersion(
-        major=int(m.group(1)),
-        minor=int(m.group(2)),
-        patch=int(m.group(3)))
 
 
 # define global default instance of Plugin
 plugin = Plugin(PluginConfig(
-    name=os.environ.get('WAGGLE_PLUGIN_NAME', ''),
-    id=int(os.environ.get('WAGGLE_PLUGIN_ID', 0)),
-    version=parse_version_string(
-        os.environ.get('WAGGLE_PLUGIN_VERSION', '0.0.0')),
-    instance=int(os.environ.get('WAGGLE_PLUGIN_INSTANCE', 0)),
-    username=os.environ.get('WAGGLE_PLUGIN_USERNAME', 'plugin'),
-    password=os.environ.get('WAGGLE_PLUGIN_PASSWORD', 'plugin'),
-    host=os.environ.get('WAGGLE_PLUGIN_HOST', 'rabbitmq'),
-    port=int(os.environ.get('WAGGLE_PLUGIN_PORT', 5672)),
-    app_id=os.environ.get('WAGGLE_APP_ID', ''),
+    username=getenv("WAGGLE_PLUGIN_USERNAME", "plugin"),
+    password=getenv("WAGGLE_PLUGIN_PASSWORD", "plugin"),
+    host=getenv("WAGGLE_PLUGIN_HOST", "rabbitmq"),
+    port=int(getenv("WAGGLE_PLUGIN_PORT", 5672)),
+    app_id=getenv("WAGGLE_APP_ID", ""),
 ))
 init = plugin.init
 stop = plugin.stop
@@ -295,5 +262,5 @@ publish = plugin.publish
 get = plugin.get
 
 # define global default instance of Uploader
-uploader = Uploader(Path(os.environ.get("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
+uploader = Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
 upload_file = uploader.upload_file
