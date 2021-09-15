@@ -210,7 +210,7 @@ class Uploader:
 
         path = Path(path)
 
-        checksum = sha1sum_for_path(path)
+        checksum = sha1sum_for_file(path)
 
         # create upload dir
         upload_dir = Path(self.root, f"{timestamp}-{checksum}")
@@ -230,13 +230,12 @@ class Uploader:
             "labels": {k: v for k, v in meta.items()},
         }
         metafile["labels"]["filename"] = path.name
-
-        Path(upload_dir, "meta").write_text(json.dumps(metafile, separators=(',', ':')))
+        write_json_file(Path(upload_dir, "meta"), metafile)
 
         return upload_dir
 
 
-def sha1sum_for_path(path):
+def sha1sum_for_file(path):
     h = hashlib.sha1()
     with open(path, "rb") as f:
         while True:
@@ -245,6 +244,11 @@ def sha1sum_for_path(path):
                 break
             h.update(chunk)
     return h.hexdigest()
+
+
+def write_json_file(path, obj):
+    with open(path, "w") as f:
+        json.dump(obj, f, separators=(',', ':'), sort_keys=True)
 
 
 # define global default instance of Plugin
