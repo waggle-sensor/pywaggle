@@ -97,11 +97,9 @@ class Plugin:
     def subscribe(self, *topics):
         self.subscribe_queue.put(topics)
 
-    def publish(self, name, value, timestamp=None, meta={}, scope=None, timeout=None):
+    def publish(self, name, value, timestamp=None, meta={}, scope="all", timeout=None):
         if timestamp is None:
             timestamp = get_timestamp()
-        if scope is None:
-            scope = "all"
         raise_for_invalid_publish_name(name)
         msg = message.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
