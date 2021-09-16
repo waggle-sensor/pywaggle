@@ -22,6 +22,10 @@ class TestPlugin(unittest.TestCase):
             "camera": "bottom_left",
         })
     
+    def test_publish_check_reserved(self):
+        with self.assertRaises(ValueError):
+            plugin.publish("upload", "path/to/data")
+
     def test_get(self):
         plugin.subscribe('raw.#')
         with self.assertRaises(TimeoutError):
@@ -40,6 +44,10 @@ class TestPlugin(unittest.TestCase):
             plugin.raise_for_invalid_publish_name("")
         with self.assertRaises(ValueError):
             plugin.raise_for_invalid_publish_name(".")
+
+        # check for reserved names
+        with self.assertRaises(ValueError):
+            plugin.raise_for_invalid_publish_name("upload")
 
         # use _ instead of -
         with self.assertRaises(ValueError):

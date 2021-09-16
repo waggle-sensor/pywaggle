@@ -50,6 +50,8 @@ def raise_for_invalid_publish_name(s):
         raise TypeError(f"publish name must be a string: {s!r}")
     if len(s) > 128:
         raise ValueError(f"publish must be at most 128 characters: {s!r}")
+    if s == "upload":
+        raise ValueError(f"name {s!r} is reserved for system use only")
     parts = s.split(".")
     for p in parts:
         if not publish_name_part_pattern.match(p):
@@ -58,7 +60,7 @@ def raise_for_invalid_publish_name(s):
 
 class Plugin:
 
-    def __init__(self, config):
+    def __init__(self, config, uploader=None):
         self.config = config
 
         self.connection_parameters = pika.ConnectionParameters(
@@ -79,6 +81,8 @@ class Plugin:
         self.incoming_queue = Queue()
         self.subscribe_queue = Queue()
 
+        self.uploader = uploader
+
     def init(self):
         logger.debug("starting plugin worker thread")
         Thread(target=self.run_rabbitmq_worker, daemon=True).start()
@@ -96,14 +100,24 @@ class Plugin:
 
     def subscribe(self, *topics):
         self.subscribe_queue.put(topics)
-
-    def publish(self, name, value, timestamp=None, meta={}, scope="all", timeout=None):
-        if timestamp is None:
-            timestamp = get_timestamp()
-        raise_for_invalid_publish_name(name)
+    
+    # NOTE __publish is used internally by publish and upload_file to do an unchecked
+    # message publish. the main reason this exists is to guard against reserved names
+    # like "upload" in publish but still allow upload_file to use it.
+    def __publish(self, name, value, meta, timestamp, scope="all", timeout=None):
         msg = message.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
         self.outgoing_queue.put((scope, msg), timeout=timeout)
+    
+    def publish(self, name, value, meta={}, timestamp=None, scope="all", timeout=None):
+        if timestamp is None:
+            timestamp = get_timestamp()
+        raise_for_invalid_publish_name(name)
+        self.__publish(name, value, meta, timestamp, scope, timeout)
+
+    def upload_file(self, path, meta={}, timestamp=None, keep=False):
+        upload_path = self.uploader.upload_file(path=path, meta=meta, timestamp=timestamp, keep=keep)
+        self.__publish("upload", upload_path.name, meta, timestamp)
 
     def run_rabbitmq_worker(self):
         if self.running.is_set():
@@ -249,6 +263,9 @@ def write_json_file(path, obj):
         json.dump(obj, f, separators=(',', ':'), sort_keys=True)
 
 
+# define global default instance of Uploader
+uploader = Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
+
 # define global default instance of Plugin
 plugin = Plugin(PluginConfig(
     username=getenv("WAGGLE_PLUGIN_USERNAME", "plugin"),
@@ -256,13 +273,10 @@ plugin = Plugin(PluginConfig(
     host=getenv("WAGGLE_PLUGIN_HOST", "rabbitmq"),
     port=int(getenv("WAGGLE_PLUGIN_PORT", 5672)),
     app_id=getenv("WAGGLE_APP_ID", ""),
-))
+), uploader=uploader)
 init = plugin.init
 stop = plugin.stop
 subscribe = plugin.subscribe
 publish = plugin.publish
 get = plugin.get
-
-# define global default instance of Uploader
-uploader = Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
-upload_file = uploader.upload_file
+upload_file = plugin.upload_file
