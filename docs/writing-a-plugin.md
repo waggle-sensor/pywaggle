@@ -227,6 +227,19 @@ elif msg.name == "my.sensor.name2":
     # do something else
 ```
 
+In more complex examples, the full message metadata can also be used to differentiate behavior:
+
+```python
+plugin.subscribe("env.temperature")
+
+while True:
+    msg = plugin.get()
+    if msg.meta.get("sensor") == "bme280":
+        # do something
+    elif msg.meta.get("sensor") == "bme680":
+        # do something else
+```
+
 ### More about the subscribe function
 
 The subscribe function can match two kinds of wildcard patterns. Measurement names are treated as "segments" broken up by a dot and we can match various segments using the star and hash operators.
