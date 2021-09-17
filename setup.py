@@ -7,7 +7,7 @@ setup(
     description="Official Waggle Python module",
     url="https://github.com/waggle-sensor/pywaggle",
     install_requires=[
-        # "wagglemsg @ ..."
+        "wagglemsg @ https://github.com/waggle-sensor/pywagglemsg/releases/download/0.1.0/wagglemsg-0.1.0-py3-none-any.whl",
         "pika>=1.2.0",
         "soundcard>=0.4.1",
         "soundfile>=0.9.0",

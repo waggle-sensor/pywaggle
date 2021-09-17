@@ -5,7 +5,7 @@
 # license.  For more details on the Waggle project, visit:
 #          http://www.wa8.gl
 # ANL:waggle-license
-import waggle.message as message
+import wagglemsg
 import json
 import logging
 from os import getenv
@@ -105,7 +105,7 @@ class Plugin:
     # message publish. the main reason this exists is to guard against reserved names
     # like "upload" in publish but still allow upload_file to use it.
     def __publish(self, name, value, meta, timestamp, scope="all", timeout=None):
-        msg = message.Message(name=name, value=value, timestamp=timestamp, meta=meta)
+        msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
         self.outgoing_queue.put((scope, msg), timeout=timeout)
     
@@ -149,7 +149,7 @@ class Plugin:
 
         def subscriber_callback(ch, method, properties, body):
             try:
-                msg = message.load(body)
+                msg = wagglemsg.load(body)
             except TypeError:
                 logger.debug("unsupported message type: %s %s", properties, body)
                 return
@@ -179,7 +179,7 @@ class Plugin:
                     properties.app_id = self.config.app_id
                     # NOTE app_id is used by data service to validate and tag additional metadata provided by k3s scheduler.
 
-                body = message.dump(msg)
+                body = wagglemsg.dump(msg)
                 logger.debug("publishing message to rabbitmq: %s", msg)
                 channel.basic_publish(
                     exchange="to-validator",
