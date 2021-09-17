@@ -1,23 +1,18 @@
-# ANL:waggle-license
-# This file is part of the Waggle Platform.  Please see the file
-# LICENSE.waggle.txt for the legal details of the copyright and software
-# license.  For more details on the Waggle project, visit:
-#          http://www.wa8.gl
-# ANL:waggle-license
-from distutils.core import setup
-import waggle
-
-# TODO split minimal and full deps better
+from setuptools import setup
+from os import getenv
 
 setup(
     name="waggle",
-    version=waggle.__version__,
+    version=getenv("RELEASE_VERSION", "0.0.0"),
     description="Official Waggle Python module",
     url="https://github.com/waggle-sensor/pywaggle",
     install_requires=[
+        # "wagglemsg @ ..."
         "pika>=1.2.0",
         "soundcard>=0.4.1",
         "soundfile>=0.9.0",
+        # "numpy",
+        # "opencv-python",
     ],
     extras_require={
         "dev": [
