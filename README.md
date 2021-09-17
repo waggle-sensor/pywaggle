@@ -1,7 +1,5 @@
 # Waggle Python Module
 
-![CI/CD](https://github.com/waggle-sensor/pywaggle/workflows/CI/CD/badge.svg)
-
 pywaggle is a Python module for implementing [Waggle](https://github.com/waggle-sensor/waggle) plugins and system services.
 
 ## Installation Guides
@@ -10,7 +8,7 @@ The latest version pywaggle with all optional dependencies can be installed usin
 
 ```sh
 git clone https://github.com/waggle-sensor/pywaggle
-pip install ./pywaggle[dev]
+pip install ./pywaggle
 ```
 
 pywaggle provides the following additional functionality if these modules are installed:

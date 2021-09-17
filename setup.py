@@ -11,15 +11,9 @@ setup(
         "pika>=1.2.0",
         "soundcard>=0.4.1",
         "soundfile>=0.9.0",
-        # "numpy",
-        # "opencv-python",
+        "numpy",
+        "opencv-python",
     ],
-    extras_require={
-        "dev": [
-            "numpy",
-            "opencv-python"
-        ],
-    },
     packages=[
         "waggle",
         "waggle.data",
