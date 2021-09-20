@@ -36,7 +36,7 @@ First, we'll install the latest version of pywaggle.
 
 ```sh
 git clone https://github.com/waggle-sensor/pywaggle
-pip install -U ./pywaggle[dev]
+pip install -U ./pywaggle[all]
 ```
 
 This will install the core pywaggle modules along with the extra developer modules.
