@@ -33,7 +33,7 @@ jobs:
         with:
           name: dist
       - name: Install wheel
-        run: pip3 install *.whl[all]
+        run: pip3 install $(echo *.whl)[all]
       - name: Run tests
         run: python3 -m unittest discover -s tests
 
