@@ -116,6 +116,8 @@ class Plugin:
         self.__publish(name, value, meta, timestamp, scope, timeout)
 
     def upload_file(self, path, meta={}, timestamp=None, keep=False):
+        if timestamp is None:
+            timestamp = get_timestamp()
         upload_path = self.uploader.upload_file(path=path, meta=meta, timestamp=timestamp, keep=keep)
         # copy metadata and set filename
         # TODO consolidate this with Uploader...
