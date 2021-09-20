@@ -4,14 +4,14 @@ pywaggle is a Python module for implementing [Waggle](https://github.com/waggle-
 
 ## Installation Guides
 
-The latest version pywaggle with all optional dependencies can be installed using:
+Most users getting started with pywaggle will want to install latest version with all optional dependencies using:
 
 ```sh
 git clone https://github.com/waggle-sensor/pywaggle
 pip install ./pywaggle[all]
 ```
 
-In the case only a subset of functionality is required, the following flags are available:
+Advanced users can install specific subsets of functionality using the following extras flags:
 
 * `audio` - Audio and microphone support for plugins.
 * `vision` - Image, video and camera support for plugins.
