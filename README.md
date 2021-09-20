@@ -17,6 +17,9 @@ Advanced users can install specific subsets of functionality using the following
 * `vision` - Image, video and camera support for plugins.
 
 ```sh
+# install only core plugin features
+pip install ./pywaggle
+
 # install only audio features
 pip install ./pywaggle[audio]
 
