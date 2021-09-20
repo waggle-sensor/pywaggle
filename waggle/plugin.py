@@ -117,6 +117,10 @@ class Plugin:
 
     def upload_file(self, path, meta={}, timestamp=None, keep=False):
         upload_path = self.uploader.upload_file(path=path, meta=meta, timestamp=timestamp, keep=keep)
+        # copy metadata and set filename
+        # TODO consolidate this with Uploader...
+        meta = meta.copy()
+        meta["filename"] = Path(path).name
         self.__publish("upload", upload_path.name, meta, timestamp)
 
     def run_rabbitmq_worker(self):
