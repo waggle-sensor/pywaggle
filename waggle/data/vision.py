@@ -5,6 +5,7 @@ from typing import Union
 from contextlib import contextmanager
 import time
 import os
+from os import PathLike
 import random
 import json
 import re
@@ -63,8 +64,9 @@ class ImageSample:
         self.data = self.format.cv2_to_format(data)
         self.timestamp = timestamp
 
-    def save(self, filename):
-        cv2.imwrite(filename, self.format.format_to_cv2(self.data))
+    def save(self, path: PathLike):
+        path = Path(path)
+        cv2.imwrite(str(path), self.format.format_to_cv2(self.data))
 
 
 # TODO(sean) handle various data sources more uniformly

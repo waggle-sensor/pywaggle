@@ -1,3 +1,4 @@
+from os import PathLike
 from pathlib import Path
 import numpy
 import soundcard
@@ -12,8 +13,9 @@ class AudioSample(NamedTuple):
     samplerate: int
     timestamp: int
 
-    def save(self, filename):
-        soundfile.write(filename, self.data, self.samplerate)
+    def save(self, path: PathLike):
+        path = Path(path)
+        soundfile.write(str(path), self.data, self.samplerate)
 
 
 class Microphone:
