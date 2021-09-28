@@ -1,10 +1,11 @@
 import unittest
 import waggle.plugin as plugin
+from waggle.plugin import Plugin, PluginConfig
 from waggle.plugin import Uploader
-import shutil
 from pathlib import Path
 import json
 from tempfile import TemporaryDirectory
+
 
 class TestPlugin(unittest.TestCase):
 
@@ -70,6 +71,30 @@ class TestPlugin(unittest.TestCase):
             plugin.raise_for_invalid_publish_name("sys.cpu temp")
         # correct alternative
         plugin.raise_for_invalid_publish_name("sys.cpu_temp")
+
+    # TODO(sean) refactor messaging part to make testing this cleaner
+    def test_upload_file(self):
+        with TemporaryDirectory() as tempdir:
+            pl = Plugin(PluginConfig(
+                host="fake-rabbitmq-host",
+                port=5672,
+                username="plugin",
+                password="plugin",
+                app_id="0668b12c-0c15-462c-9e06-7239282411e5"
+            ), uploader=Uploader(Path(tempdir, "uploads")))
+
+            data = b'here some data in a data'
+            upload_path = Path(tempdir, 'myfile.txt')
+            upload_path.write_bytes(data)
+            
+            pl.upload_file(upload_path)
+            scope, msg = pl.outgoing_queue.get_nowait()
+            self.assertEqual(scope, "all")
+            self.assertEqual(msg.name, "upload")
+            self.assertIsNotNone(msg.timestamp)
+            self.assertIsInstance(msg.value, str)
+            self.assertIsNotNone(msg.meta)
+            self.assertIn("filename", msg.meta)
 
 class TestUploader(unittest.TestCase):
     
