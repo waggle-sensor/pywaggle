@@ -1,7 +1,6 @@
 from os import PathLike
 from pathlib import Path
 import numpy
-import soundcard
 import soundfile
 from typing import NamedTuple
 import random
@@ -21,6 +20,7 @@ class AudioSample(NamedTuple):
 class Microphone:
 
     def __init__(self, samplerate=48000, channels=1, name=None):
+        import soundcard
         self.microphone = soundcard.default_microphone()
         self.samplerate = samplerate
         self.channels = channels
