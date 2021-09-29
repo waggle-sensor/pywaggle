@@ -31,30 +31,52 @@ class TestData(unittest.TestCase):
             self.assertTrue(np.allclose(sample.data, samples[0].data))
     
     def test_audio_save(self):
-        with TemporaryDirectory() as dir:
-            # save mono audio
-            sample = AudioSample(np.random.uniform(-1, 1, (48000, 1)), 48000, 0)
-            name = "sample.wav"
-            sample.save(os.path.join(dir, name))
-            sample.save(Path(dir, name))
+        for format in ["wav", "ogg", "flac"]:
+            name = f"sample.{format}"
 
-            # save stereo audio
-            sample = AudioSample(np.random.uniform(-1, 1, (48000, 2)), 48000, 0)
-            name = "sample.wav"
-            sample.save(os.path.join(dir, name))
-            sample.save(Path(dir, name))
+            with TemporaryDirectory() as dir:
+                # save mono audio float
+                sample = AudioSample(np.random.uniform(-1, 1, (48000, 1)), 48000, 0)
+                sample.save(os.path.join(dir, name))
+                sample.save(Path(dir, name))
+
+                # save stereo audio float
+                sample = AudioSample(np.random.uniform(-1, 1, (48000, 2)), 48000, 0)
+                sample.save(os.path.join(dir, name))
+                sample.save(Path(dir, name))
+
+                for dtype in [np.int16, np.int32]:
+                    # save stereo audio float
+                    sample = AudioSample(np.random.randint(-100, 100, (48000, 1), dtype=dtype), 48000, 0)
+                    sample.save(os.path.join(dir, name))
+                    sample.save(Path(dir, name))
+
+                    # save stereo audio float
+                    sample = AudioSample(np.random.randint(-100, 100, (48000, 2), dtype=dtype), 48000, 0)
+                    sample.save(os.path.join(dir, name))
+                    sample.save(Path(dir, name))
 
     def test_audio_save_load(self):
-        with TemporaryDirectory() as dir:
-            sample = AudioSample(np.random.uniform(-1, 1, (48000, 1)), 48000, 0)
-            sample.save(Path(dir, "sample.wav"))
-            samples = AudioFolder(dir)
-            self.assertTrue(np.allclose(sample.data, samples[0].data, atol=1e-4))
+        test_cases = [
+            {"format": "wav", "tol": 1e-4},
+            {"format": "flac", "tol": 1e-4},
+            # {"format": "ogg", "tol": 1},
+        ]
 
-            sample = AudioSample(np.random.uniform(-1, 1, (48000, 2)), 48000, 0)
-            sample.save(Path(dir, "sample.wav"))
-            samples = AudioFolder(dir)
-            self.assertTrue(np.allclose(sample.data, samples[0].data, atol=1e-4))
+        for test in test_cases:
+            name = f"sample.{test['format']}"
+
+            with TemporaryDirectory() as dir:
+                sample = AudioSample(np.random.uniform(-1, 1, (48000, 1)), 48000, 0)
+                sample.save(Path(dir, name))
+                samples = AudioFolder(dir)
+                self.assertTrue(np.allclose(sample.data, samples[0].data, atol=test['tol']))
+
+            with TemporaryDirectory() as dir:
+                sample = AudioSample(np.random.uniform(-1, 1, (48000, 2)), 48000, 0)
+                sample.save(Path(dir, name))
+                samples = AudioFolder(dir)
+                self.assertTrue(np.allclose(sample.data, samples[0].data, atol=test['tol']))
 
 
     def test_get_timestamp(self):
