@@ -6,6 +6,24 @@ import numpy as np
 from tempfile import TemporaryDirectory
 from pathlib import Path
 import os.path
+from itertools import product
+
+
+def generate_audio_data(samplerate, channels, dtype):
+    if dtype == np.float32:
+        return np.random.uniform(-1, 1, (samplerate, channels)).astype(dtype)
+    if dtype == np.float64:
+        return np.random.uniform(-1, 1, (samplerate, channels)).astype(dtype)
+    if dtype == np.int16:
+        return np.random.randint(-2**15, 2**15, (samplerate, channels), dtype=dtype)
+    if dtype == np.int32:
+        return np.random.randint(-2**31, 2**31, (samplerate, channels), dtype=dtype)
+    raise ValueError("unsupported audio settings")
+
+
+def generate_audio_sample(samplerate, channels, dtype):
+    return AudioSample(generate_audio_data(samplerate, channels, dtype), samplerate, 0)
+
 
 class TestData(unittest.TestCase):
 
@@ -31,53 +49,33 @@ class TestData(unittest.TestCase):
             self.assertTrue(np.allclose(sample.data, samples[0].data))
     
     def test_audio_save(self):
-        for format in ["wav", "ogg", "flac"]:
+        test_formats = ["wav", "flac"]
+        test_samplerates = [22050, 44100, 48000]
+        test_channels = [1, 2]
+        test_dtypes = [np.float32, np.float64, np.int16, np.int32]
+
+        for format, samplerate, channels, dtype in product(test_formats, test_samplerates, test_channels, test_dtypes):
             name = f"sample.{format}"
-
             with TemporaryDirectory() as dir:
-                # save mono audio float
-                sample = AudioSample(np.random.uniform(-1, 1, (48000, 1)), 48000, 0)
+                sample = generate_audio_sample(samplerate, channels=channels, dtype=dtype)
+                # test saving as any PathLike
                 sample.save(os.path.join(dir, name))
                 sample.save(Path(dir, name))
 
-                # save stereo audio float
-                sample = AudioSample(np.random.uniform(-1, 1, (48000, 2)), 48000, 0)
-                sample.save(os.path.join(dir, name))
-                sample.save(Path(dir, name))
-
-                for dtype in [np.int16, np.int32]:
-                    # save stereo audio float
-                    sample = AudioSample(np.random.randint(-100, 100, (48000, 1), dtype=dtype), 48000, 0)
-                    sample.save(os.path.join(dir, name))
-                    sample.save(Path(dir, name))
-
-                    # save stereo audio float
-                    sample = AudioSample(np.random.randint(-100, 100, (48000, 2), dtype=dtype), 48000, 0)
-                    sample.save(os.path.join(dir, name))
-                    sample.save(Path(dir, name))
 
     def test_audio_save_load(self):
-        test_cases = [
-            {"format": "wav", "tol": 1e-4},
-            {"format": "flac", "tol": 1e-4},
-            # {"format": "ogg", "tol": 1},
-        ]
+        test_formats = ["wav", "flac"]
+        test_samplerates = [22050, 44100, 48000]
+        test_channels = [1, 2]
+        test_dtypes = [np.float32, np.float64]
 
-        for test in test_cases:
-            name = f"sample.{test['format']}"
-
+        for format, samplerate, channels, dtype in product(test_formats, test_samplerates, test_channels, test_dtypes):
+            name = f"sample.{format}"
             with TemporaryDirectory() as dir:
-                sample = AudioSample(np.random.uniform(-1, 1, (48000, 1)), 48000, 0)
+                sample = generate_audio_sample(samplerate, channels=channels, dtype=dtype)
                 sample.save(Path(dir, name))
                 samples = AudioFolder(dir)
-                self.assertTrue(np.allclose(sample.data, samples[0].data, atol=test['tol']))
-
-            with TemporaryDirectory() as dir:
-                sample = AudioSample(np.random.uniform(-1, 1, (48000, 2)), 48000, 0)
-                sample.save(Path(dir, name))
-                samples = AudioFolder(dir)
-                self.assertTrue(np.allclose(sample.data, samples[0].data, atol=test['tol']))
-
+                self.assertTrue(np.allclose(sample.data, samples[0].data, atol=1e-4), msg=f"failed: format={format} samplerate={samplerate} channels={channels} dtypes={dtype}")
 
     def test_get_timestamp(self):
         ts = get_timestamp()
