@@ -107,7 +107,7 @@ class Plugin:
     def __publish(self, name, value, meta, timestamp, scope="all", timeout=None):
         msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
-        self.outgoing_queue.put((scope, msg), timeout=timeout)
+        self.outgoing_queue.put((scope, wagglemsg.dump(msg)), timeout=timeout)
     
     def publish(self, name, value, meta={}, timestamp=None, scope="all", timeout=None):
         if timestamp is None:
@@ -174,7 +174,7 @@ class Plugin:
         def process_publish_queue():
             while self.running.is_set():
                 try:
-                    scope, msg = self.outgoing_queue.get_nowait()
+                    scope, body = self.outgoing_queue.get_nowait()
                 except Empty:
                     break
                 properties = pika.BasicProperties(
@@ -185,8 +185,9 @@ class Plugin:
                     properties.app_id = self.config.app_id
                     # NOTE app_id is used by data service to validate and tag additional metadata provided by k3s scheduler.
 
-                body = wagglemsg.dump(msg)
-                logger.debug("publishing message to rabbitmq: %s", msg)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("publishing message to rabbitmq: %s", wagglemsg.load(body))
+
                 channel.basic_publish(
                     exchange="to-validator",
                     routing_key=scope,

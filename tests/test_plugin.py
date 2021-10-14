@@ -6,6 +6,8 @@ from pathlib import Path
 import json
 from tempfile import TemporaryDirectory
 
+import wagglemsg
+
 
 class TestPlugin(unittest.TestCase):
 
@@ -88,13 +90,15 @@ class TestPlugin(unittest.TestCase):
             upload_path.write_bytes(data)
             
             pl.upload_file(upload_path)
-            scope, msg = pl.outgoing_queue.get_nowait()
+            scope, body = pl.outgoing_queue.get_nowait()
+            msg = wagglemsg.load(body)
             self.assertEqual(scope, "all")
             self.assertEqual(msg.name, "upload")
             self.assertIsNotNone(msg.timestamp)
             self.assertIsInstance(msg.value, str)
             self.assertIsNotNone(msg.meta)
             self.assertIn("filename", msg.meta)
+
 
 class TestUploader(unittest.TestCase):
     
