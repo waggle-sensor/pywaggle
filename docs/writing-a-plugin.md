@@ -274,8 +274,8 @@ for sample in camera.stream():
 
 The `camera.stream()` function provides a sequence of `ImageSample` items with the following properties:
 
-* `data`. captured image's `numpy` data array.
-* `timestamp`. captured image's timestamp.
+* `sample.data`. captured image's `numpy` data array.
+* `sample.timestamp`. captured image's timestamp.
 
 Additionally, the Camera class accepts URLs and video files as input. For example:
 
