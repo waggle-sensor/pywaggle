@@ -272,10 +272,10 @@ for sample in camera.stream():
         plugin.upload_file("cars.jpg")
 ```
 
-The `camera.stream()` function provides a sequence of `ImageSample` items with the following properties:
+The `camera.stream()` function yields a sequence of `ImageSample` with the following properties:
 
 * `sample.data`. captured image's `numpy` data array.
-* `sample.timestamp`. captured image's timestamp.
+* `sample.timestamp`. captured image's nanosecond timestamp.
 
 Additionally, the Camera class accepts URLs and video files as input. For example:
 
@@ -319,7 +319,7 @@ while True:
 Similar to `ImageSample`, `AudioSample` provide the following properties:
 
 * `sample.data`. captured audio's `numpy` data array.
-* `sample.timestamp`. captured audio's timestamp.
+* `sample.timestamp`. captured audio's nanosecond timestamp.
 * `sample.samplerate`. captured audio's sample rate.
 
 ### AudioFolder and ImageFolder for testing
