@@ -316,6 +316,12 @@ while True:
     time.sleep(300)
 ```
 
+Similar to `ImageSample`, `AudioSample` provide the following properties:
+
+* `sample.data`. captured audio's `numpy` data array.
+* `sample.timestamp`. captured audio's timestamp.
+* `sample.samplerate`. captured audio's sample rate.
+
 ### AudioFolder and ImageFolder for testing
 
 We provide a couple simple classes to provide audio and image data from a directory for testing.
