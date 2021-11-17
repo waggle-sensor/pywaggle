@@ -272,6 +272,11 @@ for sample in camera.stream():
         plugin.upload_file("cars.jpg")
 ```
 
+The `camera.stream()` function provides a sequence of `ImageSample` items with the following properties:
+
+* `data`. captured image's `numpy` data array.
+* `timestamp`. captured image's timestamp.
+
 Additionally, the Camera class accepts URLs and video files as input. For example:
 
 ```python
