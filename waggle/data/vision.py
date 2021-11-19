@@ -10,6 +10,10 @@ import random
 import json
 import re
 from .timestamp import get_timestamp
+import logging
+
+
+logger = logging.getLogger("waggle.data.vision")
 
 
 class BGR:
@@ -94,40 +98,62 @@ def resolve_device(device):
 class Camera:
 
     def __init__(self, device=0, format=RGB):
-        self.device = resolve_device(device)
-        self.format = format
+        self.capture = _Capture(resolve_device(device), format)
 
-    def snapshot(self, dropframes=0):
+    def __enter__(self):
+        self.capture.__enter__()
+        return self
 
-        with VideoCapture(self.device) as capture:
-            # drop first few frames to improve exposure
-            for _ in range(dropframes):
-                capture.read()
-            timestamp = get_timestamp()
-            ok, data = capture.read()
-            if not ok:
-                raise RuntimeError("failed to take snapshot")
-            return ImageSample(data=data, timestamp=timestamp, format=self.format)
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.capture.__exit__(exc_type, exc_val, exc_tb)
+
+    def snapshot(self):
+        with self.capture:
+            return self.capture.snapshot()
 
     def stream(self):
-        with VideoCapture(self.device) as capture:
-            while True:
-                timestamp = get_timestamp()
-                ok, data = capture.read()
-                if not ok:
-                    break
-                yield ImageSample(data=data, timestamp=timestamp, format=self.format)
+        with self.capture:
+            yield from self.capture.stream()
 
 
-@contextmanager
-def VideoCapture(device):
-    capture = cv2.VideoCapture(device)
-    if not capture.isOpened():
-        raise RuntimeError(f"unable to open video capture for device {device!r}")
-    try:
-        yield capture
-    finally:
-        capture.release()
+class _Capture:
+
+    def __init__(self, device, format):
+        self.device = device
+        self.format = format
+        self.context_depth = 0
+
+    def __enter__(self):
+        if self.context_depth == 0:
+            logger.debug("opening video capture")
+            self.capture = cv2.VideoCapture(self.device)
+            if not self.capture.isOpened():
+                raise RuntimeError(f"unable to open video capture for device {self.device!r}")
+        self.context_depth += 1
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.context_depth -= 1
+        if self.context_depth == 0:
+            logger.debug("closing video capture")
+            self.capture.release()
+
+    def snapshot(self):
+        logger.debug("snapshot")
+        timestamp = get_timestamp()
+        ok, data = self.capture.read()
+        if not ok:
+            raise RuntimeError("failed to take snapshot")
+        return ImageSample(data=data, timestamp=timestamp, format=self.format)
+
+    def stream(self):
+        logger.debug("stream")
+        while True:
+            timestamp = get_timestamp()
+            ok, data = self.capture.read()
+            if not ok:
+                break
+            yield ImageSample(data=data, timestamp=timestamp, format=self.format)
 
 
 class ImageFolder:
