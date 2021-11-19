@@ -2,18 +2,12 @@ import cv2
 from pathlib import Path
 import numpy
 from typing import Union
-from contextlib import contextmanager
-import time
 import os
 from os import PathLike
 import random
 import json
 import re
 from .timestamp import get_timestamp
-import logging
-
-
-logger = logging.getLogger("waggle.data.vision")
 
 
 class BGR:
@@ -125,7 +119,6 @@ class _Capture:
 
     def __enter__(self):
         if self.context_depth == 0:
-            logger.debug("opening video capture")
             self.capture = cv2.VideoCapture(self.device)
             if not self.capture.isOpened():
                 raise RuntimeError(f"unable to open video capture for device {self.device!r}")
@@ -135,11 +128,9 @@ class _Capture:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.context_depth -= 1
         if self.context_depth == 0:
-            logger.debug("closing video capture")
             self.capture.release()
 
     def snapshot(self):
-        logger.debug("snapshot")
         timestamp = get_timestamp()
         ok, data = self.capture.read()
         if not ok:
@@ -147,7 +138,6 @@ class _Capture:
         return ImageSample(data=data, timestamp=timestamp, format=self.format)
 
     def stream(self):
-        logger.debug("stream")
         while True:
             timestamp = get_timestamp()
             ok, data = self.capture.read()
