@@ -32,17 +32,6 @@ class RGB:
         return cv2.cvtColor(data, cv2.COLOR_RGB2BGR)
 
 
-# class HSV:
-
-#     @classmethod
-#     def cv2_to_format(cls, data):
-#         return cv2.cvtColor(data, cv2.COLOR_BGR2HSV)
-
-#     @classmethod
-#     def format_to_cv2(cls, data):
-#         return cv2.cvtColor(data, cv2.COLOR_HSV2BGR)
-
-
 WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))
 
 
@@ -67,18 +56,28 @@ class ImageSample:
         cv2.imwrite(str(path), self.format.format_to_cv2(self.data))
 
 
-# TODO(sean) handle various data sources more uniformly
 def resolve_device(device):
-    # path like files are converted to strings for opencv
     if isinstance(device, Path):
-        return str(device.absolute())
+        return resolve_device_from_path(device)
     # objects that are not paths or strings are considered already resolved
     if not isinstance(device, str):
         return device
-    # url like strings are considered resolved
-    if re.match(r"[A-Za-z0-9]+://", device):
-        return device
-    # otherwise, lookup device in data config
+    match = re.match(r"([A-Za-z0-9]+)://(.*)$", device)
+    # non-url like paths refer to data shim devices
+    if match is None:
+        return resolve_device_from_data_config(device)
+    # return file:// urls as path
+    if match.group(1) == "file":
+        return resolve_device_from_path(Path(match.group(2)))
+    # return other urls as-is
+    return device
+
+
+def resolve_device_from_path(path):
+    return str(path.absolute())
+
+
+def resolve_device_from_data_config(device):
     config = read_device_config(WAGGLE_DATA_CONFIG_PATH)
     section = config.get(device)
     if section is None:

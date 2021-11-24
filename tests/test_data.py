@@ -1,6 +1,6 @@
 import unittest
 from waggle.data.audio import AudioFolder, AudioSample
-from waggle.data.vision import RGB, BGR, ImageFolder, ImageSample
+from waggle.data.vision import RGB, BGR, ImageFolder, ImageSample, resolve_device
 from waggle.data.timestamp import get_timestamp
 import numpy as np
 from tempfile import TemporaryDirectory
@@ -32,7 +32,14 @@ class TestData(unittest.TestCase):
             data = np.random.randint(0, 255, (100, 120, 3), dtype=np.uint8)
             data2 = fmt.format_to_cv2(fmt.cv2_to_format(data))
             self.assertTrue(np.all(np.isclose(data, data2, 1.0)), f"checking format {fmt}")
-    
+
+    def test_resolve_device(self):
+        self.assertEqual(resolve_device(Path("test.jpg")), str(Path("test.jpg").absolute()))
+        self.assertEqual(resolve_device("file://path/to/test.jpg"), str(Path("path/to/test.jpg").absolute()))
+        self.assertEqual(resolve_device("http://camera-ip.org/image.jpg"), "http://camera-ip.org/image.jpg")
+        self.assertEqual(resolve_device("rtsp://camera-ip.org/image.jpg"), "rtsp://camera-ip.org/image.jpg")
+        self.assertEqual(resolve_device(0), 0)
+
     def test_image_save(self):
         with TemporaryDirectory() as dir:
             sample = ImageSample(np.random.randint(0, 255, (100, 120, 3), dtype=np.uint8), 0, RGB)
