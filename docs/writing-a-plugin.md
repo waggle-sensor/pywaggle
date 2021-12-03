@@ -287,7 +287,7 @@ camera = Camera("http://camera-server/profile1.mjpeg")
 camera = Camera("rtsp://camera-server/v0.mp4")
 
 # open a local file using file:// url
-camera = Camera(Path("file://path/to/my_cool_video.mp4"))
+camera = Camera("file://path/to/my_cool_video.mp4")
 
 # open a camera by device id (when plugin runs on a node)
 camera = Camera("bottom_camera")
