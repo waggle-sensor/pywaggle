@@ -286,15 +286,11 @@ camera = Camera("http://camera-server/profile1.mjpeg")
 # open an rtsp stream
 camera = Camera("rtsp://camera-server/v0.mp4")
 
+# open a local file using file:// url
+camera = Camera(Path("file://path/to/my_cool_video.mp4"))
+
 # open a camera by device id (when plugin runs on a node)
 camera = Camera("bottom_camera")
-```
-
-```python
-from pathlib import Path
-
-# open a prerecorded video file
-camera = Camera(Path("my_cool_video.mp4"))
 ```
 
 ### Recording audio data
