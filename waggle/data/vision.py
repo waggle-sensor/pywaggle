@@ -7,6 +7,7 @@ from os import PathLike
 import random
 import json
 import re
+from base64 import b64encode
 from .timestamp import get_timestamp
 
 
@@ -53,7 +54,16 @@ class ImageSample:
 
     def save(self, path: PathLike):
         path = Path(path)
-        cv2.imwrite(str(path), self.format.format_to_cv2(self.data))
+        data = self.format.format_to_cv2(self.data)
+        cv2.imwrite(str(path), data)
+
+    def _repr_html_(self):
+        data = self.format.format_to_cv2(self.data)
+        ok, buf = cv2.imencode(".png", data)
+        if not ok:
+            raise RuntimeError("could not encode image")
+        b64data = b64encode(buf.ravel()).decode()
+        return f'<img src="data:image/png;base64,{b64data}" />'
 
 
 def resolve_device(device):

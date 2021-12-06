@@ -4,6 +4,8 @@ import numpy
 import soundfile
 from typing import NamedTuple
 import random
+from base64 import b64encode
+from io import BytesIO
 from .timestamp import get_timestamp
 
 
@@ -15,6 +17,16 @@ class AudioSample(NamedTuple):
     def save(self, path: PathLike):
         path = Path(path)
         soundfile.write(str(path), self.data, self.samplerate)
+
+    def _repr_html_(self):
+        with BytesIO() as buf:
+            soundfile.write(buf, self.data, self.samplerate, format="flac", closefd=False)
+            b64data = b64encode(buf.getvalue()).decode()
+        return f'''
+<audio controls="controls" autobuffer="autobuffer">
+<source src="data:audio/wav;base64,{b64data}" />
+</audio>
+'''
 
 
 class Microphone:
