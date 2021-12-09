@@ -98,28 +98,28 @@ class Plugin:
         self.subscribe_queue = Queue()
 
     def __enter__(self):
-        self.init()
-        # self.publish("plugin.status", "start")
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        # if exc_type is None:
-        #     self.publish("plugin.status", "stop")
-        # else:
-        #     self.publish("plugin.status", "error")
-        self.stop()
-
-    def init(self):
         logger.debug("starting plugin worker thread")
         if self.running.is_set():
             raise RuntimeError("cannot init already running plugin")
         self.running.set()
         Thread(target=self.run_rabbitmq_worker, daemon=True).start()
+        logger.debug("started plugin worker thread")
+        # TODO add trace publish
+        # self.publish("plugin.status", "start")
+        # self.enter_time = time.process_time_ns()
+        return self
 
-    def stop(self, timeout=None):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        # TODO add trace publish
+        # if exc_type is None:
+        #     self.publish("plugin.status", "stop")
+        # else:
+        #     self.publish("plugin.status", "error")
+        # self.publish("plugin.duration", time.process_time_ns() - self.enter_time)
         logger.debug("stopping plugin worker thread")
         self.running.clear()
-        self.stopped.wait(timeout=timeout)
+        self.stopped.wait()
+        logger.debug("stopped plugin worker thread")
 
     def get(self, timeout=None):
         try:
@@ -157,25 +157,28 @@ class Plugin:
 
     def run_rabbitmq_worker(self):
         try:
+            logger.debug("started background worker")
             self.stopped.clear()
             while self.running.is_set():
                 try:
-                    logger.debug("connecting to rabbitmq broker at %s:%d with username %r",
-                                    self.connection_parameters.host,
-                                    self.connection_parameters.port,
-                                    self.connection_parameters.credentials.username)
-                    with pika.BlockingConnection(self.connection_parameters) as connection:
-                        logger.debug("connected to rabbitmq broker")
-                        self.rabbitmq_worker_mainloop(connection)
+                    self.connect_and_process_messages()
                 except Exception as exc:
                     logger.debug("rabbitmq connection error: %s", exc)
                 time.sleep(1)
         finally:
             self.stopped.set()
+            logger.debug("stopped background worker")
 
-    def rabbitmq_worker_mainloop(self, connection):
-        channel = connection.channel()
+    def connect_and_process_messages(self):
+        logger.debug("connecting to rabbitmq broker at %s:%d with username %r",
+                        self.connection_parameters.host,
+                        self.connection_parameters.port,
+                        self.connection_parameters.credentials.username)
+        with pika.BlockingConnection(self.connection_parameters) as connection, connection.channel() as channel:
+            logger.debug("connected to rabbitmq broker")
+            self.process_messages(connection, channel)
 
+    def process_messages(self, connection, channel):
         def subscriber_callback(ch, method, properties, body):
             try:
                 msg = wagglemsg.load(body)
@@ -195,7 +198,7 @@ class Plugin:
                     channel.queue_bind(queue, "data.topic", topic)
 
         def process_publish_queue():
-            while self.running.is_set():
+            while True:
                 try:
                     scope, body = self.outgoing_queue.get_nowait()
                 except Empty:
@@ -218,21 +221,27 @@ class Plugin:
                     body=body)
 
         def process_queues_and_events():
-            process_subscribe_queue()
-            process_publish_queue()
-            if self.running.is_set():
-                connection.call_later(0.01, process_queues_and_events)
-            else:
+            if not self.running.is_set():
+                logger.debug("attempting to flush remaining messages in queue")
+                process_publish_queue()
                 logger.debug("stopping rabbitmq processing loop")
                 channel.stop_consuming()
+                return
+            process_subscribe_queue()
+            process_publish_queue()
+            connection.call_later(0.01, process_queues_and_events)
 
         # setup subscriber queue and bind
         queue = channel.queue_declare("", exclusive=True).method.queue
         channel.basic_consume(queue, subscriber_callback, auto_ack=True)
         # setup periodic publish and subscribe to topic checks
         connection.call_later(0.01, process_queues_and_events)
-        logger.debug("starting rabbitmq processing loop")
-        channel.start_consuming()
+
+        try:
+            logger.debug("starting rabbitmq processing loop")
+            channel.start_consuming()
+        finally:
+            logger.debug("stopped rabbitmq processing loop")
 
 
 class Uploader:
@@ -293,11 +302,6 @@ def write_json_file(path, obj):
         json.dump(obj, f, separators=(',', ':'), sort_keys=True)
 
 
-# define global default instance of Plugin
-plugin = Plugin()
-init = plugin.init
-stop = plugin.stop
-subscribe = plugin.subscribe
-publish = plugin.publish
-get = plugin.get
-upload_file = plugin.upload_file
+# NOTE inform users of change until we migrate everyone
+def init():
+    raise DeprecationWarning("calling init explicity is deprecated. please use the new managed with Plugin() statement instead.")

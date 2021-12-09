@@ -11,11 +11,9 @@ import wagglemsg
 
 class TestPlugin(unittest.TestCase):
 
-    def setUp(self):
-        plugin.init()
-    
-    def tearDown(self):
-        plugin.stop()
+    def test_deprecate(self):
+        with self.assertRaises(DeprecationWarning):
+            plugin.init()
 
     def test_publish(self):
         with Plugin() as plugin:
