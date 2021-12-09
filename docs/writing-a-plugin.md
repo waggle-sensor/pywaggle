@@ -63,36 +63,14 @@ touch requirements.txt
 Create a new file called `main.py` with the following code:
 
 ```python
-from waggle import plugin
-from time import sleep
+from waggle.plugin import Plugin
+import time
 
-plugin.init()
-
-counter = 0
-
-while True:
-    sleep(1)
-    print("publishing value", counter)
-    plugin.publish("hello.world.counter", counter)
-    counter += 1
-```
-
-Let's walk through the pywaggle related details. First, we import the pywaggle plugin module:
-
-```python
-from waggle import plugin
-```
-
-Next, we initialize our plugin. This will prepare our plugin to interface with Waggle system services.
-
-```python
-plugin.init()
-```
-
-Finally, we publish our counter value. This will queue up our measurement name and value along with the current timestamp and will eventually be shipped to our data repository where it can be accessed.
-
-```python
-plugin.publish("hello.world.counter", counter)
+with Plugin() as plugin:
+    for i in range(10):
+        print("publishing value", i)
+        plugin.publish("hello.world.value", i)
+        time.sleep(1)
 ```
 
 ### 5. Run plugin
@@ -200,15 +178,15 @@ Plugins can subscribe to measurements published by other plugins running on the 
 The followng basic example simply waits for measurements named "my.sensor.name" and prints the value it received.
 
 ```python
-from waggle.plugin import plugin
+from waggle.plugin import Plugin
 from random import random
 
-plugin.init()
-plugin.subscribe("my.sensor.name")
+with Plugin() as plugin:
+    plugin.subscribe("my.sensor.name")
 
-while True:
-    msg = plugin.get()
-    print("Another plugin published my.sensor.name value", msg.value)
+    while True:
+        msg = plugin.get()
+        print("Another plugin published my.sensor.name value", msg.value)
 ```
 
 In the case you need multiple multiple measurements, you can simply use:
@@ -255,21 +233,17 @@ pywaggle provides a simple abstraction to cameras and microphones.
 ### Accessing a video stream
 
 ```python
-from waggle import plugin
+from waggle.plugin import Plugin
 from waggle.data.vision import Camera
 import time
 
-plugin.init()
-
-# open default local camera
-camera = Camera()
-
-# process samples from video stream
-for sample in camera.stream():
-    count = count_cars_in_image(sample.data)
-    if count > 10:
-        sample.save("cars.jpg")
-        plugin.upload_file("cars.jpg")
+with Plugin() as plugin, Camera() as camera:
+    # process samples from video stream
+    for sample in camera.stream():
+        count = count_cars_in_image(sample.data)
+        if count > 10:
+            sample.save("cars.jpg")
+            plugin.upload_file("cars.jpg")
 ```
 
 The `camera.stream()` function yields a sequence of `ImageSample` with the following properties:
@@ -296,20 +270,17 @@ camera = Camera("bottom_camera")
 ### Recording audio data
 
 ```python
-from waggle import plugin
+from waggle.plugin import Plugin
 from waggle.data.audio import Microphone
 import time
 
-plugin.init()
-
-microphone = Microphone()
-
-# record and upload a 10s sample periodically
-while True:
-    sample = microphone.record(10)
-    sample.save("sample.ogg")
-    plugin.upload_file("sample.ogg")
-    time.sleep(300)
+with Plugin() as plugin, Microphone() as microphone:
+    # record and upload a 10s sample periodically
+    while True:
+        sample = microphone.record(10)
+        sample.save("sample.ogg")
+        plugin.upload_file("sample.ogg")
+        time.sleep(300)
 ```
 
 Similar to `ImageSample`, `AudioSample` provide the following properties:
@@ -377,7 +348,7 @@ camera = ImageFolder(format=BGR)
 If we run the basic example, the only thing we'll see is the message "publishing a value!" every second. If you need to see more details, pywaggle is designed to easily interface with Python's standard logging module. To enable debug logging, simply make the following additions:
 
 ```python
-from waggle import plugin
+from waggle.plugin import Plugin
 from time import sleep
 
 # 1. import standard logging module
@@ -386,12 +357,11 @@ import logging
 # 2. enable debug logging
 logging.basicConfig(level=logging.DEBUG)
 
-plugin.init()
-
-while True:
-    sleep(1)
-    print("publishing a value!")
-    plugin.publish("my.sensor.name", 123)
+with Plugin() as plugin:
+    while True:
+        sleep(1)
+        print("publishing a value!")
+        plugin.publish("my.sensor.name", 123)
 ```
 
 You should see a lot of information like:
