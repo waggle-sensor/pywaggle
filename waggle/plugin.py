@@ -99,14 +99,14 @@ class Plugin:
 
     def __enter__(self):
         self.init()
-        self.publish("plugin.status", "start")
+        # self.publish("plugin.status", "start")
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        if exc_type is None:
-            self.publish("plugin.status", "stop")
-        else:
-            self.publish("plugin.status", "error")
+        # if exc_type is None:
+        #     self.publish("plugin.status", "stop")
+        # else:
+        #     self.publish("plugin.status", "error")
         self.stop()
 
     def init(self):
