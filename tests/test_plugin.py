@@ -18,23 +18,26 @@ class TestPlugin(unittest.TestCase):
         plugin.stop()
 
     def test_publish(self):
-        plugin.publish('test.int', 1)
-        plugin.publish('test.float', 2.0)
-        plugin.publish('test.bytes', b'three')
-        plugin.publish('cows.total', 391, meta={
-            "camera": "bottom_left",
-        })
+        with Plugin() as plugin:
+            plugin.publish('test.int', 1)
+            plugin.publish('test.float', 2.0)
+            plugin.publish('test.bytes', b'three')
+            plugin.publish('cows.total', 391, meta={
+                "camera": "bottom_left",
+            })
     
     def test_publish_check_reserved(self):
-        with self.assertRaises(ValueError):
-            plugin.publish("upload", "path/to/data")
+        with Plugin() as plugin:
+            with self.assertRaises(ValueError):
+                plugin.publish("upload", "path/to/data")
 
     def test_get(self):
-        plugin.subscribe('raw.#')
-        with self.assertRaises(TimeoutError):
-            plugin.get(timeout=0)
-        with self.assertRaises(TimeoutError):
-            plugin.get(timeout=0.001)
+        with Plugin() as plugin:
+            plugin.subscribe('raw.#')
+            with self.assertRaises(TimeoutError):
+                plugin.get(timeout=0)
+            with self.assertRaises(TimeoutError):
+                plugin.get(timeout=0.001)
 
     def test_get_timestamp(self):
         ts = plugin.get_timestamp()

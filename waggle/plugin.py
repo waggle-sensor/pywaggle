@@ -60,8 +60,24 @@ def raise_for_invalid_publish_name(s):
 
 class Plugin:
 
-    def __init__(self, config, uploader=None):
+    def __init__(self, config=None, uploader=None):
+        # default config from env vars
+        if config is None:
+            config = PluginConfig(
+                username=getenv("WAGGLE_PLUGIN_USERNAME", "plugin"),
+                password=getenv("WAGGLE_PLUGIN_PASSWORD", "plugin"),
+                host=getenv("WAGGLE_PLUGIN_HOST", "rabbitmq"),
+                port=int(getenv("WAGGLE_PLUGIN_PORT", 5672)),
+                app_id=getenv("WAGGLE_APP_ID", ""),
+            )
+
         self.config = config
+
+        # default upload directory
+        if uploader is None:
+            uploader = Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
+
+        self.uploader = uploader
 
         self.connection_parameters = pika.ConnectionParameters(
             host=config.host,
@@ -81,15 +97,29 @@ class Plugin:
         self.incoming_queue = Queue()
         self.subscribe_queue = Queue()
 
-        self.uploader = uploader
+    def __enter__(self):
+        self.init()
+        self.publish("plugin.status", "start")
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        if exc_type is None:
+            self.publish("plugin.status", "stop")
+        else:
+            self.publish("plugin.status", "error")
+        self.stop()
 
     def init(self):
         logger.debug("starting plugin worker thread")
+        if self.running.is_set():
+            raise RuntimeError("cannot init already running plugin")
+        self.running.set()
         Thread(target=self.run_rabbitmq_worker, daemon=True).start()
 
-    def stop(self):
+    def stop(self, timeout=None):
         logger.debug("stopping plugin worker thread")
         self.running.clear()
+        self.stopped.wait(timeout=timeout)
 
     def get(self, timeout=None):
         try:
@@ -126,20 +156,14 @@ class Plugin:
         self.__publish("upload", upload_path.name, meta, timestamp)
 
     def run_rabbitmq_worker(self):
-        if self.running.is_set():
-            logger.warning("already have an instance of rabbitmq worker running")
-            return
-
         try:
-            self.running.set()
             self.stopped.clear()
-
             while self.running.is_set():
                 try:
                     logger.debug("connecting to rabbitmq broker at %s:%d with username %r",
-                                 self.connection_parameters.host,
-                                 self.connection_parameters.port,
-                                 self.connection_parameters.credentials.username)
+                                    self.connection_parameters.host,
+                                    self.connection_parameters.port,
+                                    self.connection_parameters.credentials.username)
                     with pika.BlockingConnection(self.connection_parameters) as connection:
                         logger.debug("connected to rabbitmq broker")
                         self.rabbitmq_worker_mainloop(connection)
@@ -147,7 +171,6 @@ class Plugin:
                     logger.debug("rabbitmq connection error: %s", exc)
                 time.sleep(1)
         finally:
-            self.running.clear()
             self.stopped.set()
 
     def rabbitmq_worker_mainloop(self, connection):
@@ -198,7 +221,7 @@ class Plugin:
             process_subscribe_queue()
             process_publish_queue()
             if self.running.is_set():
-                connection.call_later(0.001, process_queues_and_events)
+                connection.call_later(0.01, process_queues_and_events)
             else:
                 logger.debug("stopping rabbitmq processing loop")
                 channel.stop_consuming()
@@ -207,7 +230,7 @@ class Plugin:
         queue = channel.queue_declare("", exclusive=True).method.queue
         channel.basic_consume(queue, subscriber_callback, auto_ack=True)
         # setup periodic publish and subscribe to topic checks
-        connection.call_later(0.001, process_queues_and_events)
+        connection.call_later(0.01, process_queues_and_events)
         logger.debug("starting rabbitmq processing loop")
         channel.start_consuming()
 
@@ -270,17 +293,8 @@ def write_json_file(path, obj):
         json.dump(obj, f, separators=(',', ':'), sort_keys=True)
 
 
-# define global default instance of Uploader
-uploader = Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
-
 # define global default instance of Plugin
-plugin = Plugin(PluginConfig(
-    username=getenv("WAGGLE_PLUGIN_USERNAME", "plugin"),
-    password=getenv("WAGGLE_PLUGIN_PASSWORD", "plugin"),
-    host=getenv("WAGGLE_PLUGIN_HOST", "rabbitmq"),
-    port=int(getenv("WAGGLE_PLUGIN_PORT", 5672)),
-    app_id=getenv("WAGGLE_APP_ID", ""),
-), uploader=uploader)
+plugin = Plugin()
 init = plugin.init
 stop = plugin.stop
 subscribe = plugin.subscribe
