@@ -353,11 +353,11 @@ The following example shows how we can instrument our code using a typical AI/ML
 from waggle.plugin import Plugin
 
 with Plugin() as plugin:
-    # measures duration of "get input" block and publishes to plugin.duration.input
+    # measures duration of input block and publishes to plugin.duration.input
     with plugin.timeit("plugin.duration.input"):
         get_inputs(...)
 
-    # measures duration of "do inferencec" block and publishes to plugin.duration.inference
+    # measures duration of inference block and publishes to plugin.duration.inference
     with plugin.timeit("plugin.duration.inference"):
         do_inference(...)
 
