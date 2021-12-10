@@ -15,6 +15,14 @@ class TestPlugin(unittest.TestCase):
         with self.assertRaises(DeprecationWarning):
             plugin.init()
 
+    def test_timeit(self):
+        with Plugin() as plugin:
+            with plugin.timeit("dur"):
+                pass
+            _, body = plugin.outgoing_queue.get(0.01)
+            msg = wagglemsg.load(body)
+            self.assertEqual(msg.name, "dur")
+
     def test_publish(self):
         with Plugin() as plugin:
             plugin.publish('test.int', 1)

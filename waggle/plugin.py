@@ -19,6 +19,7 @@ from typing import NamedTuple
 from pathlib import Path
 import hashlib
 from shutil import copyfile
+from contextlib import contextmanager
 
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,15 @@ class Plugin:
         self.running.clear()
         self.stopped.wait()
         logger.debug("stopped plugin worker thread")
+
+    @contextmanager
+    def timeit(self, name):
+        logger.debug("starting timeit block %s", name)
+        start = time.perf_counter_ns()
+        yield
+        finish = time.perf_counter_ns()
+        self.publish(name, finish - start)
+        logger.debug("finished timeit block %s", name)
 
     def get(self, timeout=None):
         try:
@@ -304,4 +314,4 @@ def write_json_file(path, obj):
 
 # NOTE inform users of change until we migrate everyone
 def init():
-    raise DeprecationWarning("calling init explicity is deprecated. please use the new managed with Plugin() statement instead.")
+    raise DeprecationWarning("Calling init explicity is deprecated. Please use the context manager format \"with Plugin() as plugin\" instead.")
