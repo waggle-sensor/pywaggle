@@ -343,6 +343,28 @@ camera = Camera(format=BGR)
 camera = ImageFolder(format=BGR)
 ```
 
+### Advanced: Timing a block
+
+The Plugin class provides a simple utility for timing how long a block of code takes.
+
+The following example shows how we can instrument our code using a typical AI/ML example plugin.
+
+```python
+from waggle.plugin import Plugin
+
+with Plugin() as plugin:
+    with plugin.timeit("plugin.duration.input"):
+        # get inputs...
+
+    with plugin.timeit("plugin.duration.inference"):
+        # do inference...
+
+    with plugin.timeit("plugin.duration.publish"):
+        # publish results...
+```
+
+In the example above, the duration of the input, inference and publish steps are measured and then the plugin publishes the duration in nanoseconds to the name provided to `plugin.timeit` as each block finishes.
+
 ## Seeing the internal details
 
 If we run the basic example, the only thing we'll see is the message "publishing a value!" every second. If you need to see more details, pywaggle is designed to easily interface with Python's standard logging module. To enable debug logging, simply make the following additions:
