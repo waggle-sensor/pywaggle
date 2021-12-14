@@ -5,6 +5,7 @@ from waggle.plugin import Uploader
 from pathlib import Path
 import json
 from tempfile import TemporaryDirectory
+import time
 
 import wagglemsg
 
@@ -18,7 +19,7 @@ class TestPlugin(unittest.TestCase):
     def test_timeit(self):
         with Plugin() as plugin:
             with plugin.timeit("dur"):
-                pass
+                time.sleep(0.001)
             _, body = plugin.outgoing_queue.get(0.01)
             msg = wagglemsg.load(body)
             self.assertEqual(msg.name, "dur")
