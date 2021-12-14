@@ -28,12 +28,26 @@ logging.getLogger("pika").setLevel(logging.CRITICAL)
 
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
-# We don't want any surprises in terms of accuraccy 
+# We don't want any surprises in terms of accuraccy
 try:
     from time import time_ns as get_timestamp
 except ImportError:
     def get_timestamp():
         return int(time.time() * 1e9)
+
+# NOTE to preserve the best accuracy, we implement the backwards compatible perf
+# counter by only abstracting how to measure the duration between two times in
+# nanoseconds
+try:
+    from time import perf_counter_ns as timeit_perf_counter
+
+    def timeit_perf_counter_duration(start, finish):
+        return finish - start
+except ImportError:
+    from time import perf_counter as timeit_perf_counter
+
+    def timeit_perf_counter_duration(start, finish):
+        return int((finish - start) * 1e9)
 
 
 class PluginConfig(NamedTuple):
@@ -125,10 +139,11 @@ class Plugin:
     @contextmanager
     def timeit(self, name):
         logger.debug("starting timeit block %s", name)
-        start = time.perf_counter_ns()
+        start = timeit_perf_counter()
         yield
-        finish = time.perf_counter_ns()
-        self.publish(name, finish - start)
+        finish = timeit_perf_counter()
+        duration = timeit_perf_counter_duration(start, finish)
+        self.publish(name, duration)
         logger.debug("finished timeit block %s", name)
 
     def get(self, timeout=None):
