@@ -20,6 +20,7 @@ from pathlib import Path
 import hashlib
 from shutil import copyfile
 from contextlib import contextmanager
+from copy import deepcopy
 
 
 logger = logging.getLogger(__name__)
@@ -73,78 +74,40 @@ def raise_for_invalid_publish_name(s):
             raise ValueError(f"publish name invalid: {s!r} part: {p!r}")
 
 
+def get_default_plugin_config() -> PluginConfig:
+    return PluginConfig(
+        username=getenv("WAGGLE_PLUGIN_USERNAME", "plugin"),
+        password=getenv("WAGGLE_PLUGIN_PASSWORD", "plugin"),
+        host=getenv("WAGGLE_PLUGIN_HOST", "rabbitmq"),
+        port=int(getenv("WAGGLE_PLUGIN_PORT", 5672)),
+        app_id=getenv("WAGGLE_APP_ID", ""),
+    )
+
+
+def get_default_plugin_uploader():
+    return Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
+
+
 class Plugin:
 
     def __init__(self, config=None, uploader=None):
-        # default config from env vars
-        if config is None:
-            config = PluginConfig(
-                username=getenv("WAGGLE_PLUGIN_USERNAME", "plugin"),
-                password=getenv("WAGGLE_PLUGIN_PASSWORD", "plugin"),
-                host=getenv("WAGGLE_PLUGIN_HOST", "rabbitmq"),
-                port=int(getenv("WAGGLE_PLUGIN_PORT", 5672)),
-                app_id=getenv("WAGGLE_APP_ID", ""),
-            )
-
-        self.config = config
-
-        # default upload directory
-        if uploader is None:
-            uploader = Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
-
-        self.uploader = uploader
-
-        self.connection_parameters = pika.ConnectionParameters(
-            host=config.host,
-            port=config.port,
-            credentials=pika.PlainCredentials(
-                username=config.username,
-                password=config.password,
-            ),
-            connection_attempts=1,
-            socket_timeout=3.0,
-        )
-
-        self.running = Event()
-        self.stopped = Event()
-
-        self.outgoing_queue = Queue()
-        self.incoming_queue = Queue()
-        self.subscribe_queue = Queue()
+        self.config = config or get_default_plugin_config()
+        self.uploader = uploader or get_default_plugin_uploader()
+        self.send = Queue()
+        self.recv = Queue()
+        self.stop = Event()
+        self.tasks = []
 
     def __enter__(self):
-        logger.debug("starting plugin worker thread")
-        if self.running.is_set():
-            raise RuntimeError("cannot init already running plugin")
-        self.running.set()
-        Thread(target=self.run_rabbitmq_worker, daemon=True).start()
-        logger.debug("started plugin worker thread")
-        # TODO add trace publish
-        # self.publish("plugin.status", "start")
-        # self.enter_time = time.process_time_ns()
+        self.tasks.append(RabbitMQPublisher(self.config, self.send, self.stop))
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        # TODO add trace publish
-        # if exc_type is None:
-        #     self.publish("plugin.status", "stop")
-        # else:
-        #     self.publish("plugin.status", "error")
-        # self.publish("plugin.duration", time.process_time_ns() - self.enter_time)
-        logger.debug("stopping plugin worker thread")
-        self.running.clear()
-        self.stopped.wait()
-        logger.debug("stopped plugin worker thread")
-
-    @contextmanager
-    def timeit(self, name):
-        logger.debug("starting timeit block %s", name)
-        start = timeit_perf_counter()
-        yield
-        finish = timeit_perf_counter()
-        duration = timeit_perf_counter_duration(start, finish)
-        self.publish(name, duration)
-        logger.debug("finished timeit block %s", name)
+        # signal to tasks to stop
+        self.stop.set()
+        # wait for all tasks to finish
+        for task in self.tasks:
+            task.done.wait()
 
     def get(self, timeout=None):
         try:
@@ -154,21 +117,21 @@ class Plugin:
         raise TimeoutError("plugin get timed out")
 
     def subscribe(self, *topics):
-        self.subscribe_queue.put(topics)
-    
+        self.tasks.append(RabbitMQConsumer(topics, self.config, self.send, self.stop))
+
+    def publish(self, name, value, meta={}, timestamp=None, scope="all", timeout=None):
+        if timestamp is None:
+            timestamp = get_timestamp()
+        raise_for_invalid_publish_name(name)
+        self.__publish(name, value, meta, timestamp, scope, timeout)
+
     # NOTE __publish is used internally by publish and upload_file to do an unchecked
     # message publish. the main reason this exists is to guard against reserved names
     # like "upload" in publish but still allow upload_file to use it.
     def __publish(self, name, value, meta, timestamp, scope="all", timeout=None):
         msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
-        self.outgoing_queue.put((scope, wagglemsg.dump(msg)), timeout=timeout)
-    
-    def publish(self, name, value, meta={}, timestamp=None, scope="all", timeout=None):
-        if timestamp is None:
-            timestamp = get_timestamp()
-        raise_for_invalid_publish_name(name)
-        self.__publish(name, value, meta, timestamp, scope, timeout)
+        self.send.put((scope, wagglemsg.dump(msg)), timeout=timeout)
 
     def upload_file(self, path, meta={}, timestamp=None, keep=False):
         if timestamp is None:
@@ -180,93 +143,138 @@ class Plugin:
         meta["filename"] = Path(path).name
         self.__publish("upload", upload_path.name, meta, timestamp)
 
-    def run_rabbitmq_worker(self):
+    @contextmanager
+    def timeit(self, name):
+        logger.debug("starting timeit block %s", name)
+        start = timeit_perf_counter()
+        yield
+        finish = timeit_perf_counter()
+        duration = timeit_perf_counter_duration(start, finish)
+        self.publish(name, duration)
+        logger.debug("finished timeit block %s", name)
+
+
+def get_connection_parameters_for_config(config: PluginConfig) -> pika.ConnectionParameters:
+    return pika.ConnectionParameters(
+            host=config.host,
+            port=config.port,
+            credentials=pika.PlainCredentials(
+                username=config.username,
+                password=config.password,
+            ),
+            connection_attempts=1,
+            socket_timeout=1.0,
+        )
+
+
+class RabbitMQPublisher:
+    """
+    RabbitMQPublisher manages a connection to a RabbitMQ broker and flushes messages from
+    the provided queue when connected.
+
+    This is done using a background which must be stopped by setting the provided stop Event.
+    """
+
+    def __init__(self, config: PluginConfig, messages: Queue, stop: Event):
+        self.config = deepcopy(config)
+        self.params = get_connection_parameters_for_config(config)
+        self.messages = messages
+        self.stop = stop
+        self.done = Event()
+        Thread(target=self.__main).start()
+    
+    def __main(self):
         try:
-            logger.debug("started background worker")
-            self.stopped.clear()
-            while self.running.is_set():
+            while not self.stop.is_set():
                 try:
-                    self.connect_and_process_messages()
-                except Exception as exc:
-                    logger.debug("rabbitmq connection error: %s", exc)
-                time.sleep(1)
+                    self.__connect_and_flush_messages()
+                except Exception:
+                    time.sleep(1)
         finally:
-            self.stopped.set()
-            logger.debug("stopped background worker")
+            self.done.set()
 
-    def connect_and_process_messages(self):
-        logger.debug("connecting to rabbitmq broker at %s:%d with username %r",
-                        self.connection_parameters.host,
-                        self.connection_parameters.port,
-                        self.connection_parameters.credentials.username)
-        with pika.BlockingConnection(self.connection_parameters) as connection, connection.channel() as channel:
-            logger.debug("connected to rabbitmq broker")
-            self.process_messages(connection, channel)
+    def __connect_and_flush_messages(self):
+        with pika.BlockingConnection(self.params) as conn, conn.channel() as ch:
+            while not self.stop.is_set():
+                self.__flush_messages(ch)
+            # attempt to flush any remaining messages
+            self.__flush_messages(ch)
 
-    def process_messages(self, connection, channel):
-        def subscriber_callback(ch, method, properties, body):
+    def __flush_messages(self, ch):
+        while True:
             try:
-                msg = wagglemsg.load(body)
-            except TypeError:
-                logger.debug("unsupported message type: %s %s", properties, body)
+                scope, body = self.messages.get(timeout=1)
+            except Empty:
                 return
-            self.incoming_queue.put(msg)
-        
-        def process_subscribe_queue():
-            while self.running.is_set():
-                try:
-                    topics = self.subscribe_queue.get_nowait()
-                except Empty:
-                    break
-                for topic in topics:
-                    logger.debug("subscribing to topic %r", topic)
-                    channel.queue_bind(queue, "data.topic", topic)
 
-        def process_publish_queue():
-            while True:
-                try:
-                    scope, body = self.outgoing_queue.get_nowait()
-                except Empty:
-                    break
-                properties = pika.BasicProperties(
-                    delivery_mode=2,
-                    user_id=self.connection_parameters.credentials.username)
-                
-                if self.config.app_id != "":
-                    properties.app_id = self.config.app_id
-                    # NOTE app_id is used by data service to validate and tag additional metadata provided by k3s scheduler.
+            properties = pika.BasicProperties(
+                delivery_mode=2,
+                user_id=self.params.credentials.username)
+            
+            # NOTE app_id is used by data service to validate and tag additional metadata provided by k3s scheduler.
+            if self.config.app_id != "":
+                properties.app_id = self.config.app_id
 
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("publishing message to rabbitmq: %s", wagglemsg.load(body))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("publishing message to rabbitmq: %s", wagglemsg.load(body))
 
-                channel.basic_publish(
-                    exchange="to-validator",
-                    routing_key=scope,
-                    properties=properties,
-                    body=body)
+            ch.basic_publish(
+                exchange="to-validator",
+                routing_key=scope,
+                properties=properties,
+                body=body)
 
-        def process_queues_and_events():
-            if not self.running.is_set():
-                logger.debug("attempting to flush remaining messages in queue")
-                process_publish_queue()
-                logger.debug("stopping rabbitmq processing loop")
-                channel.stop_consuming()
-                return
-            process_subscribe_queue()
-            process_publish_queue()
-            connection.call_later(0.01, process_queues_and_events)
 
-        # setup subscriber queue and bind
-        queue = channel.queue_declare("", exclusive=True).method.queue
-        channel.basic_consume(queue, subscriber_callback, auto_ack=True)
-        # setup periodic publish and subscribe to topic checks
-        connection.call_later(0.01, process_queues_and_events)
+class RabbitMQConsumer:
+    """
+    RabbitMQConsumer manages a connection to a RabbitMQ broker and adds incoming messages to
+    the provided queue when connected.
 
+    This is done using a background which must be stopped by setting the provided stop Event.
+    """
+
+    def __init__(self, topics, config: PluginConfig, messages: Queue, stop: Event):
+        self.topics = deepcopy(topics)
+        self.config = deepcopy(config)
+        self.params = get_connection_parameters_for_config(config)
+        self.messages = messages
+        self.stop = stop
+        self.done = Event()
+        Thread(target=self.__main).start()
+
+    def __main(self):
         try:
-            logger.debug("starting rabbitmq processing loop")
-            channel.start_consuming()
+            while not self.stop.is_set():
+                try:
+                    self.__connect_and_consume_messages()
+                except Exception:
+                    time.sleep(1)
         finally:
-            logger.debug("stopped rabbitmq processing loop")
+            self.done.set()
+
+    def __connect_and_consume_messages(self):
+        with pika.BlockingConnection(self.params) as conn, conn.channel() as ch:
+            # setup subscriber queue and bind to topics
+            queue = ch.queue_declare("", exclusive=True).method.queue
+            ch.basic_consume(queue, self.__process_message, auto_ack=True)
+            ch.queue_bind(queue, "data.topic", self.topics)
+
+            def check_stop():
+                if self.stop.is_set():
+                    ch.stop_consuming()
+                else:
+                    conn.call_later(1, check_stop)
+
+            conn.call_later(1, check_stop)
+            ch.start_consuming()
+    
+    def __process_message(self, ch, method, properties, body):
+        try:
+            msg = wagglemsg.load(body)
+        except TypeError:
+            logger.debug("unsupported message type: %s %s", properties, body)
+            return
+        self.messages.put(msg)
 
 
 class Uploader:
