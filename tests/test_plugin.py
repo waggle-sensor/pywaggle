@@ -4,7 +4,7 @@ import json
 from tempfile import TemporaryDirectory
 import time
 
-from waggle.plugin import Plugin, PluginConfig, Uploader, raise_for_invalid_publish_name, get_timestamp
+from waggle.plugin import Plugin, PluginConfig, Uploader, get_timestamp
 import wagglemsg
 
 
@@ -36,39 +36,40 @@ class TestPlugin(unittest.TestCase):
         ts = get_timestamp()
         self.assertIsInstance(ts, int)
 
-    def test_raise_for_invalid_publish_name(self):
-        with self.assertRaises(TypeError):
-            raise_for_invalid_publish_name(None)
-        with self.assertRaises(ValueError):
-            raise_for_invalid_publish_name("")
-        with self.assertRaises(ValueError):
-            raise_for_invalid_publish_name(".")
+    def test_valid_publish_names(self):
+        with Plugin() as plugin:
+            with self.assertRaises(TypeError):
+                plugin.publish(None, 0)
+            with self.assertRaises(ValueError):
+                plugin.publish("", 0)
+            with self.assertRaises(ValueError):
+                plugin.publish(".", 0)
 
-        # check for reserved names
-        with self.assertRaises(ValueError):
-            raise_for_invalid_publish_name("upload")
+            # check for reserved names
+            with self.assertRaises(ValueError):
+                plugin.publish("upload", 0)
 
-        # use _ instead of -
-        with self.assertRaises(ValueError):
-            raise_for_invalid_publish_name("my-metric")
-        # correct alternative
-        raise_for_invalid_publish_name("my_metric")
-        
-        # assert len(name) <= 128
-        with self.assertRaises(ValueError):
-            raise_for_invalid_publish_name("x"*129)
-        
-        # no empty parts allowed
-        with self.assertRaises(ValueError):
-            raise_for_invalid_publish_name("vision.count..bird")
-        # correct alternative
-        raise_for_invalid_publish_name("vision.count.bird")
+            # use _ instead of -
+            with self.assertRaises(ValueError):
+                plugin.publish("my-metric", 0)
+            # correct alternative
+            plugin.publish("my_metric", 0)
+            
+            # assert len(name) <= 128
+            with self.assertRaises(ValueError):
+                plugin.publish("x"*129, 0)
+            
+            # no empty parts allowed
+            with self.assertRaises(ValueError):
+                plugin.publish("vision.count..bird", 0)
+            # correct alternative
+            plugin.publish("vision.count.bird", 0)
 
-        # no spaces allowed
-        with self.assertRaises(ValueError):
-            raise_for_invalid_publish_name("sys.cpu temp")
-        # correct alternative
-        raise_for_invalid_publish_name("sys.cpu_temp")
+            # no spaces allowed
+            with self.assertRaises(ValueError):
+                plugin.publish("sys.cpu temp", 0)
+            # correct alternative
+            plugin.publish("sys.cpu_temp", 0)
 
     # TODO(sean) refactor messaging part to make testing this cleaner
     def test_upload_file(self):
