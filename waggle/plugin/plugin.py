@@ -16,27 +16,27 @@ from .time import get_timestamp, timeit_perf_counter, timeit_perf_counter_durati
 logger = logging.getLogger(__name__)
 
 
-class PublishItem(NamedTuple):
+class PublishData(NamedTuple):
     scope: str
     body: bytes
 
 
-publish_name_part_pattern = re.compile("^[a-z0-9_]+$")
-
-def raise_for_invalid_publish_name(s):
-    if not isinstance(s, str):
-        raise TypeError(f"publish name must be a string: {s!r}")
-    if len(s) > 128:
-        raise ValueError(f"publish must be at most 128 characters: {s!r}")
-    if s == "upload":
-        raise ValueError(f"name {s!r} is reserved for system use only")
-    parts = s.split(".")
-    for p in parts:
-        if not publish_name_part_pattern.match(p):
-            raise ValueError(f"publish name invalid: {s!r} part: {p!r}")
-
-
 class Plugin:
+    """
+    Plugin provides methods to publish and consume messages inside the Waggle ecosystem.
+
+    Examples
+    --------
+
+    The simplest example is creating a Plugin and publishing a message. This can be done using:
+
+    ```python
+    from waggle.plugin import Plugin
+
+    with Plugin() as plugin:
+        plugin.publish("test_value", 99)
+    ```
+    """
 
     def __init__(self, config=None, uploader=None):
         self.config = config or get_default_plugin_config()
@@ -66,6 +66,7 @@ class Plugin:
         raise TimeoutError("plugin get timed out")
 
     def publish(self, name, value, meta={}, timestamp=None, scope="all", timeout=None):
+        # get timestamp before doing other work
         timestamp = timestamp or get_timestamp()
         raise_for_invalid_publish_name(name)
         self.__publish(name, value, meta, timestamp, scope, timeout)
@@ -76,9 +77,10 @@ class Plugin:
     def __publish(self, name, value, meta, timestamp, scope="all", timeout=None):
         msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
-        self.send.put(PublishItem(scope, wagglemsg.dump(msg)), timeout=timeout)
+        self.send.put(PublishData(scope, wagglemsg.dump(msg)), timeout=timeout)
 
     def upload_file(self, path, meta={}, timestamp=None, keep=False):
+        # get timestamp before doing other work
         timestamp = timestamp or get_timestamp()
         upload_path = self.uploader.upload_file(path=path, meta=meta, timestamp=timestamp, keep=keep)
         # copy metadata and set filename
@@ -110,3 +112,19 @@ def get_default_plugin_config() -> PluginConfig:
 
 def get_default_plugin_uploader():
     return Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
+
+
+publish_name_part_pattern = re.compile("^[a-z0-9_]+$")
+
+
+def raise_for_invalid_publish_name(s: str):
+    if not isinstance(s, str):
+        raise TypeError(f"publish name must be a string: {s!r}")
+    if len(s) > 128:
+        raise ValueError(f"publish must be at most 128 characters: {s!r}")
+    if s == "upload":
+        raise ValueError(f"name {s!r} is reserved for system use only")
+    parts = s.split(".")
+    for p in parts:
+        if not publish_name_part_pattern.match(p):
+            raise ValueError(f"publish name invalid: {s!r} part: {p!r}")

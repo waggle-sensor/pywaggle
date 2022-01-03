@@ -16,12 +16,10 @@ class Uploader:
     #     data
     #     meta
     def upload_file(self, path, meta={}, timestamp=None, keep=False):
-        # get timestamp *before* doing any other work!
-        if timestamp is None:
-            timestamp = get_timestamp()
-
+        # get timestamp before doing other work
+        timestamp = timestamp or get_timestamp()
+        
         path = Path(path)
-
         checksum = sha1sum_for_file(path)
 
         # create upload dir
