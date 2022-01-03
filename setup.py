@@ -28,6 +28,7 @@ setup(
     packages=[
         "waggle",
         "waggle.data",
+        "waggle.plugin",
     ],
     python_requires=">=3.6",
 )
