@@ -37,7 +37,7 @@ jobs:
       - name: Install wheel
         run: pip3 install $(echo *.whl)[all]
       - name: Run tests
-        run: python3 -m unittest discover -s tests
+        run: (cd tests && python3 -m unittest discover)
 
   release:
     name: Release

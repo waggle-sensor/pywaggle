@@ -20,7 +20,6 @@ from pathlib import Path
 import hashlib
 from shutil import copyfile
 from contextlib import contextmanager
-from copy import deepcopy
 
 
 logger = logging.getLogger(__name__)
@@ -57,6 +56,11 @@ class PluginConfig(NamedTuple):
     host: str
     port: int
     app_id: str
+
+
+class PublishItem(NamedTuple):
+    scope: str
+    body: bytes
 
 
 publish_name_part_pattern = re.compile("^[a-z0-9_]+$")
@@ -103,25 +107,22 @@ class Plugin:
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        # signal to tasks to stop
         self.stop.set()
-        # wait for all tasks to finish
         for task in self.tasks:
             task.done.wait()
-
-    def get(self, timeout=None):
-        try:
-            return self.incoming_queue.get(timeout=timeout)
-        except Empty:
-            pass
-        raise TimeoutError("plugin get timed out")
 
     def subscribe(self, *topics):
         self.tasks.append(RabbitMQConsumer(topics, self.config, self.send, self.stop))
 
+    def get(self, timeout=None):
+        try:
+            return self.recv.get(timeout=timeout)
+        except Empty:
+            pass
+        raise TimeoutError("plugin get timed out")
+
     def publish(self, name, value, meta={}, timestamp=None, scope="all", timeout=None):
-        if timestamp is None:
-            timestamp = get_timestamp()
+        timestamp = timestamp or get_timestamp()
         raise_for_invalid_publish_name(name)
         self.__publish(name, value, meta, timestamp, scope, timeout)
 
@@ -131,11 +132,10 @@ class Plugin:
     def __publish(self, name, value, meta, timestamp, scope="all", timeout=None):
         msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
-        self.send.put((scope, wagglemsg.dump(msg)), timeout=timeout)
+        self.send.put(PublishItem(scope, wagglemsg.dump(msg)), timeout=timeout)
 
     def upload_file(self, path, meta={}, timestamp=None, keep=False):
-        if timestamp is None:
-            timestamp = get_timestamp()
+        timestamp = timestamp or get_timestamp()
         upload_path = self.uploader.upload_file(path=path, meta=meta, timestamp=timestamp, keep=keep)
         # copy metadata and set filename
         # TODO consolidate this with Uploader...
@@ -176,7 +176,7 @@ class RabbitMQPublisher:
     """
 
     def __init__(self, config: PluginConfig, messages: Queue, stop: Event):
-        self.config = deepcopy(config)
+        self.config = config
         self.params = get_connection_parameters_for_config(config)
         self.messages = messages
         self.stop = stop
@@ -203,7 +203,7 @@ class RabbitMQPublisher:
     def __flush_messages(self, ch):
         while True:
             try:
-                scope, body = self.messages.get(timeout=1)
+                item = self.messages.get(timeout=1)
             except Empty:
                 return
 
@@ -216,13 +216,13 @@ class RabbitMQPublisher:
                 properties.app_id = self.config.app_id
 
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("publishing message to rabbitmq: %s", wagglemsg.load(body))
+                logger.debug("publishing message to rabbitmq: %s", wagglemsg.load(item.body))
 
             ch.basic_publish(
                 exchange="to-validator",
-                routing_key=scope,
+                routing_key=item.scope,
                 properties=properties,
-                body=body)
+                body=item.body)
 
 
 class RabbitMQConsumer:
@@ -234,8 +234,8 @@ class RabbitMQConsumer:
     """
 
     def __init__(self, topics, config: PluginConfig, messages: Queue, stop: Event):
-        self.topics = deepcopy(topics)
-        self.config = deepcopy(config)
+        self.topics = topics
+        self.config = config
         self.params = get_connection_parameters_for_config(config)
         self.messages = messages
         self.stop = stop
@@ -333,8 +333,3 @@ def sha1sum_for_file(path):
 def write_json_file(path, obj):
     with open(path, "w") as f:
         json.dump(obj, f, separators=(',', ':'), sort_keys=True)
-
-
-# NOTE inform users of change until we migrate everyone
-def init():
-    raise DeprecationWarning("Calling init explicity is deprecated. Please use the context manager format \"with Plugin() as plugin\" instead.")
