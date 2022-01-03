@@ -169,10 +169,9 @@ def get_connection_parameters_for_config(config: PluginConfig) -> pika.Connectio
 
 class RabbitMQPublisher:
     """
-    RabbitMQPublisher manages a connection to a RabbitMQ broker and flushes messages from
-    the provided queue when connected.
+    RabbitMQPublisher manages a connection to RabbitMQ and publishes messages from the provided queue.
 
-    This is done using a background which must be stopped by setting the provided stop Event.
+    This is done in a background thread which must be stopped by setting the provided stop Event.
     """
 
     def __init__(self, config: PluginConfig, messages: Queue, stop: Event):
@@ -227,10 +226,9 @@ class RabbitMQPublisher:
 
 class RabbitMQConsumer:
     """
-    RabbitMQConsumer manages a connection to a RabbitMQ broker and adds incoming messages to
-    the provided queue when connected.
+    RabbitMQConsumer manages a connection to RabbitMQ and puts received messages into the provided queue.
 
-    This is done using a background which must be stopped by setting the provided stop Event.
+    This is done in a background thread which must be stopped by setting the provided stop Event.
     """
 
     def __init__(self, topics, config: PluginConfig, messages: Queue, stop: Event):
