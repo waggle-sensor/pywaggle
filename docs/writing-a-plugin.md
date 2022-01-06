@@ -124,7 +124,6 @@ Create and add a new file called `sage.yaml` with the following contents:
 ```yaml
 name: "hello-world"
 description: "My hello world plugin"
-version: "0.0.1"
 keywords: "hello, testing"
 authors: "Your Name <your.email@somewhere.org>, A Coworker <your.coworker@somewhere.org>"
 collaborators: "Helpful Collaborator <our.collaborator@otherplace.edu>"
@@ -136,11 +135,9 @@ source:
     - "linux/amd64"
     - "linux/arm64"
     - "linux/arm/v7"
-  url: "https://github.com/username/plugin-hello-world"
-  branch: "main"
 ```
 
-This file contains metadata about what your plugin is called, what it's supposed to do and where it lives. It is used by the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore) when submitting plugins.
+This file contains metadata about what your plugin is called and what it's supposed to do. It is used by the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore) when submitting plugins.
 
 ### 4. Add ECR media
 
