@@ -35,8 +35,7 @@ measurement `hello.world.counter` every second.
 First, we'll install the latest version of pywaggle.
 
 ```sh
-git clone https://github.com/waggle-sensor/pywaggle
-pip install -U ./pywaggle[all]
+pip install -U pywaggle[all]
 ```
 
 This will install the core pywaggle modules along with the extra developer modules.
@@ -52,11 +51,14 @@ cd plugin-hello-world
 
 ### 3. Create a requirements.txt dependency file
 
-We'll create an empty `requirements.txt` file which we will use to track future dependencies.
+Create a new `requirements.txt` file and add this following:
 
 ```sh
-touch requirements.txt
+pywaggle[all]
 ```
+
+This will be used when building our plugin to ensure all dependencies are available. Right now, it only contains
+pywaggle but you can add your own custom dependencies here.
 
 ### 4. Create main.py file
 
