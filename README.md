@@ -31,4 +31,4 @@ pip install pywaggle[audio,vision]
 
 ## Usage Guides
 
-* [Writing a plugin](./docs/writing-a-plugin.md)
+* [Writing a plugin](https://github.com/waggle-sensor/pywaggle/blob/main/docs/writing-a-plugin.md)
