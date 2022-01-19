@@ -30,18 +30,18 @@ class RabbitMQPublisher:
         Thread(target=self.__main).start()
     
     def __main(self):
-        logger.debug("publisher started.")
+        logger.debug("publisher thread started.")
         try:
             while not self.stop.is_set():
                 try:
                     self.__connect_and_flush_messages()
                 except Exception:
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.exception("publisher exception")
+                        logger.exception("publisher exception!")
                 time.sleep(1)
         finally:
             self.done.set()
-            logger.debug("publisher stopped.")
+            logger.debug("publisher thread stopped.")
 
     def __connect_and_flush_messages(self):
         logger.debug("publisher connecting to rabbitmq...")
@@ -96,18 +96,18 @@ class RabbitMQConsumer:
         Thread(target=self.__main).start()
 
     def __main(self):
-        logger.debug("consumer started.")
+        logger.debug("consumer thread started.")
         try:
             while not self.stop.is_set():
                 try:
                     self.__connect_and_consume_messages()
                 except Exception:
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.exception("consumer exception")
+                        logger.exception("consumer exception!")
                 time.sleep(1)
         finally:
             self.done.set()
-            logger.debug("consumer stopped.")
+            logger.debug("consumer thread stopped.")
 
     def __connect_and_consume_messages(self):
         logger.debug("consumer connecting to rabbitmq...")
@@ -129,16 +129,19 @@ class RabbitMQConsumer:
             logger.debug("consumer starting to process messages...")
             conn.call_later(1, check_stop)
             ch.basic_consume(queue, self.__process_message, auto_ack=True)
-            ch.start_consuming()
+            try:
+                ch.start_consuming()
+            finally:
+                logger.debug("consumer stopped processing messages.")
     
     def __process_message(self, ch, method, properties, body):
-        logger.debug("consumer processing message %s...", body)
+        logger.debug("consumer processing message body %s...", body)
         try:
             msg = wagglemsg.load(body)
         except TypeError:
             logger.debug("unsupported message type: %s %s", properties, body)
             return
-        logger.debug("consumer putting message in waiting queue")
+        logger.debug("consumer putting message %s in waiting queue", msg)
         self.messages.put(msg)
 
 
