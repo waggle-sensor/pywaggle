@@ -29,6 +29,7 @@ class RabbitMQPublisher:
         Thread(target=self.__main).start()
     
     def __main(self):
+        logger.debug("publisher started.")
         try:
             while not self.stop.is_set():
                 try:
@@ -37,17 +38,21 @@ class RabbitMQPublisher:
                     time.sleep(1)
         finally:
             self.done.set()
+            logger.debug("publisher stopped.")
 
     def __connect_and_flush_messages(self):
+        logger.debug("publisher connecting to rabbitmq...")
         with pika.BlockingConnection(self.params) as conn, conn.channel() as ch:
             while not self.stop.is_set():
                 self.__flush_messages(ch)
+            logger.debug("publisher stopping...")
             # attempt to flush any remaining messages
             self.__flush_messages(ch)
 
     def __flush_messages(self, ch):
         while True:
             try:
+                logger.debug("publisher checking for message...")
                 item = self.messages.get(timeout=1)
             except Empty:
                 return
@@ -87,6 +92,7 @@ class RabbitMQConsumer:
         Thread(target=self.__main).start()
 
     def __main(self):
+        logger.debug("consumer started.")
         try:
             while not self.stop.is_set():
                 try:
@@ -95,29 +101,36 @@ class RabbitMQConsumer:
                     time.sleep(1)
         finally:
             self.done.set()
+            logger.debug("consumer stopped.")
 
     def __connect_and_consume_messages(self):
+        logger.debug("consumer connecting to rabbitmq...")
         with pika.BlockingConnection(self.params) as conn, conn.channel() as ch:
             # setup subscriber queue and bind to topics
             queue = ch.queue_declare("", exclusive=True).method.queue
             ch.basic_consume(queue, self.__process_message, auto_ack=True)
             ch.queue_bind(queue, "data.topic", self.topics)
+            logger.debug("consumer binding queue %s to topics %s", queue, self.topics)
 
             def check_stop():
                 if self.stop.is_set():
+                    logger.debug("consumer stopping...")
                     ch.stop_consuming()
                 else:
                     conn.call_later(1, check_stop)
 
             conn.call_later(1, check_stop)
+            logger.debug("consumer start processing messages...")
             ch.start_consuming()
     
     def __process_message(self, ch, method, properties, body):
         try:
+            logger.debug("consumer processing message %s...", body)
             msg = wagglemsg.load(body)
         except TypeError:
             logger.debug("unsupported message type: %s %s", properties, body)
             return
+        logger.debug("consumer putting message in waiting queue")
         self.messages.put(msg)
 
 
