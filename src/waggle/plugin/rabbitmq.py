@@ -7,6 +7,7 @@ import pika
 import pika.exceptions
 import wagglemsg
 from .config import PluginConfig
+from copy import deepcopy
 
 
 logger = logging.getLogger(__name__)
@@ -22,8 +23,8 @@ class RabbitMQPublisher:
     """
 
     def __init__(self, config: PluginConfig, messages: Queue, stop: Event):
-        self.config = config
-        self.params = get_connection_parameters_for_config(config)
+        self.config = deepcopy(config)
+        self.params = get_connection_parameters_for_config(self.config)
         self.messages = messages
         self.stop = stop
         self.done = Event()
@@ -87,9 +88,9 @@ class RabbitMQConsumer:
     """
 
     def __init__(self, topics, config: PluginConfig, messages: Queue, stop: Event):
-        self.topics = topics
-        self.config = config
-        self.params = get_connection_parameters_for_config(config)
+        self.topics = deepcopy(topics)
+        self.config = deepcopy(config)
+        self.params = get_connection_parameters_for_config(self.config)
         self.messages = messages
         self.stop = stop
         self.done = Event()
@@ -115,7 +116,7 @@ class RabbitMQConsumer:
             # setup subscriber queue and bind to topics
             queue = ch.queue_declare("", exclusive=True).method.queue
             logger.debug("consumer binding queue %s to topics %s", queue, self.topics)
-            for topic in topics:
+            for topic in self.topics:
                 ch.queue_bind(queue, "data.topic", topic)
 
             def check_stop():
