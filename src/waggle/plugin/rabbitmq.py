@@ -53,9 +53,10 @@ class RabbitMQPublisher:
             self.__flush_messages(ch)
 
     def __flush_messages(self, ch):
+        logger.debug("publisher flushing messages...")
         while True:
             try:
-                logger.debug("publisher checking for message...")
+                logger.debug("publisher waiting for message...")
                 item = self.messages.get(timeout=1)
             except Empty:
                 return
@@ -113,25 +114,26 @@ class RabbitMQConsumer:
         with pika.BlockingConnection(self.params) as conn, conn.channel() as ch:
             # setup subscriber queue and bind to topics
             queue = ch.queue_declare("", exclusive=True).method.queue
-            ch.basic_consume(queue, self.__process_message, auto_ack=True)
+            logger.debug("consumer binding queue %s to topics %s", queue, self.topics)
             for topic in topics:
                 ch.queue_bind(queue, "data.topic", topic)
-            logger.debug("consumer binding queue %s to topics %s", queue, self.topics)
 
             def check_stop():
+                logger.debug("consumer checking if should stop...")
                 if self.stop.is_set():
                     logger.debug("consumer stopping...")
                     ch.stop_consuming()
                 else:
                     conn.call_later(1, check_stop)
 
+            logger.debug("consumer starting to process messages...")
             conn.call_later(1, check_stop)
-            logger.debug("consumer start processing messages...")
+            ch.basic_consume(queue, self.__process_message, auto_ack=True)
             ch.start_consuming()
     
     def __process_message(self, ch, method, properties, body):
+        logger.debug("consumer processing message %s...", body)
         try:
-            logger.debug("consumer processing message %s...", body)
             msg = wagglemsg.load(body)
         except TypeError:
             logger.debug("unsupported message type: %s %s", properties, body)
