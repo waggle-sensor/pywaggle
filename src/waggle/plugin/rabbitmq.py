@@ -35,7 +35,8 @@ class RabbitMQPublisher:
                 try:
                     self.__connect_and_flush_messages()
                 except Exception:
-                    time.sleep(1)
+                    logger.exception("publisher exception")
+                time.sleep(1)
         finally:
             self.done.set()
             logger.debug("publisher stopped.")
@@ -98,7 +99,8 @@ class RabbitMQConsumer:
                 try:
                     self.__connect_and_consume_messages()
                 except Exception:
-                    time.sleep(1)
+                    logger.exception("consumer exception")
+                time.sleep(1)
         finally:
             self.done.set()
             logger.debug("consumer stopped.")
