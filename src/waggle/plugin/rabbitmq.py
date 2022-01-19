@@ -1,4 +1,5 @@
 import logging
+from pydoc_data.topics import topics
 from threading import Thread, Event
 from queue import Queue, Empty
 import time
@@ -35,7 +36,8 @@ class RabbitMQPublisher:
                 try:
                     self.__connect_and_flush_messages()
                 except Exception:
-                    logger.exception("publisher exception")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception("publisher exception")
                 time.sleep(1)
         finally:
             self.done.set()
@@ -99,7 +101,8 @@ class RabbitMQConsumer:
                 try:
                     self.__connect_and_consume_messages()
                 except Exception:
-                    logger.exception("consumer exception")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception("consumer exception")
                 time.sleep(1)
         finally:
             self.done.set()
@@ -111,7 +114,8 @@ class RabbitMQConsumer:
             # setup subscriber queue and bind to topics
             queue = ch.queue_declare("", exclusive=True).method.queue
             ch.basic_consume(queue, self.__process_message, auto_ack=True)
-            ch.queue_bind(queue, "data.topic", self.topics)
+            for topic in topics:
+                ch.queue_bind(queue, "data.topic", topic)
             logger.debug("consumer binding queue %s to topics %s", queue, self.topics)
 
             def check_stop():
