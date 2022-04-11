@@ -21,6 +21,10 @@ class PublishData(NamedTuple):
     body: bytes
 
 
+# Nanoseconds since epoch for 2000-01-01T00:00:00Z
+MIN_TIMESTAMP_NS = 946706400000000000
+
+
 class Plugin:
     """
     Plugin provides methods to publish and consume messages inside the Waggle ecosystem.
@@ -75,6 +79,10 @@ class Plugin:
     # message publish. the main reason this exists is to guard against reserved names
     # like "upload" in publish but still allow upload_file to use it.
     def __publish(self, name, value, meta, timestamp, scope="all", timeout=None):
+        if not isinstance(timestamp, int):
+            raise TypeError("Timestamp must be an int and have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps.")
+        if timestamp < MIN_TIMESTAMP_NS:
+            raise ValueError("Timestamp probably has wrong units and is being processed as before 2000-01-01T00:00:00Z. Timestamp must have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps.")
         msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
         self.send.put(PublishData(scope, wagglemsg.dump(msg)), timeout=timeout)

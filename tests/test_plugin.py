@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 from tempfile import TemporaryDirectory
 import time
+from datetime import datetime
 
 from waggle.plugin import Plugin, PluginConfig, Uploader, get_timestamp
 import wagglemsg
@@ -35,6 +36,28 @@ class TestPlugin(unittest.TestCase):
     def test_get_timestamp(self):
         ts = get_timestamp()
         self.assertIsInstance(ts, int)
+
+    def test_valid_timestamp(self):
+        with Plugin() as plugin:
+            # valid int, nanosecond timestamp
+            plugin.publish("test", 1, timestamp=1649694687904754000)
+
+            # must prevent a float type timestamp
+            ts = datetime(2022, 1, 1, 0, 0, 0).timestamp()
+            with self.assertRaises(TypeError):
+                plugin.publish("test", 1, timestamp=ts)
+
+            # must prevent int timestamp in seconds from being loaded by flagging
+            # timestamps that are too early.
+            testcases = [
+                datetime(2022, 1, 1, 0, 0, 0),
+                datetime(3000, 1, 1, 0, 0, 0),
+                datetime(5000, 1, 1, 0, 0, 0),
+            ]
+
+            for dt in testcases:
+                with self.assertRaises(ValueError):
+                    plugin.publish("test", 1, timestamp=int(dt.timestamp()))
 
     def test_valid_publish_names(self):
         with Plugin() as plugin:
