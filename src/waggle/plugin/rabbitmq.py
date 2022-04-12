@@ -68,11 +68,18 @@ class RabbitMQPublisher:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("publishing message to rabbitmq: %s", wagglemsg.load(item.body))
 
-            ch.basic_publish(
-                exchange="to-validator",
-                routing_key=item.scope,
-                properties=properties,
-                body=item.body)
+            try:
+                ch.basic_publish(
+                    exchange="to-validator",
+                    routing_key=item.scope,
+                    properties=properties,
+                    body=item.body)
+            except Exception:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception("basic_publish to rabbitmq failed. will requeue message...")
+                # requeue message so we can again later
+                self.messages.put(item)
+                raise
 
 
 class RabbitMQConsumer:
