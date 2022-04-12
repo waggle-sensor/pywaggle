@@ -79,6 +79,7 @@ class RabbitMQPublisher:
                     logger.exception("basic_publish to rabbitmq failed. will requeue message...")
                 # requeue message so we can again later
                 self.messages.put(item)
+                # propagate error up to trigger reconnect
                 raise
 
 
