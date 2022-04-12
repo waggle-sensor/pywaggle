@@ -68,11 +68,21 @@ class RabbitMQPublisher:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("publishing message to rabbitmq: %s", wagglemsg.load(item.body))
 
-            ch.basic_publish(
-                exchange="to-validator",
-                routing_key=item.scope,
-                properties=properties,
-                body=item.body)
+            try:
+                ch.basic_publish(
+                    exchange="to-validator",
+                    routing_key=item.scope,
+                    properties=properties,
+                    body=item.body)
+            except Exception:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception("basic_publish to rabbitmq failed. will requeue message...")
+                # requeue message so we can again later
+                # NOTE(sean) this will reorder messages. if we realized we *must* preserve message
+                # order, we must to change this to avoid subtle bugs!
+                self.messages.put(item)
+                # propagate error up to trigger reconnect
+                raise
 
 
 class RabbitMQConsumer:
