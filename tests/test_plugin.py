@@ -37,6 +37,17 @@ class TestPlugin(unittest.TestCase):
         ts = get_timestamp()
         self.assertIsInstance(ts, int)
 
+    def test_valid_values(self):
+        with Plugin() as plugin:
+            plugin.publish("test", 1)
+            plugin.publish("test", 1.3)
+            plugin.publish("test", "some string")
+            plugin.publish("test", b"some bytes")
+            with self.assertRaises(TypeError):
+                plugin.publish("test", [1, 2, 3])
+            with self.assertRaises(TypeError):
+                plugin.publish("test", {1: 1, 2: 2, 3: 3})
+
     def test_valid_timestamp(self):
         with Plugin() as plugin:
             # valid int, nanosecond timestamp
