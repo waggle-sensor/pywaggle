@@ -85,6 +85,8 @@ class Plugin:
             raise TypeError("Timestamp must be an int and have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps.")
         if timestamp < MIN_TIMESTAMP_NS:
             raise ValueError("Timestamp probably has wrong units and is being processed as before 2000-01-01T00:00:00Z. Timestamp must have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps.")
+        if not valid_meta(meta):
+            raise TypeError("Meta must be a dictionary of strings to strings.")
         msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
         logger.debug("adding message to outgoing queue: %s", msg)
         self.send.put(PublishData(scope, wagglemsg.dump(msg)), timeout=timeout)
@@ -118,6 +120,10 @@ def get_default_plugin_config() -> PluginConfig:
         port=int(getenv("WAGGLE_PLUGIN_PORT", 5672)),
         app_id=getenv("WAGGLE_APP_ID", ""),
     )
+
+
+def valid_meta(meta):
+    return isinstance(meta, dict) and all(isinstance(v, str) for v in meta.values())
 
 
 def get_default_plugin_uploader():

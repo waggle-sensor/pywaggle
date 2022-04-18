@@ -48,6 +48,16 @@ class TestPlugin(unittest.TestCase):
             with self.assertRaises(TypeError):
                 plugin.publish("test", {1: 1, 2: 2, 3: 3})
 
+    def test_valid_meta(self):
+        with Plugin() as plugin:
+            plugin.publish("test", 1, meta={"k": "v"})
+            with self.assertRaises(TypeError):
+                plugin.publish("test", 1, meta={"k": 10})
+            with self.assertRaises(TypeError):
+                plugin.publish("test", 1, meta={"k": 12.3})
+            with self.assertRaises(TypeError):
+                plugin.publish("test", 1, meta={"k": []})
+
     def test_valid_timestamp(self):
         with Plugin() as plugin:
             # valid int, nanosecond timestamp
