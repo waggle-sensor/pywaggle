@@ -25,6 +25,36 @@ class PublishData(NamedTuple):
 MIN_TIMESTAMP_NS = 946706400000000000
 
 
+class FilesystemPublisher:
+
+    def __init__(self, root):
+        self.root = Path(root)
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.datafile = Path(root, "data.ndjson").open("a")
+        self.uploads_dir = Path(root, "uploads")
+        self.uploads_dir.mkdir(parents=True, exist_ok=True)
+
+    def close(self):
+        self.datafile.close()
+
+    def publish(self, msg: wagglemsg.Message):
+        print(wagglemsg.dump(msg), file=self.datafile, flush=True)
+
+    def upload_file(self, path, timestamp, meta):
+        from shutil import copyfile
+        src = Path(path)
+        dst = Path(self.uploads_dir, f"{timestamp}-{src.name}")
+        copyfile(src, dst)
+        meta = meta.copy()
+        meta["filename"] = Path(src).name
+        self.publish(wagglemsg.Message(
+            name="upload",
+            value=str(dst.absolute()),
+            meta=meta,
+            timestamp=timestamp,
+        ))
+
+
 class Plugin:
     """
     Plugin provides methods to publish and consume messages inside the Waggle ecosystem.
@@ -42,7 +72,7 @@ class Plugin:
     ```
     """
 
-    def __init__(self, config=None, uploader=None):
+    def __init__(self, config=None, uploader=None, file_publisher: FilesystemPublisher=None):
         self.config = config or get_default_plugin_config()
         self.uploader = uploader or get_default_plugin_uploader()
         self.send = Queue()
@@ -50,12 +80,21 @@ class Plugin:
         self.stop = Event()
         self.tasks = []
 
+        self.file_publisher = file_publisher
+
+        if self.file_publisher is None and getenv("PYWAGGLE_LOG_DIR") is not None:
+            self.file_publisher = FilesystemPublisher(getenv("PYWAGGLE_LOG_DIR"))
+
     def __enter__(self):
         self.tasks.append(RabbitMQPublisher(self.config, self.send, self.stop))
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.stop.set()
+
+        if self.file_publisher is not None:
+            self.file_publisher.close()
+
         for task in self.tasks:
             task.done.wait()
 
@@ -88,18 +127,26 @@ class Plugin:
         if not valid_meta(meta):
             raise TypeError("Meta must be a dictionary of strings to strings.")
         msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
+
+        # hack to use file publisher for everything except uploads
+        if self.file_publisher is not None and name != "upload":
+            self.file_publisher.publish(msg)
+
         logger.debug("adding message to outgoing queue: %s", msg)
         self.send.put(PublishData(scope, wagglemsg.dump(msg)), timeout=timeout)
 
     def upload_file(self, path, meta={}, timestamp=None, keep=False):
         # get timestamp before doing other work
         timestamp = timestamp or get_timestamp()
-        upload_path = self.uploader.upload_file(path=path, meta=meta, timestamp=timestamp, keep=keep)
-        # copy metadata and set filename
-        # TODO consolidate this with Uploader...
-        meta = meta.copy()
-        meta["filename"] = Path(path).name
-        self.__publish("upload", upload_path.name, meta, timestamp)
+
+        if self.file_publisher is not None:
+            self.file_publisher.upload_file(path, meta=meta, timestamp=timestamp)
+
+        if self.uploader is not None:
+            meta = meta.copy()
+            meta["filename"] = Path(path).name
+            upload_path = self.uploader.upload_file(path=path, meta=meta, timestamp=timestamp, keep=keep)
+            self.__publish("upload", upload_path.name, meta, timestamp)
 
     @contextmanager
     def timeit(self, name):
@@ -127,6 +174,8 @@ def valid_meta(meta):
 
 
 def get_default_plugin_uploader():
+    if getenv("WAGGLE_PLUGIN_UPLOAD_PATH") is None and getenv("PYWAGGLE_LOG_DIR") is not None:
+        return None
     return Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
 
 
