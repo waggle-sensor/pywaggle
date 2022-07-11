@@ -62,7 +62,7 @@ class RabbitMQPublisher:
             properties = pika.BasicProperties(
                 delivery_mode=2,
                 user_id=self.params.credentials.username)
-            
+
             # NOTE app_id is used by data service to validate and tag additional metadata provided by k3s scheduler.
             if self.config.app_id != "":
                 properties.app_id = self.config.app_id

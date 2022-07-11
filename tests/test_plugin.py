@@ -8,6 +8,9 @@ from datetime import datetime
 from waggle.plugin import Plugin, PluginConfig, Uploader, get_timestamp
 import wagglemsg
 
+# TODO(sean) add integration testing against rabbitmq
+# TODO(sean) clean up the queue interface. it would be better to not know about the plugin.send / plugin.recv queues explicitly.
+
 
 class TestPlugin(unittest.TestCase):
 
@@ -32,6 +35,11 @@ class TestPlugin(unittest.TestCase):
                 plugin.get(timeout=0)
             with self.assertRaises(TimeoutError):
                 plugin.get(timeout=0.001)
+
+            msg = wagglemsg.Message("test", 1.0, 0, {})
+            plugin.recv.put(msg)
+            msg2 = plugin.get(timeout=0)
+            self.assertEqual(msg, msg2)
 
     def test_get_timestamp(self):
         ts = get_timestamp()

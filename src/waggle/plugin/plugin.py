@@ -60,7 +60,8 @@ class Plugin:
             task.done.wait()
 
     def subscribe(self, *topics):
-        self.tasks.append(RabbitMQConsumer(topics, self.config, self.send, self.stop))
+        self.tasks.append(RabbitMQConsumer(topics, self.config, self.recv, self.stop))
+        # TODO(sean) add mock or integration testing against rabbitmq to actually test this
 
     def get(self, timeout=None):
         try:
