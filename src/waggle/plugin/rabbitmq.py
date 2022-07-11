@@ -35,6 +35,8 @@ class RabbitMQPublisher:
                 try:
                     self.__connect_and_flush_messages()
                 except Exception:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception("__connect_and_flush_messages exception")
                     time.sleep(1)
         finally:
             self.done.set()
@@ -108,6 +110,8 @@ class RabbitMQConsumer:
                 try:
                     self.__connect_and_consume_messages()
                 except Exception:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception("__connect_and_consume_messages exception")
                     time.sleep(1)
         finally:
             self.done.set()
