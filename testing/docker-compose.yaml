@@ -1,0 +1,7 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.8.11-alpine
+    ports:
+      - "127.0.0.1:5672:5672"
+    volumes:
+      - "./rabbitmq-config:/etc/rabbitmq:ro"
