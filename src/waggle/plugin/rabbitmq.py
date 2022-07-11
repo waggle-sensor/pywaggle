@@ -119,8 +119,10 @@ class RabbitMQConsumer:
             # setup subscriber queue and bind to topics
             queue = ch.queue_declare("", exclusive=True).method.queue
             ch.basic_consume(queue, self.__process_message, auto_ack=True)
-            ch.queue_bind(queue, "data.topic", self.topics)
-            logger.debug("consumer binding queue %s to topics %s", queue, self.topics)
+
+            for topic in self.topics:
+                ch.queue_bind(queue, "data.topic", topic)
+                logger.debug("consumer binding queue %s to topic %s", queue, topic)
 
             def check_stop():
                 if self.stop.is_set():
