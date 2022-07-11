@@ -3,7 +3,7 @@ import wagglemsg
 import os
 import pika
 import time
-from contextlib import ExitStack
+import unittest
 
 os.environ["WAGGLE_PLUGIN_USERNAME"] = "plugin"
 os.environ["WAGGLE_PLUGIN_PASSWORD"] = "plugin"
@@ -11,31 +11,52 @@ os.environ["WAGGLE_PLUGIN_HOST"] = "127.0.0.1"
 os.environ["WAGGLE_PLUGIN_PORT"] = "5672"
 
 
-with ExitStack() as es:
+def get_admin_connection():
     params = pika.ConnectionParameters(credentials=pika.PlainCredentials("admin", "admin"))
-    connection = es.enter_context(pika.BlockingConnection(params))
-    channel = es.enter_context(connection.channel())
+    return pika.BlockingConnection(params)
 
-    # flush to-validator queue
-    while True:
-        ok, properties, body = channel.basic_get("to-validator", auto_ack=True)
-        if ok is None:
-            break
 
-    # connect subscriber and ensure sufficient time to connect and subscribe
-    subscriber = es.enter_context(Plugin())
-    subscriber.subscribe("test")
-    time.sleep(1)
+class TestPlugin(unittest.TestCase):
 
-    # publish test message
-    with Plugin() as publisher:
-        publisher.publish("test", 123)
+    def setUp(self):
+        with get_admin_connection() as conn, conn.channel() as ch:
+            ch.queue_purge("to-validator")
+    
+    def test_publish(self):
+        now = time.time_ns()
 
-    # load and forward message (this mocks out the data-sharing-service functionality)
-    ok, properties, body = channel.basic_get("to-validator", auto_ack=True)
-    msg = wagglemsg.load(body)
-    channel.basic_publish("data.topic", msg.name, body)
+        with Plugin() as publisher:
+            publisher.publish("test", 123, meta={"sensor": "bme680"}, timestamp=now)
 
-    # confirm we can get the message and that it matches what we had before
-    msg2 = subscriber.get(1)
-    assert msg == msg2
+        with get_admin_connection() as conn, conn.channel() as ch:
+            _, _, body = ch.basic_get("to-validator", auto_ack=True)
+            msg = wagglemsg.load(body)
+        
+        self.assertEqual(msg, wagglemsg.Message(
+            name="test",
+            value=123,
+            meta={"sensor": "bme680"},
+            timestamp=now,
+        ))
+
+    def test_subscribe(self):
+        msg = wagglemsg.Message(
+            name="test",
+            value=123,
+            meta={"sensor": "bme680"},
+            timestamp=time.time_ns(),
+        )
+
+        with Plugin() as subscriber:
+            subscriber.subscribe("test")
+            time.sleep(1)
+
+            with get_admin_connection() as conn, conn.channel() as ch:
+                ch.basic_publish("data.topic", "test", wagglemsg.dump(msg))
+
+            msg2 = subscriber.get(1)
+            self.assertEqual(msg, msg2)
+
+
+if __name__ == "__main__":
+    unittest.main()
