@@ -144,4 +144,4 @@ def raise_for_invalid_publish_name(s: str):
     parts = s.split(".")
     for p in parts:
         if not publish_name_part_pattern.match(p):
-            raise ValueError(f"publish name invalid: {s!r} part: {p!r}")
+            raise ValueError(f"publish name invalid: {s!r} part: {p!r} (names must consist of [a-z0-9_] and may be joined by .)")
