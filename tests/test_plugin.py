@@ -195,7 +195,7 @@ def get_admin_connection():
     return pika.BlockingConnection(params)
 
 
-@unittest.skipIf(not rabbitmq_available(), "rabbitmq unavailable")
+@unittest.skipUnless(rabbitmq_available(), "rabbitmq not available")
 class TestPluginWithRabbitMQ(unittest.TestCase):
 
     def setUp(self):
