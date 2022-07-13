@@ -10,4 +10,4 @@ svc-up:
 
 .PHONY: svc-down
 svc-down:
-	docker-compose down
+	docker-compose down --volumes
