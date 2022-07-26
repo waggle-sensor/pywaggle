@@ -92,9 +92,11 @@ publishing value 2
 ...
 ```
 
-### 6. Access run logs
+### 6. Access run logs (Optional)
 
-As you're developing and debugging a plugin, it can be very helpful to get access to the log of published messages and uploads. In order to enable this, you can specify a "run log directory" as follows:
+As you're developing and debugging a plugin, it can be very helpful to see the run log of published messages and uploads.
+
+You can enable this by defining the `PYWAGGLE_LOG_DIR=path/to/run/logs` environment variable as follows:
 
 ```sh
 export PYWAGGLE_LOG_DIR=test-run
