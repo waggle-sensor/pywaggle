@@ -114,7 +114,9 @@ test-run/
         ...
 ```
 
-The `data.ndjson` file is a [line deliminted JSON](https://en.wikipedia.org/wiki/JSON_streaming#Line-delimited_JSON) file containing raw measurement messages. As an example:
+The `data.ndjson` file is a [line deliminted JSON](https://en.wikipedia.org/wiki/JSON_streaming#Line-delimited_JSON) file containing raw measurement messages.
+
+Here's an example from a more complete plugin:
 
 ```json
 {"name":"env.temperature","ts":1656449073603869000,"meta":{"sensor":"bme280"},"val":23.0}
