@@ -243,5 +243,40 @@ class TestPluginWithRabbitMQ(unittest.TestCase):
             self.assertEqual(msg, msg2)
 
 
+class TestPluginLogDir(unittest.TestCase):
+
+    def test_log_dir(self):
+        with TemporaryDirectory() as dir:
+            dir = Path(dir)
+
+            # create dummy upload file
+            upload_file = Path(dir, "hello.txt")
+            upload_file.write_text("hello")
+
+            # set env var and run plugin
+            try:
+                os.environ["PYWAGGLE_LOG_DIR"] = str(dir)
+                with Plugin() as plugin:
+                    plugin.publish("test", 123)
+                    plugin.upload_file(upload_file)
+            finally:
+                del os.environ["PYWAGGLE_LOG_DIR"]
+
+            # ensure uploads dir exists and contains our upload
+            uploads = list(Path(dir, "uploads").glob("*"))
+            self.assertEqual(len(uploads), 1)
+
+            # ensure data.ndjson exists and is valid json and contains expected content
+            text = Path(dir, "data.ndjson").read_text()
+            data = list(map(json.loads, text.splitlines()))
+            self.assertEqual(len(data), 2)
+            assertDictContainsSubset(self, {"name": "test", "val": 123}, data[0])
+            assertDictContainsSubset(self, {"name": "upload", "val": str(uploads[0].absolute())}, data[1])
+
+
+def assertDictContainsSubset(t, a, b):
+    t.assertLessEqual(a.items(), b.items())
+
+
 if __name__ == '__main__':
     unittest.main()

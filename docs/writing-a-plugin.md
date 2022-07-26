@@ -92,6 +92,38 @@ publishing value 2
 ...
 ```
 
+### 6. Access run logs
+
+As you're developing and debugging a plugin, it can be very helpful to get access to the log of published messages and uploads. In order to enable this, you can specify a "run log directory" as follows:
+
+```sh
+export PYWAGGLE_LOG_DIR=test-run
+python3 main.py
+```
+
+Now, you should see a new directory named `test-run` with the following contents:
+
+```txt
+test-run/
+    data.ndjson                   <- measurements published
+    uploads/                      <- timestamped files uploaded
+        nstimestamp1-filename1
+        nstimestamp2-filename2
+        ...
+```
+
+The `data.ndjson` file is a [line deliminted JSON](https://en.wikipedia.org/wiki/JSON_streaming#Line-delimited_JSON) file containing raw measurement messages. As an example:
+
+```json
+{"name":"env.temperature","ts":1656449073603869000,"meta":{"sensor":"bme280"},"val":23.0}
+{"name":"upload","ts":1656449073603976000,"meta":{"camera":"top","filename":"test.png.webp"},"val":"/Users/sean/git/pywaggle-log-dir-example/testrun/uploads/1656449073603976000-test.png.webp"}
+{"name":"image.cats","ts":1656449074613277000,"meta":{},"val":0}
+{"name":"image.birds","ts":1656449074613507000,"meta":{"camera":"left"},"val":8}
+{"name":"timeit.inference","ts":1656449074613580000,"meta":{},"val":1005408000}
+```
+
+The contents of the log directory operates in an append mode, so you may safely run the plugin multiple times without losing previous data.
+
 ## Adding "Hello World" plugin packaging info
 
 Now that we have the basic plugin code working, let's prepare this code to be submitted to the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore).
