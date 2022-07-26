@@ -114,7 +114,7 @@ test-run/
         ...
 ```
 
-The `data.ndjson` file is a [line deliminted JSON](https://en.wikipedia.org/wiki/JSON_streaming#Line-delimited_JSON) file containing raw measurement messages.
+The `data.ndjson` file is a [newline delimited JSON](https://en.wikipedia.org/wiki/JSON_streaming#Line-delimited_JSON) file containing raw measurement messages.
 
 Here's an example from a more complete plugin:
 
