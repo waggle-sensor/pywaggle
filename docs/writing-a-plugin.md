@@ -1,5 +1,7 @@
 # Writing a plugin
 
+> Although this doc is still useful as a reference for more advanced pywaggle features, we have migrated the getting started portions to [their own tutorial](https://docs.waggle-edge.ai/docs/tutorials/edge-apps/intro-to-edge-apps) on our central docs site. The pywaggle docs will become more of a reference guide in the near future.
+
 In this guide, we'll walk through writing a basic plugin and exploring some of the functionality provided by pywaggle.
 
 That being said, we do want to emphasize that pywaggle is designed to make it easy to interface _existing_ Python code with the [Waggle](https://github.com/waggle-sensor/waggle) stack. To a first approximation, pywaggle aims to augment print statements with publish statements.
