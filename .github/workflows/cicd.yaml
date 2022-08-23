@@ -38,6 +38,8 @@ jobs:
           path: dist
       - name: Install package
         run: pip3 install "$(echo dist/*.whl)[all]"
+      - name: Install test packages
+        run: pip3 install 'sage-data-client==0.4.*'
       - name: Test package
         run: python3 -m unittest discover tests
   release:

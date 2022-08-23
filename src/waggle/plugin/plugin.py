@@ -1,16 +1,19 @@
-import wagglemsg
 import logging
-from os import getenv
-from threading import Event
-from queue import Queue, Empty
 import re
-from typing import NamedTuple
-from pathlib import Path
+import wagglemsg
+
 from contextlib import contextmanager
+from datetime import datetime
+from os import getenv
+from pathlib import Path
+from queue import Queue, Empty
+from threading import Event
+from typing import NamedTuple
+
 from .config import PluginConfig
 from .rabbitmq import RabbitMQPublisher, RabbitMQConsumer
-from .uploader import Uploader
 from .time import get_timestamp, timeit_perf_counter, timeit_perf_counter_duration
+from .uploader import Uploader
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +41,15 @@ class FilesystemPublisher:
         self.datafile.close()
 
     def publish(self, msg: wagglemsg.Message):
-        print(wagglemsg.dump(msg), file=self.datafile, flush=True)
+        import json
+        out = {
+            "name": msg.name,
+            "value": msg.value,
+            "meta": msg.meta,
+            # python doesn't have builtin support for nanosecond
+            "timestamp": isoformat_time_ns(msg.timestamp),
+        }
+        print(json.dumps(out, sort_keys=True, separators=(",", ":")), file=self.datafile, flush=True)
 
     def upload_file(self, path, timestamp, meta):
         from shutil import copyfile
@@ -53,6 +64,13 @@ class FilesystemPublisher:
             meta=meta,
             timestamp=timestamp,
         ))
+
+
+def isoformat_time_ns(ns: int) -> str:
+    # python doesn't have builtin support for nanosecond timestamps and formatting, so we provide
+    # a backfill for it. this is only intended to be used in the run log for testing.
+    nanostr = f"{ns%1000:03d}"
+    return datetime.fromtimestamp(ns/1e9).isoformat() + nanostr
 
 
 class Plugin:
@@ -79,6 +97,8 @@ class Plugin:
         self.recv = Queue()
         self.stop = Event()
         self.tasks = []
+
+        # TODO(sean) can we use ExitStack to clean up???
 
         self.file_publisher = file_publisher
 

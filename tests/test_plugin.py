@@ -246,6 +246,8 @@ class TestPluginWithRabbitMQ(unittest.TestCase):
 class TestPluginLogDir(unittest.TestCase):
 
     def test_log_dir(self):
+        import sage_data_client
+
         with TemporaryDirectory() as dir:
             dir = Path(dir)
 
@@ -253,25 +255,37 @@ class TestPluginLogDir(unittest.TestCase):
             upload_file = Path(dir, "hello.txt")
             upload_file.write_text("hello")
 
+            timestamp = get_timestamp()
+
             # set env var and run plugin
             try:
                 os.environ["PYWAGGLE_LOG_DIR"] = str(dir)
                 with Plugin() as plugin:
-                    plugin.publish("test", 123)
-                    plugin.upload_file(upload_file)
+                    plugin.publish("test", 123, timestamp=timestamp)
+                    plugin.publish("test.with.meta", 456, meta={"user": "data"}, timestamp=timestamp+10000)
+                    plugin.upload_file(upload_file, timestamp=timestamp+20000)
             finally:
                 del os.environ["PYWAGGLE_LOG_DIR"]
 
-            # ensure uploads dir exists and contains our upload
-            uploads = list(Path(dir, "uploads").glob("*"))
-            self.assertEqual(len(uploads), 1)
+            df = sage_data_client.load(Path(dir, "data.ndjson"))
 
-            # ensure data.ndjson exists and is valid json and contains expected content
-            text = Path(dir, "data.ndjson").read_text()
-            data = list(map(json.loads, text.splitlines()))
-            self.assertEqual(len(data), 2)
-            assertDictContainsSubset(self, {"name": "test", "val": 123}, data[0])
-            assertDictContainsSubset(self, {"name": "upload", "val": str(uploads[0].absolute())}, data[1])
+            # ensure records match what was published
+            self.assertEqual(len(df), 3)
+
+            # TODO(sean) test timestamps
+            self.assertEqual(df.loc[0, "name"], "test")
+            self.assertEqual(df.loc[0, "value"], 123)
+
+            self.assertEqual(df.loc[1, "name"], "test.with.meta")
+            self.assertEqual(df.loc[1, "value"], 456)
+            self.assertEqual(df.loc[1, "meta.user"], "data")
+
+            self.assertEqual(df.loc[2, "name"], "upload")
+            self.assertEqual(df.loc[2, "meta.filename"], "hello.txt")
+
+            # ensure all uploads exist
+            for path in df[df.name == "upload"].value:
+                self.assertTrue(Path(path).exists())
 
 
 def assertDictContainsSubset(t, a, b):
