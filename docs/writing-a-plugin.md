@@ -121,11 +121,11 @@ The `data.ndjson` file is a [newline delimited JSON](https://en.wikipedia.org/wi
 Here's an example from a more complete plugin:
 
 ```json
-{"name":"env.temperature","ts":1656449073603869000,"meta":{"sensor":"bme280"},"val":23.0}
-{"name":"upload","ts":1656449073603976000,"meta":{"camera":"top","filename":"test.png.webp"},"val":"/Users/sean/git/pywaggle-log-dir-example/testrun/uploads/1656449073603976000-test.png.webp"}
-{"name":"image.cats","ts":1656449074613277000,"meta":{},"val":0}
-{"name":"image.birds","ts":1656449074613507000,"meta":{"camera":"left"},"val":8}
-{"name":"timeit.inference","ts":1656449074613580000,"meta":{},"val":1005408000}
+{"name":"env.temperature","timestamp":"2022-08-23T13:27:10.562104000","meta":{"sensor":"bme280"},"value":23.0}
+{"name":"upload","timestamp":"2022-08-23T13:27:13.562104000","meta":{"camera":"top","filename":"test.png.webp"},"value":"/Users/sean/git/pywaggle-log-dir-example/testrun/uploads/1661279233561615000-test.png.webp"}
+{"name":"image.cats","timestamp":"2022-08-23T13:27:13.562104000","meta":{},"value":0}
+{"name":"image.birds","timestamp":"2022-08-23T13:27:13.562104000","meta":{"camera":"left"},"value":8}
+{"name":"timeit.inference","timestamp":"2022-08-23T13:27:11.562104000","meta":{},"value":1005408000}
 ```
 
 The contents of the log directory operates in an append mode, so you may safely run the plugin multiple times without losing previous data.
