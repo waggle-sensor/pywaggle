@@ -16,16 +16,19 @@ import wagglemsg
 
 
 class TestPlugin(unittest.TestCase):
-
     def test_publish(self):
         with Plugin() as plugin:
-            plugin.publish('test.int', 1)
-            plugin.publish('test.float', 2.0)
-            plugin.publish('test.bytes', b'three')
-            plugin.publish('cows.total', 391, meta={
-                "camera": "bottom_left",
-            })
-    
+            plugin.publish("test.int", 1)
+            plugin.publish("test.float", 2.0)
+            plugin.publish("test.bytes", b"three")
+            plugin.publish(
+                "cows.total",
+                391,
+                meta={
+                    "camera": "bottom_left",
+                },
+            )
+
     def test_publish_check_reserved(self):
         with Plugin() as plugin:
             with self.assertRaises(ValueError):
@@ -33,7 +36,7 @@ class TestPlugin(unittest.TestCase):
 
     def test_get(self):
         with Plugin() as plugin:
-            plugin.subscribe('raw.#')
+            plugin.subscribe("raw.#")
             with self.assertRaises(TimeoutError):
                 plugin.get(timeout=0)
             with self.assertRaises(TimeoutError):
@@ -109,11 +112,11 @@ class TestPlugin(unittest.TestCase):
                 plugin.publish("my-metric", 0)
             # correct alternative
             plugin.publish("my_metric", 0)
-            
+
             # assert len(name) <= 128
             with self.assertRaises(ValueError):
-                plugin.publish("x"*129, 0)
-            
+                plugin.publish("x" * 129, 0)
+
             # no empty parts allowed
             with self.assertRaises(ValueError):
                 plugin.publish("vision.count..bird", 0)
@@ -129,18 +132,21 @@ class TestPlugin(unittest.TestCase):
     # TODO(sean) refactor messaging part to make testing this cleaner
     def test_upload_file(self):
         with TemporaryDirectory() as tempdir:
-            pl = Plugin(PluginConfig(
-                host="fake-rabbitmq-host",
-                port=5672,
-                username="plugin",
-                password="plugin",
-                app_id="0668b12c-0c15-462c-9e06-7239282411e5"
-            ), uploader=Uploader(Path(tempdir, "uploads")))
+            pl = Plugin(
+                PluginConfig(
+                    host="fake-rabbitmq-host",
+                    port=5672,
+                    username="plugin",
+                    password="plugin",
+                    app_id="0668b12c-0c15-462c-9e06-7239282411e5",
+                ),
+                uploader=Uploader(Path(tempdir, "uploads")),
+            )
 
-            data = b'here some data in a data'
-            upload_path = Path(tempdir, 'myfile.txt')
+            data = b"here some data in a data"
+            upload_path = Path(tempdir, "myfile.txt")
             upload_path.write_bytes(data)
-            
+
             pl.upload_file(upload_path)
             item = pl.send.get_nowait()
             msg = wagglemsg.load(item.body)
@@ -161,25 +167,23 @@ class TestPlugin(unittest.TestCase):
 
 
 class TestUploader(unittest.TestCase):
-    
     def test_upload_file(self):
         with TemporaryDirectory() as tempdir:
             uploader = Uploader(Path(tempdir, "uploads"))
 
-            data = b'here some data in a data'
+            data = b"here some data in a data"
 
-            upload_path = Path(tempdir, 'myfile.txt')
+            upload_path = Path(tempdir, "myfile.txt")
             upload_path.write_bytes(data)
-            
+
             path = uploader.upload_file(upload_path)
             self.assertFalse(upload_path.exists())
 
-            self.assertEqual(data, Path(path, 'data').read_bytes())
-            meta = json.loads(Path(path, 'meta').read_text())
-            self.assertIn('timestamp', meta)
-            self.assertIn('shasum', meta)
-            self.assertEqual(meta['labels']['filename'], upload_path.name)
-
+            self.assertEqual(data, Path(path, "data").read_bytes())
+            meta = json.loads(Path(path, "meta").read_text())
+            self.assertIn("timestamp", meta)
+            self.assertIn("shasum", meta)
+            self.assertEqual(meta["labels"]["filename"], upload_path.name)
 
 
 def rabbitmq_available():
@@ -191,13 +195,14 @@ def rabbitmq_available():
 
 
 def get_admin_connection():
-    params = pika.ConnectionParameters(credentials=pika.PlainCredentials("admin", "admin"))
+    params = pika.ConnectionParameters(
+        credentials=pika.PlainCredentials("admin", "admin")
+    )
     return pika.BlockingConnection(params)
 
 
 @unittest.skipUnless(rabbitmq_available(), "rabbitmq not available")
 class TestPluginWithRabbitMQ(unittest.TestCase):
-
     def setUp(self):
         os.environ["WAGGLE_PLUGIN_USERNAME"] = "plugin"
         os.environ["WAGGLE_PLUGIN_PASSWORD"] = "plugin"
@@ -206,7 +211,7 @@ class TestPluginWithRabbitMQ(unittest.TestCase):
 
         with get_admin_connection() as conn, conn.channel() as ch:
             ch.queue_purge("to-validator")
-    
+
     def test_publish(self):
         now = time.time_ns()
 
@@ -216,13 +221,16 @@ class TestPluginWithRabbitMQ(unittest.TestCase):
         with get_admin_connection() as conn, conn.channel() as ch:
             _, _, body = ch.basic_get("to-validator", auto_ack=True)
             msg = wagglemsg.load(body)
-        
-        self.assertEqual(msg, wagglemsg.Message(
-            name="test",
-            value=123,
-            meta={"sensor": "bme680"},
-            timestamp=now,
-        ))
+
+        self.assertEqual(
+            msg,
+            wagglemsg.Message(
+                name="test",
+                value=123,
+                meta={"sensor": "bme680"},
+                timestamp=now,
+            ),
+        )
 
     def test_subscribe(self):
         msg = wagglemsg.Message(
@@ -244,7 +252,6 @@ class TestPluginWithRabbitMQ(unittest.TestCase):
 
 
 class TestPluginLogDir(unittest.TestCase):
-
     def test_log_dir(self):
         import sage_data_client
 
@@ -262,8 +269,13 @@ class TestPluginLogDir(unittest.TestCase):
                 os.environ["PYWAGGLE_LOG_DIR"] = str(dir)
                 with Plugin() as plugin:
                     plugin.publish("test", 123, timestamp=timestamp)
-                    plugin.publish("test.with.meta", 456, meta={"user": "data"}, timestamp=timestamp+10000)
-                    plugin.upload_file(upload_file, timestamp=timestamp+20000)
+                    plugin.publish(
+                        "test.with.meta",
+                        456,
+                        meta={"user": "data"},
+                        timestamp=timestamp + 10000,
+                    )
+                    plugin.upload_file(upload_file, timestamp=timestamp + 20000)
             finally:
                 del os.environ["PYWAGGLE_LOG_DIR"]
 
@@ -292,5 +304,5 @@ def assertDictContainsSubset(t, a, b):
     t.assertLessEqual(a.items(), b.items())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -5,8 +5,10 @@ import time
 try:
     from time import time_ns as get_timestamp
 except ImportError:
+
     def get_timestamp():
         return int(time.time() * 1e9)
+
 
 # NOTE to preserve the best accuracy, we implement the backwards compatible perf
 # counter by only abstracting how to measure the duration between two times in
@@ -16,6 +18,7 @@ try:
 
     def timeit_perf_counter_duration(start, finish):
         return finish - start
+
 except ImportError:
     from time import perf_counter as timeit_perf_counter
 

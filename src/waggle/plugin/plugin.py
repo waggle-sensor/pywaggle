@@ -29,7 +29,6 @@ MIN_TIMESTAMP_NS = 946706400000000000
 
 
 class FilesystemPublisher:
-
     def __init__(self, root):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
@@ -42,6 +41,7 @@ class FilesystemPublisher:
 
     def publish(self, msg: wagglemsg.Message):
         import json
+
         out = {
             "name": msg.name,
             "value": msg.value,
@@ -49,28 +49,35 @@ class FilesystemPublisher:
             # python doesn't have builtin support for nanosecond
             "timestamp": isoformat_time_ns(msg.timestamp),
         }
-        print(json.dumps(out, sort_keys=True, separators=(",", ":")), file=self.datafile, flush=True)
+        print(
+            json.dumps(out, sort_keys=True, separators=(",", ":")),
+            file=self.datafile,
+            flush=True,
+        )
 
     def upload_file(self, path, timestamp, meta):
         from shutil import copyfile
+
         src = Path(path)
         dst = Path(self.uploads_dir, f"{timestamp}-{src.name}")
         copyfile(src, dst)
         meta = meta.copy()
         meta["filename"] = Path(src).name
-        self.publish(wagglemsg.Message(
-            name="upload",
-            value=str(dst.absolute()),
-            meta=meta,
-            timestamp=timestamp,
-        ))
+        self.publish(
+            wagglemsg.Message(
+                name="upload",
+                value=str(dst.absolute()),
+                meta=meta,
+                timestamp=timestamp,
+            )
+        )
 
 
 def isoformat_time_ns(ns: int) -> str:
     # python doesn't have builtin support for nanosecond timestamps and formatting, so we provide
     # a backfill for it. this is only intended to be used in the run log for testing.
     nanostr = f"{ns%1000:03d}"
-    return datetime.fromtimestamp(ns/1e9).isoformat() + nanostr
+    return datetime.fromtimestamp(ns / 1e9).isoformat() + nanostr
 
 
 class Plugin:
@@ -90,7 +97,9 @@ class Plugin:
     ```
     """
 
-    def __init__(self, config=None, uploader=None, file_publisher: FilesystemPublisher=None):
+    def __init__(
+        self, config=None, uploader=None, file_publisher: FilesystemPublisher = None
+    ):
         self.config = config or get_default_plugin_config()
         self.uploader = uploader or get_default_plugin_uploader()
         self.send = Queue()
@@ -142,9 +151,13 @@ class Plugin:
         if not isinstance(value, (int, float, str, bytes)):
             raise TypeError("Value must be an int, float, string or bytes.")
         if not isinstance(timestamp, int):
-            raise TypeError("Timestamp must be an int and have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps.")
+            raise TypeError(
+                "Timestamp must be an int and have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps."
+            )
         if timestamp < MIN_TIMESTAMP_NS:
-            raise ValueError("Timestamp probably has wrong units and is being processed as before 2000-01-01T00:00:00Z. Timestamp must have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps.")
+            raise ValueError(
+                "Timestamp probably has wrong units and is being processed as before 2000-01-01T00:00:00Z. Timestamp must have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps."
+            )
         if not valid_meta(meta):
             raise TypeError("Meta must be a dictionary of strings to strings.")
         msg = wagglemsg.Message(name=name, value=value, timestamp=timestamp, meta=meta)
@@ -166,7 +179,9 @@ class Plugin:
         if self.uploader is not None:
             meta = meta.copy()
             meta["filename"] = Path(path).name
-            upload_path = self.uploader.upload_file(path=path, meta=meta, timestamp=timestamp, keep=keep)
+            upload_path = self.uploader.upload_file(
+                path=path, meta=meta, timestamp=timestamp, keep=keep
+            )
             self.__publish("upload", upload_path.name, meta, timestamp)
 
     @contextmanager
@@ -195,7 +210,10 @@ def valid_meta(meta):
 
 
 def get_default_plugin_uploader():
-    if getenv("WAGGLE_PLUGIN_UPLOAD_PATH") is None and getenv("PYWAGGLE_LOG_DIR") is not None:
+    if (
+        getenv("WAGGLE_PLUGIN_UPLOAD_PATH") is None
+        and getenv("PYWAGGLE_LOG_DIR") is not None
+    ):
         return None
     return Uploader(Path(getenv("WAGGLE_PLUGIN_UPLOAD_PATH", "/run/waggle/uploads")))
 
@@ -213,4 +231,6 @@ def raise_for_invalid_publish_name(s: str):
     parts = s.split(".")
     for p in parts:
         if not publish_name_part_pattern.match(p):
-            raise ValueError(f"publish name invalid: {s!r} part: {p!r} (names must consist of [a-z0-9_] and may be joined by .)")
+            raise ValueError(
+                f"publish name invalid: {s!r} part: {p!r} (names must consist of [a-z0-9_] and may be joined by .)"
+            )

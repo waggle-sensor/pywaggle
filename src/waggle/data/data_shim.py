@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 try:
     import cv2
 except ImportError:
-    logger.warning('cv2 module not found. pywaggle requires this to capture image and video data.')
+    logger.warning(
+        "cv2 module not found. pywaggle requires this to capture image and video data."
+    )
 
 
 # BUG This *must* be addressed with the behavior written up in the plugin spec.
@@ -24,20 +26,20 @@ except ImportError:
 try:
     from time import time_ns
 except ImportError:
-    logger.warning('using backwards compatible implementation of time_ns')
+    logger.warning("using backwards compatible implementation of time_ns")
+
     def time_ns():
         return int(time.time() * 1e9)
 
 
-def cvtColor(bgr_img, pixel_format='rgb'):
-    if pixel_format == 'rgb':
+def cvtColor(bgr_img, pixel_format="rgb"):
+    if pixel_format == "rgb":
         return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
     return bgr_img
 
 
 class ImageHandler:
-
-    def __init__(self, query, url, pixel_format='rgb'):
+    def __init__(self, query, url, pixel_format="rgb"):
         self.url = url
         self.pixel_format = pixel_format
 
@@ -47,10 +49,10 @@ class ImageHandler:
                 data = f.read()
                 ts = time_ns()
                 arr = np.frombuffer(data, np.uint8)
-                bgr_img =  cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                bgr_img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
                 return ts, cvtColor(bgr_img, self.pixel_format)
         except socket.timeout:
-            raise TimeoutError('get timed out')
+            raise TimeoutError("get timed out")
 
     def __enter__(self):
         return self
@@ -67,7 +69,7 @@ def video_worker(handler):
                 break
             img = cvtColor(bgr_img, handler.pixel_format)
             item = (time_ns(), img)
-            
+
             # attempt to add an item to the queue
             try:
                 handler.queue.put_nowait(item)
@@ -93,8 +95,7 @@ def video_worker(handler):
 
 
 class VideoHandler:
-
-    def __init__(self, query, url, pixel_format='rgb'):
+    def __init__(self, query, url, pixel_format="rgb"):
         self.pixel_format = pixel_format
         self.cap = cv2.VideoCapture(url)
         if not self.cap.isOpened():
@@ -112,22 +113,27 @@ class VideoHandler:
         try:
             return self.queue.get(timeout=timeout)
         except Empty:
-            raise TimeoutError('get timed out')
+            raise TimeoutError("get timed out")
 
     def __enter__(self):
         return self
 
     def __exit__(self, *exc):
         self.quit.set()
-        self.released.wait() # <- wait for cleanup in worker thread
+        self.released.wait()  # <- wait for cleanup in worker thread
 
 
-WAGGLE_DATA_CONFIG_PATH = Path(os.environ.get('WAGGLE_DATA_CONFIG_PATH', '/run/waggle/data-config.json'))
+WAGGLE_DATA_CONFIG_PATH = Path(
+    os.environ.get("WAGGLE_DATA_CONFIG_PATH", "/run/waggle/data-config.json")
+)
 
 try:
     config = json.loads(WAGGLE_DATA_CONFIG_PATH.read_text())
 except FileNotFoundError:
-    logger.debug('could not find data config file %s. using empty resource list.', WAGGLE_DATA_CONFIG_PATH)
+    logger.debug(
+        "could not find data config file %s. using empty resource list.",
+        WAGGLE_DATA_CONFIG_PATH,
+    )
     config = []
 
 
@@ -136,26 +142,27 @@ def dict_is_subset(a, b):
 
 
 def find_all_matches(query):
-    return [c for c in config if dict_is_subset(query, c['match'])]
+    return [c for c in config if dict_is_subset(query, c["match"])]
 
 
 def find_match(query):
     matches = find_all_matches(query)
     if len(matches) == 0:
-        raise RuntimeError('no matches found')
+        raise RuntimeError("no matches found")
     if len(matches) > 1:
-        raise RuntimeError('multiple devices found')
+        raise RuntimeError("multiple devices found")
     return matches[0]
 
 
 handlers = {
-    'image': ImageHandler,
-    'video': VideoHandler,
+    "image": ImageHandler,
+    "video": VideoHandler,
 }
+
 
 # optimizations *could* happen here, on demand...
 def open_data_source(**query):
     match = find_match(query)
-    handler = handlers[match['handler']['type']]
-    args = match['handler']['args']
+    handler = handlers[match["handler"]["type"]]
+    args = match["handler"]["args"]
     return handler(query, **args)

@@ -6,7 +6,6 @@ from .time import get_timestamp
 
 
 class Uploader:
-
     def __init__(self, root):
         self.root = Path(root)
 
@@ -18,7 +17,7 @@ class Uploader:
     def upload_file(self, path, meta={}, timestamp=None, keep=False):
         # get timestamp before doing other work
         timestamp = timestamp or get_timestamp()
-        
+
         path = Path(path)
         checksum = sha1sum_for_file(path)
 
@@ -58,4 +57,4 @@ def sha1sum_for_file(path):
 
 def write_json_file(path, obj):
     with open(path, "w") as f:
-        json.dump(obj, f, separators=(',', ':'), sort_keys=True)
+        json.dump(obj, f, separators=(",", ":"), sort_keys=True)

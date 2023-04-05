@@ -27,7 +27,7 @@ class RabbitMQPublisher:
         self.stop = stop
         self.done = Event()
         Thread(target=self.__main).start()
-    
+
     def __main(self):
         logger.debug("publisher started.")
         try:
@@ -60,25 +60,30 @@ class RabbitMQPublisher:
                 return
 
             properties = pika.BasicProperties(
-                delivery_mode=2,
-                user_id=self.params.credentials.username)
+                delivery_mode=2, user_id=self.params.credentials.username
+            )
 
             # NOTE app_id is used by data service to validate and tag additional metadata provided by k3s scheduler.
             if self.config.app_id != "":
                 properties.app_id = self.config.app_id
 
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("publishing message to rabbitmq: %s", wagglemsg.load(item.body))
+                logger.debug(
+                    "publishing message to rabbitmq: %s", wagglemsg.load(item.body)
+                )
 
             try:
                 ch.basic_publish(
                     exchange="to-validator",
                     routing_key=item.scope,
                     properties=properties,
-                    body=item.body)
+                    body=item.body,
+                )
             except Exception:
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.exception("basic_publish to rabbitmq failed. will requeue message...")
+                    logger.exception(
+                        "basic_publish to rabbitmq failed. will requeue message..."
+                    )
                 # requeue message so we can again later
                 # NOTE(sean) this will reorder messages. if we realized we *must* preserve message
                 # order, we must to change this to avoid subtle bugs!
@@ -138,7 +143,7 @@ class RabbitMQConsumer:
             conn.call_later(1, check_stop)
             logger.debug("consumer start processing messages...")
             ch.start_consuming()
-    
+
     def __process_message(self, ch, method, properties, body):
         try:
             logger.debug("consumer processing message %s...", body)
@@ -150,14 +155,16 @@ class RabbitMQConsumer:
         self.messages.put(msg)
 
 
-def get_connection_parameters_for_config(config: PluginConfig) -> pika.ConnectionParameters:
+def get_connection_parameters_for_config(
+    config: PluginConfig,
+) -> pika.ConnectionParameters:
     return pika.ConnectionParameters(
-            host=config.host,
-            port=config.port,
-            credentials=pika.PlainCredentials(
-                username=config.username,
-                password=config.password,
-            ),
-            connection_attempts=1,
-            socket_timeout=1.0,
-        )
+        host=config.host,
+        port=config.port,
+        credentials=pika.PlainCredentials(
+            username=config.username,
+            password=config.password,
+        ),
+        connection_attempts=1,
+        socket_timeout=1.0,
+    )
