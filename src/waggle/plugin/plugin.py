@@ -148,8 +148,8 @@ class Plugin:
     # message publish. the main reason this exists is to guard against reserved names
     # like "upload" in publish but still allow upload_file to use it.
     def __publish(self, name, value, meta, timestamp, scope="all", timeout=None):
-        if not isinstance(value, (int, float, str, bytes)):
-            raise TypeError("Value must be an int, float, string or bytes.")
+        if not isinstance(value, (int, float, str)):
+            raise TypeError("Value must be an int, float or str.")
         if not isinstance(timestamp, int):
             raise TypeError(
                 "Timestamp must be an int and have units of nanoseconds since epoch. Please see the documentation for more information on setting timestamps."
