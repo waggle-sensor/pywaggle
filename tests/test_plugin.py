@@ -20,7 +20,7 @@ class TestPlugin(unittest.TestCase):
         with Plugin() as plugin:
             plugin.publish("test.int", 1)
             plugin.publish("test.float", 2.0)
-            plugin.publish("test.bytes", b"three")
+            plugin.publish("test.str", "three")
             plugin.publish(
                 "cows.total",
                 391,
@@ -56,7 +56,8 @@ class TestPlugin(unittest.TestCase):
             plugin.publish("test", 1)
             plugin.publish("test", 1.3)
             plugin.publish("test", "some string")
-            plugin.publish("test", b"some bytes")
+            with self.assertRaises(TypeError):
+                plugin.publish("test", b"some bytes")
             with self.assertRaises(TypeError):
                 plugin.publish("test", [1, 2, 3])
             with self.assertRaises(TypeError):
