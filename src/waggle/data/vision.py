@@ -144,16 +144,22 @@ class _Capture:
             self.capture.release()
 
     def snapshot(self):
-        timestamp = get_timestamp()
-        ok, data = self.capture.read()
+        ok = self.capture.read()
         if not ok:
             raise RuntimeError("failed to take snapshot")
+        timestamp = get_timestamp()
+        ok, data = self.capture.retrieve()
+        if not ok:
+            raise RuntimeError("failed to retrieve the taken snapshot")
         return ImageSample(data=data, timestamp=timestamp, format=self.format)
 
     def stream(self):
         while True:
+            ok = self.capture.read()
+            if not ok:
+                break
             timestamp = get_timestamp()
-            ok, data = self.capture.read()
+            ok, data = self.capture.retrieve()
             if not ok:
                 break
             yield ImageSample(data=data, timestamp=timestamp, format=self.format)
