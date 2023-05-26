@@ -144,7 +144,7 @@ class _Capture:
             self.capture.release()
 
     def snapshot(self):
-        ok = self.capture.read()
+        ok = self.capture.grab()
         if not ok:
             raise RuntimeError("failed to take snapshot")
         timestamp = get_timestamp()
@@ -155,7 +155,7 @@ class _Capture:
 
     def stream(self):
         while True:
-            ok = self.capture.read()
+            ok = self.capture.grab()
             if not ok:
                 break
             timestamp = get_timestamp()
