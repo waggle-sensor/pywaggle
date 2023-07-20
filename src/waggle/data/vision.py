@@ -7,8 +7,12 @@ from os import PathLike
 import random
 import json
 import re
+import threading
+import time
 from base64 import b64encode
 from .timestamp import get_timestamp
+from shutil import which
+import ffmpeg
 
 
 class BGR:
@@ -70,6 +74,38 @@ class ImageSample:
         return f'<img src="data:image/png;base64,{b64data}" />'
 
 
+class VideoSample:
+    path: str
+    timestamp: int
+
+    def __init__(self, path, timestamp):
+        self.path = path
+        self.timestamp = timestamp
+
+    def __enter__(self):
+        self.capture = cv2.VideoCapture(self.device)
+        if not self.capture.isOpened():
+            raise RuntimeError(
+                f"unable to open video capture for file {self.path!r}"
+            )
+        self.fps = self.capture.get(cv2.CAP_PROP_FPS)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.capture.isOpened():
+            self.capture.release()
+
+    def next(self):
+        if self.capture == None or self.capture.isOpened():
+            raise RuntimeError("video is not opened. use the Python WITH statement to open the video")
+        ok, data = self.capture.read()
+        if not ok:
+            return None
+        # TODO (yk): we need to return an approximated timestamp of the frame
+        approx_timestamp = self.timestamp
+        return ImageSample(data=data, timestamp=approx_timestamp, format=self.format)
+
+
 def resolve_device(device):
     if isinstance(device, Path):
         return resolve_device_from_path(device)
@@ -101,12 +137,12 @@ def resolve_device_from_data_config(device):
     except KeyError:
         raise KeyError(f"missing .handler.args.url field for device {device!r}.")
 
-
 class Camera:
     def __init__(self, device=0, format=RGB):
         self.capture = _Capture(resolve_device(device), format)
 
     def __enter__(self):
+        self.capture.enable_daemon = True
         self.capture.__enter__()
         return self
 
@@ -127,6 +163,9 @@ class _Capture:
         self.device = device
         self.format = format
         self.context_depth = 0
+        self.enable_daemon = False
+        self.daemon_need_to_stop = False
+        self.daemon = threading.Thread(target=self._run)
 
     def __enter__(self):
         if self.context_depth == 0:
@@ -135,34 +174,77 @@ class _Capture:
                 raise RuntimeError(
                     f"unable to open video capture for device {self.device!r}"
                 )
+            # spin up a thread to keep up with the camera frame rate
+            if self.enable_daemon:
+                self.daemon.start()
         self.context_depth += 1
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.context_depth -= 1
         if self.context_depth == 0:
+            if self.enable_daemon:
+                self.daemon_need_to_stop = True
+                self.daemon.join()
             self.capture.release()
+    
+    def _run(self):
+        # we sleep slighly shorter than FPS to drain the buffer efficiently
+        fps = self.capture.get(cv2.CAP_PROP_FPS)
+        sleep = 0.01
+        if fps > 0:
+            sleep = 1 / (fps + 1)
+        while not self.daemon_need_to_stop:
+            self.lock.acquire()
+            self.capture.grab()
+            self.timestamp = get_timestamp()
+            self.lock.release()
+            time.sleep(sleep)
 
-    def snapshot(self):
-        ok = self.capture.grab()
-        if not ok:
-            raise RuntimeError("failed to take snapshot")
-        timestamp = get_timestamp()
-        ok, data = self.capture.retrieve()
-        if not ok:
-            raise RuntimeError("failed to retrieve the taken snapshot")
-        return ImageSample(data=data, timestamp=timestamp, format=self.format)
-
-    def stream(self):
-        while True:
+    def grab_frame(self):
+        if self.daemon.is_alive():
+            self.lock.acquire()
+            timestamp = self.timestamp
+            ok, data = self.capture.retrieve()
+            self.lock.release()
+            if not ok:
+                raise RuntimeError("failed to retrieve the taken snapshot")
+            return ImageSample(data=data, timestamp=timestamp, format=self.format)
+        else:
             ok = self.capture.grab()
             if not ok:
-                break
+                raise RuntimeError("failed to take a snapshot")
             timestamp = get_timestamp()
             ok, data = self.capture.retrieve()
             if not ok:
-                break
-            yield ImageSample(data=data, timestamp=timestamp, format=self.format)
+                raise RuntimeError("failed to retrieve the taken snapshot")
+            return ImageSample(data=data, timestamp=timestamp, format=self.format)
+
+    def snapshot(self):
+        return self.grab_frame()
+
+    def stream(self):
+        try:
+            while True:
+                yield self.grab_frame()
+        except:
+            pass
+
+    def record(self, duration, file_path="./sample.mp4", skip_second=1):
+        if which("ffmpeg") == None:
+            raise RuntimeError("ffmpeg does not exist to record video. please install ffmpeg")
+        if self.context_depth > 0:
+            raise RuntimeError(f'the stream {self.device} is open. please close first or use without the Python\'s WITH statement')
+        if self.device.startswith("rtsp"):
+            c = ffmpeg.input(self.device, rtsp_transport="tcp", ss=skip_second)
+        else:
+            c = ffmpeg.input(self.device, ss=skip_second)
+        c = ffmpeg.output(c, file_path, codec="copy", f='mp4', t=duration).overwrite_output()
+        timestamp = get_timestamp()
+        _, error = ffmpeg.run(quiet=True)
+        if error != "":
+            raise RuntimeError(f'error while recording: %s', error)
+        return VideoSample(path=file_path, timestamp=timestamp)
 
 
 class ImageFolder:
