@@ -157,6 +157,9 @@ class Camera:
         with self.capture:
             yield from self.capture.stream()
 
+    def record(self, duration, file_path="./sample.mp4", skip_second=1):
+        return self.capture.record(duration, file_path, skip_second)
+
 
 class _Capture:
     def __init__(self, device, format):
@@ -166,6 +169,7 @@ class _Capture:
         self.enable_daemon = False
         self.daemon_need_to_stop = False
         self.daemon = threading.Thread(target=self._run)
+        self.lock = threading.Lock()
 
     def __enter__(self):
         if self.context_depth == 0:
