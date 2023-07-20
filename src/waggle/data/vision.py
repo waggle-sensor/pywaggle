@@ -213,13 +213,13 @@ class _Capture:
                 # raise RuntimeError("failed to grab a frame")
             self.timestamp = get_timestamp()
             self.lock.release()
-            self._ready_for_next_frame.put(True)
+            if self._ready_for_next_frame.empty():
+                self._ready_for_next_frame.put_nowait(True)
             time.sleep(sleep)
 
     def grab_frame(self):
         if self.daemon.is_alive():
             self._ready_for_next_frame.get(block=True, timeout=60)
-            logging.debug(f'new frame is available')
             self.lock.acquire()
             timestamp = self.timestamp
             ok, data = self.capture.retrieve()
@@ -251,17 +251,19 @@ class _Capture:
         if which("ffmpeg") == None:
             raise RuntimeError("ffmpeg does not exist to record video. please install ffmpeg")
         if self.context_depth > 0:
-            raise RuntimeError(f'the stream {self.device} is open. please close first or use without the Python\'s WITH statement')
+            raise RuntimeError(f'the stream {self.device} is already open. please close first or use without the Python\'s WITH statement')
         if self.device.startswith("rtsp"):
             c = ffmpeg.input(self.device, rtsp_transport="tcp", ss=skip_second)
         else:
             c = ffmpeg.input(self.device, ss=skip_second)
         c = ffmpeg.output(c, file_path, codec="copy", f='mp4', t=duration).overwrite_output()
         timestamp = get_timestamp()
-        _, error = ffmpeg.run(quiet=True)
-        if error != "":
-            raise RuntimeError(f'error while recording: %s', error)
-        return VideoSample(path=file_path, timestamp=timestamp)
+        _, stderr = ffmpeg.run(c, quiet=True)
+        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+            return VideoSample(path=file_path, timestamp=timestamp)
+        else:
+            raise RuntimeError(f'error while recording: {stderr}')
+        
 
 
 class ImageFolder:
