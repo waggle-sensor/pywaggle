@@ -321,6 +321,7 @@ Therefore, it is highly recommended to use the Camera class with the Python `wit
 
 ```python
 from time import sleep
+from waggle.data.vision import Camera
 
 with Camera() as camera:
     former_frame = camera.snapshot()
@@ -334,6 +335,7 @@ For simple grab-and-go use cases, users use the Camera class without the `with` 
 
 ```python
 from time import sleep
+from waggle.data.vision import Camera
 
 # The Camera class closes the stream after obtaining
 # a frame
@@ -342,6 +344,39 @@ sleep(5)
 # The Camera class opens the stream and grabs a frame
 current_frame = Camera().snapshot()
 calculate_motion(current_frame, former_frame)
+```
+
+### Recording video data
+
+```python
+from waggle.data.vision import Camera
+
+# record a 30-second video from the camera
+video = Camera().record(duration=30)
+for frame in video:
+    process(frame.data)
+```
+
+The Camera class allows users to record a video from camera and store the clip into a file. Because it relies on [ffmpeg](https://www.ffmpeg.org/) user code and its container (if in a Docker container) must have ffmpeg installed. You may install it as follow,
+
+```bash
+# for ubuntu
+apt-get update && apt-get install -y ffmpeg
+```
+
+Also, the `.record()` function may NOT be used with Python `with` statement for USB cameras.
+
+```python
+from waggle.data.vision import Camera
+
+# the camera is a USB camera
+device = "/dev/camera0"
+with Camera(device) as camera:
+    # this raises an exception as the camera stream is already open by the with statement
+    video = camera.record(duration=30)
+
+# USB cameras can be used as below
+video = Camera(device).record(duration=30)
 ```
 
 ### Recording audio data
