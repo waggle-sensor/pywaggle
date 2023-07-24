@@ -8,7 +8,6 @@ import random
 import json
 import re
 import threading
-from queue import Queue
 import time
 from base64 import b64encode
 from .timestamp import get_timestamp
@@ -183,7 +182,7 @@ class _Capture:
         self.context_depth = 0
         self.enable_daemon = False
         self.daemon_need_to_stop = False
-        self._ready_for_next_frame = Queue(maxsize=1)
+        self._ready_for_next_frame = threading.Event()
         self.daemon = threading.Thread(target=self._run)
         self.lock = threading.Lock()
 
@@ -216,27 +215,29 @@ class _Capture:
             sleep = 1 / (fps + 1)
         logging.debug(f'camera FPS is {fps}. the background thread sleeps {sleep} seconds in between grab()')
         while not self.daemon_need_to_stop:
-            self.lock.acquire()
-            ok = self.capture.grab()
-            if not ok:
-                pass
-                # TODO: what should we do when grab() fails?
-                # raise RuntimeError("failed to grab a frame")
-            self.timestamp = get_timestamp()
-            self.lock.release()
-            if self._ready_for_next_frame.empty():
-                self._ready_for_next_frame.put_nowait(True)
+            try:
+                self.lock.acquire()
+                ok = self.capture.grab()
+                if not ok:
+                    raise RuntimeError("failed to grab a frame")
+                self.timestamp = get_timestamp()
+            finally:
+                self.lock.release()
+            self._ready_for_next_frame.set()
             time.sleep(sleep)
 
     def grab_frame(self):
         if self.daemon.is_alive():
-            self._ready_for_next_frame.get(block=True, timeout=60)
-            self.lock.acquire()
-            timestamp = self.timestamp
-            ok, data = self.capture.retrieve()
-            self.lock.release()
-            if not ok:
-                raise RuntimeError("failed to retrieve the taken snapshot")
+            self._ready_for_next_frame.wait(timeout=60)
+            self._ready_for_next_frame.clear()
+            try:
+                self.lock.acquire(timeout=1)
+                timestamp = self.timestamp
+                ok, data = self.capture.retrieve()
+                if not ok:
+                    raise RuntimeError("failed to retrieve the taken snapshot")
+            finally:
+                self.lock.release()
             return ImageSample(data=data, timestamp=timestamp, format=self.format)
         else:
             ok = self.capture.grab()
