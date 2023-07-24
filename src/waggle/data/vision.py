@@ -85,6 +85,7 @@ class VideoSample:
         self.format = format
         self.path = path
         self.timestamp = timestamp
+        self.capture = None
 
     def __enter__(self):
         self.capture = cv2.VideoCapture(self.path)
@@ -96,7 +97,9 @@ class VideoSample:
         if self.fps > 100.:
             self.fps = 0.
             logger.debug(f'pywaggle cannot calculate timestamp because the fps ({self.fps}) is too high.')
-        self.timestamp_delta = 1 / self.fps
+            self.timestamp_delta = 0
+        else:
+            self.timestamp_delta = 1 / self.fps
         self._frame_count = 0
         return self
 
@@ -115,7 +118,7 @@ class VideoSample:
         if not ok or data is None:
             raise StopIteration
         # timestamp must be an integer in nanoseconds
-        approx_timestamp = int(self.timestamp + (self.timestamp_delta * self._frame_count))
+        approx_timestamp = self.timestamp + int(self.timestamp_delta * self._frame_count * 1e9)
         self._frame_count += 1
         return ImageSample(data=data, timestamp=approx_timestamp, format=self.format)
 
@@ -183,7 +186,7 @@ class _Capture:
         self.enable_daemon = False
         self.daemon_need_to_stop = False
         self._ready_for_next_frame = threading.Event()
-        self.daemon = threading.Thread(target=self._run)
+        self.daemon = threading.Thread(target=self._run, daemon=True)
         self.lock = threading.Lock()
 
     def __enter__(self):
@@ -228,7 +231,7 @@ class _Capture:
 
     def grab_frame(self):
         if self.daemon.is_alive():
-            self._ready_for_next_frame.wait(timeout=60)
+            self._ready_for_next_frame.wait(timeout=10)
             self._ready_for_next_frame.clear()
             try:
                 self.lock.acquire(timeout=1)
