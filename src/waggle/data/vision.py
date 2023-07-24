@@ -82,31 +82,42 @@ class VideoSample:
     path: str
     timestamp: int
 
-    def __init__(self, path, timestamp):
+    def __init__(self, path, timestamp, format=RGB):
+        self.format = format
         self.path = path
         self.timestamp = timestamp
 
     def __enter__(self):
-        self.capture = cv2.VideoCapture(self.device)
+        self.capture = cv2.VideoCapture(self.path)
         if not self.capture.isOpened():
             raise RuntimeError(
                 f"unable to open video capture for file {self.path!r}"
             )
         self.fps = self.capture.get(cv2.CAP_PROP_FPS)
+        if self.fps > 100.:
+            self.fps = 0.
+            logger.debug(f'pywaggle cannot calculate timestamp because the fps ({self.fps}) is too high.')
+        self.timestamp_delta = 1 / self.fps
+        self._frame_count = 0
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.capture.isOpened():
             self.capture.release()
 
-    def next(self):
-        if self.capture == None or self.capture.isOpened():
+    def __iter__(self):
+        self._frame_count = 0
+        return self
+
+    def __next__(self):
+        if self.capture == None or not self.capture.isOpened():
             raise RuntimeError("video is not opened. use the Python WITH statement to open the video")
         ok, data = self.capture.read()
-        if not ok:
-            return None
-        # TODO (yk): we need to return an approximated timestamp of the frame
-        approx_timestamp = self.timestamp
+        if not ok or data is None:
+            raise StopIteration
+        # timestamp must be an integer in nanoseconds
+        approx_timestamp = int(self.timestamp + (self.timestamp_delta * self._frame_count))
+        self._frame_count += 1
         return ImageSample(data=data, timestamp=approx_timestamp, format=self.format)
 
 
