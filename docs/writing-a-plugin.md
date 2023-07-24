@@ -273,6 +273,14 @@ from waggle.plugin import Plugin
 from waggle.data.vision import Camera
 import time
 
+# use case 1: take a snapshot and process
+with Plugin() as plugin:
+    sample = Camera().snapshot()
+    # do processing
+    result = process(sample.data)
+    plugin.publish("my.measurement", result, timestampe=sample.timestamp)
+
+# user case 2: process camera frames
 with Plugin() as plugin, Camera() as camera:
     # process samples from video stream
     for sample in camera.stream():
@@ -281,6 +289,8 @@ with Plugin() as plugin, Camera() as camera:
             sample.save("cars.jpg")
             plugin.upload_file("cars.jpg")
 ```
+
+The `camera.snapshot()` function returns a camera frame. The function provides a convenient way to capture a frame and process it.
 
 The `camera.stream()` function yields a sequence of `ImageSample` with the following properties:
 
@@ -301,6 +311,37 @@ camera = Camera("file://path/to/my_cool_video.mp4")
 
 # open a camera by device id (when plugin runs on a node)
 camera = Camera("bottom_camera")
+```
+
+### Python `with` statement for the Camera class
+
+The Camera class wrapped in Python `with` statement runs a background thread to keep up with the camera stream. This allows users to get the latest frame whenever `.stream()` or `.snapshot()` are called. However, this may be uncessary when users want to close the stream after grabbing a frame or the Camera class is used with a file, not a stream.
+
+Therefore, it is highly recommended to use the Camera class with the Python `with` statement when users want to process consequtive frames.
+
+```python
+from time import sleep
+
+with Camera() as camera:
+    former_frame = camera.snapshot()
+    sleep(5)
+    # the current_frame gets the latest frame
+    current_frame = camera.snapshot()
+    calculate_motion(current_frame, former_frame)
+```
+
+For simple grab-and-go use cases, users use the Camera class without the `with` statement to avoid the background process and its resource consumption.
+
+```python
+from time import sleep
+
+# The Camera class closes the stream after obtaining
+# a frame
+former_frame = Camera().snapshot()
+sleep(5)
+# The Camera class opens the stream and grabs a frame
+current_frame = Camera().snapshot()
+calculate_motion(current_frame, former_frame)
 ```
 
 ### Recording audio data
