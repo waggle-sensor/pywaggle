@@ -184,7 +184,7 @@ class _Capture:
         self.format = format
         self.context_depth = 0
         self.enable_daemon = False
-        self.daemon_need_to_stop = False
+        self.daemon_need_to_stop = threading.Event()
         self._ready_for_next_frame = threading.Event()
         self.daemon = threading.Thread(target=self._run, daemon=True)
         self.lock = threading.Lock()
@@ -198,6 +198,7 @@ class _Capture:
                 )
             # spin up a thread to keep up with the camera frame rate
             if self.enable_daemon:
+                self.daemon_need_to_stop.clear()
                 self.daemon.start()
         self.context_depth += 1
         return self
@@ -206,8 +207,7 @@ class _Capture:
         self.context_depth -= 1
         if self.context_depth == 0:
             if self.enable_daemon:
-                self.daemon_need_to_stop = True
-                self.daemon.join()
+                self.daemon_need_to_stop.set()
             self.capture.release()
     
     def _run(self):
@@ -217,7 +217,7 @@ class _Capture:
         if fps > 0 and fps < 100:
             sleep = 1 / (fps + 1)
         logging.debug(f'camera FPS is {fps}. the background thread sleeps {sleep} seconds in between grab()')
-        while not self.daemon_need_to_stop:
+        while not self.daemon_need_to_stop.is_set():
             try:
                 self.lock.acquire()
                 ok = self.capture.grab()
