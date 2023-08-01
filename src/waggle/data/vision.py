@@ -155,11 +155,23 @@ def resolve_device_from_data_config(device):
         raise KeyError(f"missing .handler.args.url field for device {device!r}.")
 
 class Camera:
+    INPUT_TYPE_FILE = "file"
+    INPUT_TYPE_OTHER = "other"
+
     def __init__(self, device=0, format=RGB):
         self.capture = _Capture(resolve_device(device), format)
+        match = re.match(r"([A-Za-z0-9]+)://(.*)$", device)
+        if match is not None and match.group(1) == "file":
+            self.input_type = self.INPUT_TYPE_FILE
+        else:
+            self.input_type = self.INPUT_TYPE_OTHER
 
     def __enter__(self):
-        self.capture.enable_daemon = True
+        if self.input_type == self.INPUT_TYPE_FILE:
+            logger.info(f'input is a file. the background thread disabled for grabbing frames')
+            self.capture.enable_daemon = False
+        else:
+            self.capture.enable_daemon = True
         self.capture.__enter__()
         return self
 
@@ -212,11 +224,14 @@ class _Capture:
     
     def _run(self):
         # we sleep slighly shorter than FPS to drain the buffer efficiently
-        fps = self.capture.get(cv2.CAP_PROP_FPS)
+        # NOTE: OpenCV's FPS get function is inaccurate as a USB webcam gives 1 FPS while
+        #       a RTSP stream returns 180000. none of them are correct. therefore, we cannot
+        #       decide the sleep time based on obtained FPS
+        # fps = self.capture.get(cv2.CAP_PROP_FPS)
         sleep = 0.01
-        if fps > 0 and fps < 100:
-            sleep = 1 / (fps + 1)
-        logging.debug(f'camera FPS is {fps}. the background thread sleeps {sleep} seconds in between grab()')
+        # if fps > 0 and fps < 100:
+        #    sleep = 1 / (fps + 1)
+        # logging.debug(f'camera FPS is {fps}. the background thread sleeps {sleep} seconds in between grab()')
         while not self.daemon_need_to_stop.is_set():
             try:
                 self.lock.acquire()
@@ -267,7 +282,7 @@ class _Capture:
             raise RuntimeError("ffmpeg does not exist to record video. please install ffmpeg")
         if self.context_depth > 0:
             raise RuntimeError(f'the stream {self.device} is already open. please close first or use without the Python\'s WITH statement')
-        if self.device.startswith("rtsp"):
+        if isinstance(self.device, str) and self.device.startswith("rtsp"):
             c = ffmpeg.input(self.device, rtsp_transport="tcp", ss=skip_second)
         else:
             c = ffmpeg.input(self.device, ss=skip_second)

@@ -366,8 +366,9 @@ from waggle.data.vision import Camera
 
 # record a 30-second video from the camera
 video = Camera().record(duration=30)
-for frame in video:
-    process(frame.data)
+with video:
+    for frame in video:
+        process(frame.data)
 ```
 
 The Camera class allows users to record a video from camera and store the clip into a file. Because it relies on [ffmpeg](https://www.ffmpeg.org/) user code and its container (if in a Docker container) must have ffmpeg installed. You may install it as follow,
