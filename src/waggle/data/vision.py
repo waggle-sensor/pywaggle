@@ -246,7 +246,8 @@ class _Capture:
 
     def grab_frame(self):
         if self.daemon.is_alive():
-            self._ready_for_next_frame.wait(timeout=10)
+            if not self._ready_for_next_frame.wait(timeout=10.):
+                raise RuntimeError("failed to grab a frame from the background thread: timed out")
             self._ready_for_next_frame.clear()
             try:
                 self.lock.acquire(timeout=1)
