@@ -14,6 +14,8 @@ from .timestamp import get_timestamp
 from shutil import which
 import ffmpeg
 import logging
+from contextlib import ExitStack, contextmanager
+
 
 logger = logging.getLogger(__name__)
 
@@ -165,66 +167,108 @@ def resolve_device_from_data_config(device):
 
 class Camera:
     def __init__(self, device=0, format=RGB):
-        device, self.input_type = resolve_device(device)
-        self.capture = _Capture(device, format)
+        self.es = ExitStack()
+
+        device, input_type = resolve_device(device)
+        self.device = device
+        self.format = format
+        if input_type == "file":
+            self.capture_class = FileCapture
+        elif input_type == "other":
+            self.capture_class = StreamCapture
+        else:
+            raise RuntimeError(f"invalid camera input type for device {device}")
 
     def __enter__(self):
-        if self.input_type == INPUT_TYPE_FILE:
-            logger.info(
-                f"input is a file. the background thread disabled for grabbing frames"
-            )
-            self.capture.enable_daemon = False
-        else:
-            self.capture.enable_daemon = True
-        self.capture.__enter__()
-        return self
+        capture = self.capture_class(self.device, self.format)
+        self.es.callback(capture.close)
+        return capture
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.capture.__exit__(exc_type, exc_val, exc_tb)
+        self.es.close()
 
     def snapshot(self):
-        with self.capture:
-            return self.capture.snapshot()
+        with self as capture:
+            return capture.snapshot()
 
     def stream(self):
-        with self.capture:
-            yield from self.capture.stream()
+        with self as capture:
+            yield from capture.stream()
 
     def record(self, duration, file_path="./sample.mp4", skip_second=1):
-        return self.capture.record(duration, file_path, skip_second)
+        if which("ffmpeg") is None:
+            raise RuntimeError(
+                "ffmpeg does not exist to record video. please install ffmpeg"
+            )
+        # TODO find cross platform option for webcams since likely to be used during tutorials
+        if isinstance(self.device, int):
+            c = ffmpeg.input(str(self.device), ss=skip_second)
+        elif isinstance(self.device, str) and self.device.startswith("rtsp"):
+            c = ffmpeg.input(self.device, rtsp_transport="tcp", ss=skip_second)
+        else:
+            c = ffmpeg.input(self.device, ss=skip_second)
+        c = ffmpeg.output(
+            c, file_path, codec="copy", f="mp4", t=duration
+        ).overwrite_output()
+        timestamp = get_timestamp()
+
+        try:
+            ffmpeg.run(c, quiet=True)
+        except ffmpeg.Error as e:
+            raise RuntimeError(f"error while recording: {e.stderr.decode()}")
+
+        return VideoSample(path=file_path, timestamp=timestamp)
 
 
-class _Capture:
+class FileCapture:
     def __init__(self, device, format):
         self.device = device
         self.format = format
-        self.context_depth = 0
-        self.enable_daemon = False
+
+    def close(self):
+        print("bye file!")
+
+    def snapshot(self):
+        pass
+
+    def stream(self):
+        pass
+
+    def record(self):
+        raise RuntimeError("TODO write this error")
+
+
+class StreamCapture:
+    def __init__(self, device, format):
+        self.device = device
+        self.format = format
+
+        self.capture = cv2.VideoCapture(self.device)
+        if not self.capture.isOpened():
+            raise RuntimeError(
+                f"unable to open video capture for device {self.device!r}"
+            )
+
+        self.lock = threading.Lock()
         self.daemon_need_to_stop = threading.Event()
         self._ready_for_next_frame = threading.Event()
-        self.daemon = threading.Thread(target=self._run, daemon=True)
-        self.lock = threading.Lock()
+        self.stopped = threading.Event()
+        threading.Thread(target=self._run, daemon=True).start()
 
-    def __enter__(self):
-        if self.context_depth == 0:
-            self.capture = cv2.VideoCapture(self.device)
-            if not self.capture.isOpened():
-                raise RuntimeError(
-                    f"unable to open video capture for device {self.device!r}"
-                )
-            # spin up a thread to keep up with the camera frame rate
-            if self.enable_daemon:
-                self.daemon_need_to_stop.clear()
-                self.daemon.start()
-        self.context_depth += 1
-        return self
+    def close(self):
+        self.daemon_need_to_stop.set()
+        self.stopped.wait(timeout=10)
+        self.capture.release()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.context_depth -= 1
-        if self.context_depth == 0:
-            if self.enable_daemon:
-                self.daemon_need_to_stop.set()
-            self.capture.release()
+    def snapshot(self):
+        return self.grab_frame()
+
+    def stream(self):
+        while True:
+            yield self.grab_frame()
+
+    def record(self):
+        raise RuntimeError("TODO write this error")
 
     def _run(self):
         # we sleep slighly shorter than FPS to drain the buffer efficiently
@@ -236,76 +280,30 @@ class _Capture:
         # if fps > 0 and fps < 100:
         #    sleep = 1 / (fps + 1)
         # logging.debug(f'camera FPS is {fps}. the background thread sleeps {sleep} seconds in between grab()')
-        while not self.daemon_need_to_stop.is_set():
-            try:
-                self.lock.acquire()
-                ok = self.capture.grab()
-                if not ok:
-                    raise RuntimeError("failed to grab a frame")
-                self.timestamp = get_timestamp()
-            finally:
-                self.lock.release()
-            self._ready_for_next_frame.set()
-            time.sleep(sleep)
+        try:
+            while not self.daemon_need_to_stop.is_set():
+                with acquire_with_timeout(self.lock, timeout=10.0):
+                    ok = self.capture.grab()
+                    if not ok:
+                        raise RuntimeError("failed to grab a frame")
+                    self.timestamp = get_timestamp()
+                self._ready_for_next_frame.set()
+                time.sleep(sleep)
+        finally:
+            self.stopped.set()
 
     def grab_frame(self):
-        if self.daemon.is_alive():
-            if not self._ready_for_next_frame.wait(timeout=10.0):
-                raise RuntimeError(
-                    "failed to grab a frame from the background thread: timed out"
-                )
-            self._ready_for_next_frame.clear()
-            try:
-                self.lock.acquire(timeout=1)
-                timestamp = self.timestamp
-                ok, data = self.capture.retrieve()
-                if not ok:
-                    raise RuntimeError("failed to retrieve the taken snapshot")
-            finally:
-                self.lock.release()
-            return ImageSample(data=data, timestamp=timestamp, format=self.format)
-        else:
-            ok = self.capture.grab()
-            if not ok:
-                raise RuntimeError("failed to take a snapshot")
-            timestamp = get_timestamp()
+        if not self._ready_for_next_frame.wait(timeout=10.0):
+            raise RuntimeError(
+                "failed to grab a frame from the background thread: timed out"
+            )
+        self._ready_for_next_frame.clear()
+        with acquire_with_timeout(self.lock, timeout=1.0):
+            timestamp = self.timestamp
             ok, data = self.capture.retrieve()
             if not ok:
                 raise RuntimeError("failed to retrieve the taken snapshot")
-            return ImageSample(data=data, timestamp=timestamp, format=self.format)
-
-    def snapshot(self):
-        return self.grab_frame()
-
-    def stream(self):
-        try:
-            while True:
-                yield self.grab_frame()
-        except:
-            pass
-
-    def record(self, duration, file_path="./sample.mp4", skip_second=1):
-        if which("ffmpeg") == None:
-            raise RuntimeError(
-                "ffmpeg does not exist to record video. please install ffmpeg"
-            )
-        if self.context_depth > 0:
-            raise RuntimeError(
-                f"the stream {self.device} is already open. please close first or use without the Python's WITH statement"
-            )
-        if isinstance(self.device, str) and self.device.startswith("rtsp"):
-            c = ffmpeg.input(self.device, rtsp_transport="tcp", ss=skip_second)
-        else:
-            c = ffmpeg.input(self.device, ss=skip_second)
-        c = ffmpeg.output(
-            c, file_path, codec="copy", f="mp4", t=duration
-        ).overwrite_output()
-        timestamp = get_timestamp()
-        _, stderr = ffmpeg.run(c, quiet=True)
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            return VideoSample(path=file_path, timestamp=timestamp)
-        else:
-            raise RuntimeError(f"error while recording: {stderr}")
+        return ImageSample(data=data, timestamp=timestamp, format=self.format)
 
 
 class ImageFolder:
@@ -331,3 +329,12 @@ class ImageFolder:
 
     def __repr__(self):
         return f"ImageFolder{self.files!r}"
+
+
+@contextmanager
+def acquire_with_timeout(lock, timeout):
+    try:
+        lock.acquire(timeout=timeout)
+        yield
+    finally:
+        lock.release()
