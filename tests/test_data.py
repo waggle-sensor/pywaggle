@@ -126,18 +126,35 @@ class TestData(unittest.TestCase):
         self.assertIsInstance(ts, int)
 
     def test_camera_file_snapshot(self):
+        # open test.mp4 is a test video 90 480x640 frames
         cam = Camera("file://tests/test.mp4")
         sample = cam.snapshot()
         assert sample.data.shape == (640, 480, 3)
 
     def test_camera_file_stream(self):
+        # open test.mp4 is a test video 90 480x640 frames
         cam = Camera("file://tests/test.mp4")
         numframes = 0
         for sample in cam.stream():
             assert sample.data.shape == (640, 480, 3)
             numframes += 1
-        # NOTE test.mp4 was created with exactly 90 frames, so we check it matches
         assert numframes == 90
+
+    def test_camera_stream_snapshot(self):
+        # open playback server which provides test video stream of 800x600 frames
+        cam = Camera("http://127.0.0.1:8090/bottom/live.mp4")
+        sample = cam.snapshot()
+        assert sample.data.shape == (600, 800, 3)
+
+    def test_camera_stream_stream(self):
+        # open playback server which provides test video stream of 800x600 frames
+        cam = Camera("http://127.0.0.1:8090/bottom/live.mp4")
+        numframes = 0
+        for sample in cam.stream():
+            assert sample.data.shape == (600, 800, 3)
+            numframes += 1
+            if numframes > 30:
+                break
 
 
 if __name__ == "__main__":
