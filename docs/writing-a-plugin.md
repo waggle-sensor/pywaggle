@@ -313,24 +313,25 @@ camera = Camera("file://path/to/my_cool_video.mp4")
 camera = Camera("bottom_camera")
 ```
 
-### Camera buffering and uses cases
+### Camera buffering and use cases
 
 ```
                                       
 Q1. How often do you need camera frames?
-A1. (As many as possible) ---> Refer to Use case 1
+A1. (As many as possible) ---> Refer to use case 1
 A2. (Occasionally)        ---> Go to Q2
 
 Q2. How sensitive is your application to a short delay when capturing an image?
-A1. (Very sensitive) ---> Refer to Use case 1
-A2. (A second is ok) ---> Refer to Use case 2
+A1. (Very sensitive) ---> Refer to use case 1
+A2. (A second is ok) ---> Refer to use case 2
 ```
 
 The Camera class wrapped in the Python `with` statement runs a background thread to keep up with the camera stream. This allows users to get the latest frame whenever `.stream()` or `.snapshot()` are called. However, this may be uncessary when users want to close the stream after grabbing a frame or the Camera class is used with a file, not a stream.
 
 Therefore, it is highly recommended to use the Camera class with the Python `with` statement when users want to process consequtive frames.
 
-**User case 1**
+**Use case 1**
+
 ```python
 from time import sleep
 from waggle.data.vision import Camera
@@ -345,17 +346,18 @@ with Camera() as camera:
 
 For simple grab-and-go use cases, users use the Camera class without the `with` statement to avoid the background process and its resource consumption.
 
-**User case 2**
+**Use case 2**
 ```python
 from time import sleep
 from waggle.data.vision import Camera
 
 # The Camera class closes the stream after obtaining
 # a frame
-former_frame = Camera().snapshot()
+camera = Camera()
+former_frame = camera.snapshot()
 sleep(5)
 # The Camera class opens the stream and grabs a frame
-current_frame = Camera().snapshot()
+current_frame = camera.snapshot()
 calculate_motion(current_frame, former_frame)
 ```
 
@@ -364,8 +366,10 @@ calculate_motion(current_frame, former_frame)
 ```python
 from waggle.data.vision import Camera
 
+camera = Camera()
+
 # record a 30-second video from the camera
-video = Camera().record(duration=30)
+video = camera.record(duration=30)
 with video:
     for frame in video:
         process(frame.data)
