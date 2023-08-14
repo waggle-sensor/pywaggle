@@ -1,6 +1,13 @@
 import unittest
 from waggle.data.audio import AudioFolder, AudioSample
-from waggle.data.vision import RGB, BGR, ImageFolder, ImageSample, resolve_device
+from waggle.data.vision import (
+    RGB,
+    BGR,
+    ImageFolder,
+    ImageSample,
+    resolve_device,
+    Camera,
+)
 from waggle.data.timestamp import get_timestamp
 import numpy as np
 from tempfile import TemporaryDirectory
@@ -117,6 +124,20 @@ class TestData(unittest.TestCase):
     def test_get_timestamp(self):
         ts = get_timestamp()
         self.assertIsInstance(ts, int)
+
+    def test_camera_file_snapshot(self):
+        cam = Camera("file://tests/test.mp4")
+        sample = cam.snapshot()
+        assert sample.data.shape == (640, 480, 3)
+
+    def test_camera_file_stream(self):
+        cam = Camera("file://tests/test.mp4")
+        numframes = 0
+        for sample in cam.stream():
+            assert sample.data.shape == (640, 480, 3)
+            numframes += 1
+        # NOTE test.mp4 was created with exactly 90 frames, so we check it matches
+        assert numframes == 90
 
 
 if __name__ == "__main__":

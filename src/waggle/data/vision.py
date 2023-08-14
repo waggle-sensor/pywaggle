@@ -225,17 +225,39 @@ class FileCapture:
         self.device = device
         self.format = format
 
+        self.capture = cv2.VideoCapture(self.device)
+        if not self.capture.isOpened():
+            raise RuntimeError(
+                f"unable to open video capture for device {self.device!r}"
+            )
+
     def close(self):
-        print("bye file!")
+        self.capture.release()
 
     def snapshot(self):
-        pass
+        return self._grab_frame()
 
     def stream(self):
-        pass
+        try:
+            while True:
+                yield self._grab_frame()
+        except RuntimeError:
+            return
 
     def record(self):
-        raise RuntimeError("TODO write this error")
+        raise RuntimeError(
+            "Camera already opened. Camera.record must be called outside of a with block."
+        )
+
+    def _grab_frame(self):
+        ok = self.capture.grab()
+        if not ok:
+            raise RuntimeError("failed to grab frame")
+        timestamp = get_timestamp()
+        ok, data = self.capture.retrieve()
+        if not ok:
+            raise RuntimeError("failed to decode frame")
+        return ImageSample(data=data, timestamp=timestamp, format=self.format)
 
 
 class StreamCapture:
@@ -261,14 +283,32 @@ class StreamCapture:
         self.capture.release()
 
     def snapshot(self):
-        return self.grab_frame()
+        return self._grab_frame()
 
     def stream(self):
-        while True:
-            yield self.grab_frame()
+        try:
+            while True:
+                yield self._grab_frame()
+        except RuntimeError:
+            return
 
     def record(self):
-        raise RuntimeError("TODO write this error")
+        raise RuntimeError(
+            "Camera already opened. Camera.record must be called outside of a with block."
+        )
+
+    def _grab_frame(self):
+        if not self._ready_for_next_frame.wait(timeout=10.0):
+            raise RuntimeError(
+                "failed to grab a frame from the background thread: timed out"
+            )
+        self._ready_for_next_frame.clear()
+        with acquire_with_timeout(self.lock, timeout=1.0):
+            timestamp = self.timestamp
+            ok, data = self.capture.retrieve()
+            if not ok:
+                raise RuntimeError("failed to retrieve the taken snapshot")
+        return ImageSample(data=data, timestamp=timestamp, format=self.format)
 
     def _run(self):
         # we sleep slighly shorter than FPS to drain the buffer efficiently
@@ -291,19 +331,6 @@ class StreamCapture:
                 time.sleep(sleep)
         finally:
             self.stopped.set()
-
-    def grab_frame(self):
-        if not self._ready_for_next_frame.wait(timeout=10.0):
-            raise RuntimeError(
-                "failed to grab a frame from the background thread: timed out"
-            )
-        self._ready_for_next_frame.clear()
-        with acquire_with_timeout(self.lock, timeout=1.0):
-            timestamp = self.timestamp
-            ok, data = self.capture.retrieve()
-            if not ok:
-                raise RuntimeError("failed to retrieve the taken snapshot")
-        return ImageSample(data=data, timestamp=timestamp, format=self.format)
 
 
 class ImageFolder:
