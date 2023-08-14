@@ -90,13 +90,13 @@ class VideoSample:
     def __enter__(self):
         self.capture = cv2.VideoCapture(self.path)
         if not self.capture.isOpened():
-            raise RuntimeError(
-                f"unable to open video capture for file {self.path!r}"
-            )
+            raise RuntimeError(f"unable to open video capture for file {self.path!r}")
         self.fps = self.capture.get(cv2.CAP_PROP_FPS)
-        if self.fps > 100.:
-            self.fps = 0.
-            logger.debug(f'pywaggle cannot calculate timestamp because the fps ({self.fps}) is too high.')
+        if self.fps > 100.0:
+            self.fps = 0.0
+            logger.debug(
+                f"pywaggle cannot calculate timestamp because the fps ({self.fps}) is too high."
+            )
             self.timestamp_delta = 0
         else:
             self.timestamp_delta = 1 / self.fps
@@ -113,31 +113,39 @@ class VideoSample:
 
     def __next__(self):
         if self.capture == None or not self.capture.isOpened():
-            raise RuntimeError("video is not opened. use the Python WITH statement to open the video")
+            raise RuntimeError(
+                "video is not opened. use the Python WITH statement to open the video"
+            )
         ok, data = self.capture.read()
         if not ok or data is None:
             raise StopIteration
         # timestamp must be an integer in nanoseconds
-        approx_timestamp = self.timestamp + int(self.timestamp_delta * self._frame_count * 1e9)
+        approx_timestamp = self.timestamp + int(
+            self.timestamp_delta * self._frame_count * 1e9
+        )
         self._frame_count += 1
         return ImageSample(data=data, timestamp=approx_timestamp, format=self.format)
 
 
+INPUT_TYPE_FILE = "file"
+INPUT_TYPE_OTHER = "other"
+
+
 def resolve_device(device):
     if isinstance(device, Path):
-        return resolve_device_from_path(device)
+        return resolve_device_from_path(device), INPUT_TYPE_FILE
     # objects that are not paths or strings are considered already resolved
     if not isinstance(device, str):
-        return device
+        return device, INPUT_TYPE_OTHER
     match = re.match(r"([A-Za-z0-9]+)://(.*)$", device)
     # non-url like paths refer to data shim devices
     if match is None:
-        return resolve_device_from_data_config(device)
+        return resolve_device_from_data_config(device), INPUT_TYPE_OTHER
     # return file:// urls as path
     if match.group(1) == "file":
-        return resolve_device_from_path(Path(match.group(2)))
+        return resolve_device_from_path(Path(match.group(2))), INPUT_TYPE_FILE
     # return other urls as-is
-    return device
+    return device, INPUT_TYPE_OTHER
 
 
 def resolve_device_from_path(path):
@@ -154,21 +162,17 @@ def resolve_device_from_data_config(device):
     except KeyError:
         raise KeyError(f"missing .handler.args.url field for device {device!r}.")
 
-class Camera:
-    INPUT_TYPE_FILE = "file"
-    INPUT_TYPE_OTHER = "other"
 
+class Camera:
     def __init__(self, device=0, format=RGB):
-        self.capture = _Capture(resolve_device(device), format)
-        match = re.match(r"([A-Za-z0-9]+)://(.*)$", device)
-        if match is not None and match.group(1) == "file":
-            self.input_type = self.INPUT_TYPE_FILE
-        else:
-            self.input_type = self.INPUT_TYPE_OTHER
+        device, self.input_type = resolve_device(device)
+        self.capture = _Capture(device, format)
 
     def __enter__(self):
-        if self.input_type == self.INPUT_TYPE_FILE:
-            logger.info(f'input is a file. the background thread disabled for grabbing frames')
+        if self.input_type == INPUT_TYPE_FILE:
+            logger.info(
+                f"input is a file. the background thread disabled for grabbing frames"
+            )
             self.capture.enable_daemon = False
         else:
             self.capture.enable_daemon = True
@@ -221,7 +225,7 @@ class _Capture:
             if self.enable_daemon:
                 self.daemon_need_to_stop.set()
             self.capture.release()
-    
+
     def _run(self):
         # we sleep slighly shorter than FPS to drain the buffer efficiently
         # NOTE: OpenCV's FPS get function is inaccurate as a USB webcam gives 1 FPS while
@@ -246,8 +250,10 @@ class _Capture:
 
     def grab_frame(self):
         if self.daemon.is_alive():
-            if not self._ready_for_next_frame.wait(timeout=10.):
-                raise RuntimeError("failed to grab a frame from the background thread: timed out")
+            if not self._ready_for_next_frame.wait(timeout=10.0):
+                raise RuntimeError(
+                    "failed to grab a frame from the background thread: timed out"
+                )
             self._ready_for_next_frame.clear()
             try:
                 self.lock.acquire(timeout=1)
@@ -280,21 +286,26 @@ class _Capture:
 
     def record(self, duration, file_path="./sample.mp4", skip_second=1):
         if which("ffmpeg") == None:
-            raise RuntimeError("ffmpeg does not exist to record video. please install ffmpeg")
+            raise RuntimeError(
+                "ffmpeg does not exist to record video. please install ffmpeg"
+            )
         if self.context_depth > 0:
-            raise RuntimeError(f'the stream {self.device} is already open. please close first or use without the Python\'s WITH statement')
+            raise RuntimeError(
+                f"the stream {self.device} is already open. please close first or use without the Python's WITH statement"
+            )
         if isinstance(self.device, str) and self.device.startswith("rtsp"):
             c = ffmpeg.input(self.device, rtsp_transport="tcp", ss=skip_second)
         else:
             c = ffmpeg.input(self.device, ss=skip_second)
-        c = ffmpeg.output(c, file_path, codec="copy", f='mp4', t=duration).overwrite_output()
+        c = ffmpeg.output(
+            c, file_path, codec="copy", f="mp4", t=duration
+        ).overwrite_output()
         timestamp = get_timestamp()
         _, stderr = ffmpeg.run(c, quiet=True)
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
             return VideoSample(path=file_path, timestamp=timestamp)
         else:
-            raise RuntimeError(f'error while recording: {stderr}')
-        
+            raise RuntimeError(f"error while recording: {stderr}")
 
 
 class ImageFolder:
