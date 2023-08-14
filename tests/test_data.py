@@ -40,21 +40,21 @@ class TestData(unittest.TestCase):
 
     def test_resolve_device(self):
         self.assertEqual(
-            resolve_device(Path("test.jpg")), str(Path("test.jpg").absolute())
+            resolve_device(Path("test.jpg")), (str(Path("test.jpg").absolute()), "file")
         )
         self.assertEqual(
             resolve_device("file://path/to/test.jpg"),
-            str(Path("path/to/test.jpg").absolute()),
+            (str(Path("path/to/test.jpg").absolute()), "file"),
         )
         self.assertEqual(
             resolve_device("http://camera-ip.org/image.jpg"),
-            "http://camera-ip.org/image.jpg",
+            ("http://camera-ip.org/image.jpg", "other"),
         )
         self.assertEqual(
             resolve_device("rtsp://camera-ip.org/image.jpg"),
-            "rtsp://camera-ip.org/image.jpg",
+            ("rtsp://camera-ip.org/image.jpg", "other"),
         )
-        self.assertEqual(resolve_device(0), 0)
+        self.assertEqual(resolve_device(0), (0, "other"))
 
     def test_image_save(self):
         with TemporaryDirectory() as dir:
