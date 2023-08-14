@@ -273,6 +273,14 @@ from waggle.plugin import Plugin
 from waggle.data.vision import Camera
 import time
 
+# use case 1: take a snapshot and process
+with Plugin() as plugin:
+    sample = Camera().snapshot()
+    # do processing
+    result = process(sample.data)
+    plugin.publish("my.measurement", result, timestampe=sample.timestamp)
+
+# user case 2: process camera frames
 with Plugin() as plugin, Camera() as camera:
     # process samples from video stream
     for sample in camera.stream():
@@ -281,6 +289,8 @@ with Plugin() as plugin, Camera() as camera:
             sample.save("cars.jpg")
             plugin.upload_file("cars.jpg")
 ```
+
+The `camera.snapshot()` function returns a camera frame. The function provides a convenient way to capture a frame and process it.
 
 The `camera.stream()` function yields a sequence of `ImageSample` with the following properties:
 
@@ -301,6 +311,86 @@ camera = Camera("file://path/to/my_cool_video.mp4")
 
 # open a camera by device id (when plugin runs on a node)
 camera = Camera("bottom_camera")
+```
+
+### Camera buffering and uses cases
+
+```
+                                      
+Q1. How often do you need camera frames?
+A1. (As many as possible) ---> Refer to Use case 1
+A2. (Occasionally)        ---> Go to Q2
+
+Q2. How sensitive is your application to a short delay when capturing an image?
+A1. (Very sensitive) ---> Refer to Use case 1
+A2. (A second is ok) ---> Refer to Use case 2
+```
+
+The Camera class wrapped in the Python `with` statement runs a background thread to keep up with the camera stream. This allows users to get the latest frame whenever `.stream()` or `.snapshot()` are called. However, this may be uncessary when users want to close the stream after grabbing a frame or the Camera class is used with a file, not a stream.
+
+Therefore, it is highly recommended to use the Camera class with the Python `with` statement when users want to process consequtive frames.
+
+**User case 1**
+```python
+from time import sleep
+from waggle.data.vision import Camera
+
+with Camera() as camera:
+    former_frame = camera.snapshot()
+    sleep(5)
+    # the current_frame gets the latest frame
+    current_frame = camera.snapshot()
+    calculate_motion(current_frame, former_frame)
+```
+
+For simple grab-and-go use cases, users use the Camera class without the `with` statement to avoid the background process and its resource consumption.
+
+**User case 2**
+```python
+from time import sleep
+from waggle.data.vision import Camera
+
+# The Camera class closes the stream after obtaining
+# a frame
+former_frame = Camera().snapshot()
+sleep(5)
+# The Camera class opens the stream and grabs a frame
+current_frame = Camera().snapshot()
+calculate_motion(current_frame, former_frame)
+```
+
+### Recording video data
+
+```python
+from waggle.data.vision import Camera
+
+# record a 30-second video from the camera
+video = Camera().record(duration=30)
+with video:
+    for frame in video:
+        process(frame.data)
+```
+
+The Camera class allows users to record a video from camera and store the clip into a file. Because it relies on [ffmpeg](https://www.ffmpeg.org/) user code and its container (if in a Docker container) must have ffmpeg installed. You may install it as follow,
+
+```bash
+# for ubuntu
+apt-get update && apt-get install -y ffmpeg
+```
+
+Also, the `.record()` function may NOT be used with Python `with` statement for USB cameras.
+
+```python
+from waggle.data.vision import Camera
+
+# the camera is a USB camera
+device = "/dev/camera0"
+with Camera(device) as camera:
+    # this raises an exception as the camera stream is already open by the with statement
+    video = camera.record(duration=30)
+
+# USB cameras can be used as below
+video = Camera(device).record(duration=30)
 ```
 
 ### Recording audio data
