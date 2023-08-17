@@ -172,7 +172,6 @@ source:
   architectures:
     - "linux/amd64"
     - "linux/arm64"
-    - "linux/arm/v7"
 ```
 
 This file contains metadata about what your plugin is called and what it's supposed to do. It is used by the [Edge Code Repository](https://portal.sagecontinuum.org/apps/explore) when submitting plugins.
