@@ -360,8 +360,9 @@ class ImageFolder:
 
 @contextmanager
 def acquire_with_timeout(lock, timeout):
+    if not lock.acquire(timeout=timeout):
+        raise TimeoutError("timed out when acquiring lock")
     try:
-        lock.acquire(timeout=timeout)
         yield
     finally:
         lock.release()
