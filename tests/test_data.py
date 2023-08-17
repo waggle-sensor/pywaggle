@@ -1,12 +1,20 @@
 import unittest
 from waggle.data.audio import AudioFolder, AudioSample
-from waggle.data.vision import RGB, BGR, ImageFolder, ImageSample, resolve_device
+from waggle.data.vision import (
+    RGB,
+    BGR,
+    ImageFolder,
+    ImageSample,
+    resolve_device,
+    Camera,
+)
 from waggle.data.timestamp import get_timestamp
 import numpy as np
 from tempfile import TemporaryDirectory
 from pathlib import Path
 import os.path
 from itertools import product
+import subprocess
 
 
 def generate_audio_data(samplerate, channels, dtype):
@@ -40,21 +48,21 @@ class TestData(unittest.TestCase):
 
     def test_resolve_device(self):
         self.assertEqual(
-            resolve_device(Path("test.jpg")), str(Path("test.jpg").absolute())
+            resolve_device(Path("test.jpg")), (str(Path("test.jpg").absolute()), "file")
         )
         self.assertEqual(
             resolve_device("file://path/to/test.jpg"),
-            str(Path("path/to/test.jpg").absolute()),
+            (str(Path("path/to/test.jpg").absolute()), "file"),
         )
         self.assertEqual(
             resolve_device("http://camera-ip.org/image.jpg"),
-            "http://camera-ip.org/image.jpg",
+            ("http://camera-ip.org/image.jpg", "other"),
         )
         self.assertEqual(
             resolve_device("rtsp://camera-ip.org/image.jpg"),
-            "rtsp://camera-ip.org/image.jpg",
+            ("rtsp://camera-ip.org/image.jpg", "other"),
         )
-        self.assertEqual(resolve_device(0), 0)
+        self.assertEqual(resolve_device(0), (0, "other"))
 
     def test_image_save(self):
         with TemporaryDirectory() as dir:
@@ -117,6 +125,49 @@ class TestData(unittest.TestCase):
     def test_get_timestamp(self):
         ts = get_timestamp()
         self.assertIsInstance(ts, int)
+
+
+def playback_server_available():
+    try:
+        output = subprocess.check_output(["docker-compose", "logs", "playback-server"])
+    except subprocess.CalledProcessError:
+        return False
+    return b"Serving data" in output
+
+
+class TestCamera(unittest.TestCase):
+    def test_file_snapshot(self):
+        # open test.mp4 is a test video 90 480x640 frames
+        cam = Camera("file://tests/test.mp4")
+        sample = cam.snapshot()
+        assert sample.data.shape == (640, 480, 3)
+
+    def test_file_stream(self):
+        # open test.mp4 is a test video 90 480x640 frames
+        cam = Camera("file://tests/test.mp4")
+        numframes = 0
+        for sample in cam.stream():
+            assert sample.data.shape == (640, 480, 3)
+            numframes += 1
+        assert numframes == 90
+
+    @unittest.skipUnless(playback_server_available(), "playback server not available")
+    def test_stream_snapshot(self):
+        # open playback server which provides test video stream of 800x600 frames
+        cam = Camera("http://127.0.0.1:8090/bottom/live.mp4")
+        sample = cam.snapshot()
+        assert sample.data.shape == (600, 800, 3)
+
+    @unittest.skipUnless(playback_server_available(), "playback server not available")
+    def test_stream_stream(self):
+        # open playback server which provides test video stream of 800x600 frames
+        cam = Camera("http://127.0.0.1:8090/bottom/live.mp4")
+        numframes = 0
+        for sample in cam.stream():
+            assert sample.data.shape == (600, 800, 3)
+            numframes += 1
+            if numframes > 30:
+                break
 
 
 if __name__ == "__main__":
