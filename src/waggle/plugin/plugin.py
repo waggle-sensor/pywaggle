@@ -127,6 +127,8 @@ class Plugin:
         for task in self.tasks:
             task.done.wait()
 
+        self.tasks.clear()
+
     def subscribe(self, *topics):
         self.tasks.append(RabbitMQConsumer(topics, self.config, self.recv, self.stop))
         # TODO(sean) add mock or integration testing against rabbitmq to actually test this
@@ -139,6 +141,8 @@ class Plugin:
         raise TimeoutError("plugin get timed out")
 
     def publish(self, name, value, meta={}, timestamp=None, scope="all", timeout=None):
+        if len(self.tasks) == 0:
+            raise RuntimeError("Plugin can only be used inside a with block!")
         # get timestamp before doing other work
         timestamp = timestamp or get_timestamp()
         raise_for_invalid_publish_name(name)

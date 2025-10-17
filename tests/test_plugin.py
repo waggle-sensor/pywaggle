@@ -166,6 +166,11 @@ class TestPlugin(unittest.TestCase):
             msg = wagglemsg.load(item.body)
             self.assertEqual(msg.name, "dur")
 
+    def test_must_be_in_with(self):
+        plugin = Plugin()
+        with self.assertRaises(RuntimeError) as cm:
+            plugin.publish("test", "value")
+
 
 class TestUploader(unittest.TestCase):
     def test_upload_file(self):
