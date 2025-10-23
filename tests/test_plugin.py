@@ -196,7 +196,7 @@ def rabbitmq_available():
     try:
         subprocess.check_output(["docker-compose", "exec", "rabbitmq", "true"])
         return True
-    except subprocess.CalledProcessError:
+    except (FileNotFoundError, subprocess.CalledProcessError):
         return False
 
 
