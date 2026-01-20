@@ -5,3 +5,8 @@ services:
       - "127.0.0.1:5672:5672"
     volumes:
       - "./config/rabbitmq:/etc/rabbitmq:ro"
+  # using playback server to test Camera on a stream for now. consider using something more general like gstreamer's videotestsrc?
+  playback-server:
+    image: waggle/wes-playback-server:0.1.0
+    ports:
+      - "127.0.0.1:8090:8090"
