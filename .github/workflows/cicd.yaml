@@ -28,7 +28,7 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
       - name: Install system deps
-        run: sudo apt-get update -y && sudo apt-get install -y pulseaudio
+        run: sudo apt-get update -y && sudo apt-get install -y pulseaudio pytest
       - name: Checkout repo
         uses: actions/checkout@v5
       - name: Download artifacts
