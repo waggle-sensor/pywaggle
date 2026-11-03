@@ -541,3 +541,16 @@ These are telling us that our messages are being queued up in an outgoing queue 
 You'll also see a number of messages related to rabbitmq.
 
 These are simply indicating the our plugin is waiting to connect to the Waggle ecosystem. This is normal when testing a standalone plugin without the rest of the Waggle stack. Plugins will simply queue up measurements in-memory until they exit.
+
+## Getting node info
+
+You can get runtime info about the current node pywaggle is running on using the `read_node_info` function.
+
+```python
+from waggle.data.node_info_env import read_node_info
+
+ni = read_node_info()
+# NodeInfo(vsn='H00F', node_id='00004cbb4701d16c',
+#          lat=41.7179852752395, lon=-87.98271513806043,
+#          mobility='unknown', vsn_is_placeholder=False)
+```
